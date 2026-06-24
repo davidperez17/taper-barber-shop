@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es-GT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Propuesta de Servicios Digitales para crear una App Web PWA y CRM para Taper Barbería con tarjeta de lealtad, QR, inventario, dashboard y sistema multi-sucursal." />
+  <title>Propuesta CRM + PWA para Taper Barbería | Servicios Digitales</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-progress" id="pageProgress"></div>
+
+  <header class="site-header" id="top">
+    <nav class="nav container" aria-label="Navegación principal">
+      <a class="brand" href="#top" aria-label="Ir al inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <svg class="brand-logo" viewBox="0 0 350 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 40C0 17.9086 17.9086 0 40 0H310C332.091 0 350 17.9086 350 40C350 62.0914 332.091 80 310 80H40C17.9086 80 0 62.0914 0 40Z" fill="#012fd3"/>
+            <path d="M0 178.5C0 156.132 18.1325 138 40.5 138H269C313.735 138 350 174.265 350 219L237 219L40.5 219C18.1325 219 0 200.868 0 178.5Z" fill="#012fd3"/>
+            <path d="M350 219L237 219C279.5 219 279.5 269 237 269L350 269V219Z" fill="#012fd3"/>
+            <path d="M350 269L237 269L40.5 269C18.1325 269 0 287.132 0 309.5C0 331.868 18.1325 350 40.5 350H269C313.735 350 350 313.735 350 269Z" fill="#012fd3"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <strong>Servicios Digitales</strong>
+          <small>Digital y verdaderamente tuyo.</small>
+        </span>
+      </a>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="nav-links" id="navLinks">
+        <a href="#plan">Plan</a>
+        <a href="#mejoras">Mejoras</a>
+        <a href="#funciones">Funciones</a>
+        <a href="#precios">Costos</a>
+        <a href="#alcance">Alcance</a>
+        <a class="btn btn-primary nav-cta" href="#contacto">Solicitar propuesta</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero section-pad">
+      <div class="container hero-grid">
+        <div class="hero-copy reveal">
+          <span class="eyebrow">Propuesta exclusiva para Taper Barbería</span>
+          <h1>CRM + app propia para clientes de Taper Barbería.</h1>
+          <p class="hero-subtitle">
+            Evolucionamos el sistema operativo actual con una experiencia para el cliente final: historial de consumos, QR único, promociones, tarjeta de lealtad y acceso instalable desde el teléfono.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#precios">Ver inversión</a>
+            <a class="btn btn-secondary" href="#funciones">Ver funcionalidades</a>
+          </div>
+
+          <div class="hero-stats" aria-label="Resumen de la propuesta">
+            <div>
+              <strong data-counter="5200">Q0</strong>
+              <span>Primer año</span>
+            </div>
+            <div>
+              <strong data-counter="150">Q0</strong>
+              <span>Por sucursal / mes</span>
+            </div>
+            <div>
+              <strong>PLUS</strong>
+              <span>App para clientes</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual reveal delay-1" aria-label="Vista previa de la App Web">
+          <div class="phone-card">
+            <div class="phone-top">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="loyalty-card black-tier">
+              <div class="loyalty-head">
+                <span>💈 Taper Club</span>
+                <strong>BLACK</strong>
+              </div>
+              <h3>Tarjeta de Lealtad</h3>
+              <div class="progress-copy">
+                <span>4 de 6 cortes</span>
+                <small>Te faltan 2 para tu recompensa</small>
+              </div>
+              <div class="stamp-grid" aria-hidden="true">
+                <span class="active"></span>
+                <span class="active"></span>
+                <span class="active"></span>
+                <span class="active"></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="qr-box">
+                <div class="qr-fake" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <p>QR único del cliente</p>
+              </div>
+            </div>
+            <div class="mini-receipt">
+              <strong>Último registro</strong>
+              <span>Corte + Shampoo</span>
+              <b>Q115</b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad soft-bg" id="plan">
+      <div class="container two-col">
+        <div class="section-copy reveal">
+          <span class="eyebrow">El concepto</span>
+          <h2>Una app web privada para Taper Barbería, instalable en el teléfono.</h2>
+          <p>
+            No será necesario publicarla en Play Store ni App Store. Los clientes podrán ingresar desde un enlace, iniciar sesión y guardar la app en la pantalla principal de su celular.
+          </p>
+          <p>
+            La app estará enfocada en que el cliente consulte su tarjeta de lealtad, promociones, historial, catálogo, sucursales y consumos. Del lado interno, el equipo mantiene control operativo con ventas, inventario, servicios, clientes, promociones y reportes.
+          </p>
+        </div>
+
+        <div class="process-card reveal delay-1">
+          <h3>Flujo de uso</h3>
+          <ol class="timeline">
+            <li><span>01</span> Cliente se registra con Google.</li>
+            <li><span>02</span> La app genera su QR único.</li>
+            <li><span>03</span> El personal escanea el QR después del pago.</li>
+            <li><span>04</span> Se registran servicios, productos y total pagado.</li>
+            <li><span>05</span> El cliente ve su tarjeta e historial actualizados.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad" id="mejoras">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="eyebrow">Evolución del sistema actual</span>
+          <h2>El CRM anterior ya opera el negocio; el nuevo valor está en abrirle una puerta al cliente.</h2>
+          <p>Tomamos como punto de partida las funciones internas que Taper Barber ya usa: ventas, caja, catálogo, inventario, reportes, cupones y sellos de lealtad.</p>
+        </div>
+
+        <div class="improvement-layout">
+          <div class="current-system reveal">
+            <figure>
+              <img src="app-anterior/Resumen.png" alt="Resumen operativo del sistema anterior de Taper Barber" loading="lazy" />
+              <figcaption>Resumen, ventas, stock bajo y accesos rápidos.</figcaption>
+            </figure>
+            <figure>
+              <img src="app-anterior/operacion.png" alt="Punto de venta del sistema anterior de Taper Barber" loading="lazy" />
+              <figcaption>Punto de venta con catálogo visual y ticket en curso.</figcaption>
+            </figure>
+          </div>
+
+          <div class="upgrade-panel reveal delay-1">
+            <span class="panel-kicker">Nuestro PLUS</span>
+            <h3>Una app de cliente conectada al CRM.</h3>
+            <p>
+              El sistema anterior está pensado principalmente para el equipo interno. La propuesta agrega una experiencia propia para que cada cliente pueda consultar su avance, consumos, promociones y beneficios sin depender del personal.
+            </p>
+            <ul class="check-list dark compact-list">
+              <li>Perfil del cliente con historial de visitas y compras.</li>
+              <li>QR personal para registrar consumos desde caja.</li>
+              <li>Tarjeta de lealtad visible y fácil de entender.</li>
+              <li>Promociones y cupones mostrados dentro de la app.</li>
+              <li>Catálogo y sucursales disponibles desde el celular.</li>
+              <li>Base preparada para reservas, WhatsApp, NFC o POS externo.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="value-grid reveal delay-2">
+          <article>
+            <strong>Antes</strong>
+            <p>El cliente depende del personal para saber sus sellos, beneficios o historial.</p>
+          </article>
+          <article>
+            <strong>Ahora</strong>
+            <p>El cliente tiene su propia app instalable, con información actualizada y marca Taper Barber.</p>
+          </article>
+          <article>
+            <strong>Resultado</strong>
+            <p>Más fidelización, más recompra y una base de datos útil para campañas futuras.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad" id="funciones">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="eyebrow">Funcionalidades incluidas</span>
+          <h2>Todo lo necesario para operar, fidelizar y crecer.</h2>
+          <p>La plataforma combina la operación interna que ya necesita la barbería con una capa nueva de experiencia para clientes.</p>
+        </div>
+
+        <div class="feature-tabs reveal" role="tablist" aria-label="Categorías de funciones">
+          <button class="tab-btn active" data-tab="cliente" role="tab">Cliente</button>
+          <button class="tab-btn" data-tab="admin" role="tab">Administración</button>
+          <button class="tab-btn" data-tab="crecimiento" role="tab">Crecimiento</button>
+        </div>
+
+        <div class="features-grid active" id="tab-cliente">
+          <article class="feature-card"><span>🔐</span><h3>Login con Google</h3><p>Registro e inicio de sesión rápido para clientes sin manejar contraseñas tradicionales.</p></article>
+          <article class="feature-card"><span>🎟️</span><h3>Tarjeta de lealtad virtual</h3><p>Progreso visual de cortes acumulados, recompensa disponible e historial de beneficios sin preguntar en caja.</p></article>
+          <article class="feature-card"><span>▣</span><h3>QR único por cliente</h3><p>Identificación rápida para registrar cortes, productos y consumos desde el panel interno.</p></article>
+          <article class="feature-card"><span>📱</span><h3>App Web PWA</h3><p>Instalable en Android y iPhone desde el navegador, sin tiendas de aplicaciones.</p></article>
+          <article class="feature-card"><span>🧾</span><h3>Historial de consumos</h3><p>El cliente podrá ver visitas, servicios comprados, productos adquiridos y beneficios utilizados.</p></article>
+          <article class="feature-card"><span>🛍️</span><h3>Catálogo de productos</h3><p>Productos visibles para clientes como shampoo, ceras, pomadas, aceites y tratamientos.</p></article>
+          <article class="feature-card"><span>📍</span><h3>Mapa de sucursales</h3><p>Ubicaciones actuales con botón para abrir ruta en Google Maps.</p></article>
+        </div>
+
+        <div class="features-grid" id="tab-admin">
+          <article class="feature-card"><span>📊</span><h3>Dashboard Admin</h3><p>Panel interno para revisar clientes, ventas, sucursales, productos, servicios y actividad.</p></article>
+          <article class="feature-card"><span>💈</span><h3>Gestión de servicios</h3><p>Creación de servicios como corte clásico, fade, barba, corte + barba y tratamientos.</p></article>
+          <article class="feature-card"><span>📦</span><h3>Inventario</h3><p>Control de productos, precios, existencias y disponibilidad por sucursal.</p></article>
+          <article class="feature-card"><span>👥</span><h3>Usuarios empresa</h3><p>Accesos para dueño, administrador, cajero o barbero con permisos definidos.</p></article>
+          <article class="feature-card"><span>🧾</span><h3>Comprobante interno</h3><p>Registro de venta y comprobante digital interno para control del negocio.</p></article>
+          <article class="feature-card"><span>🗃️</span><h3>Base de datos clientes</h3><p>Información organizada de clientes, visitas, compras, sucursal frecuente y actividad.</p></article>
+        </div>
+
+        <div class="features-grid" id="tab-crecimiento">
+          <article class="feature-card"><span>🔔</span><h3>Promociones y avisos</h3><p>Comunicación mediante correo electrónico y notificaciones push para novedades importantes.</p></article>
+          <article class="feature-card"><span>🏆</span><h3>Niveles VIP opcionales</h3><p>Silver, Gold, Platinum y Black para generar estatus, beneficios y mayor engagement.</p></article>
+          <article class="feature-card"><span>🏪</span><h3>Multi-sucursal</h3><p>Preparado para operar las 2 sucursales actuales y agregar más en el futuro.</p></article>
+          <article class="feature-card"><span>📈</span><h3>Métricas de negocio</h3><p>Clientes activos, ventas, consumo por cliente, productos vendidos y actividad por sucursal.</p></article>
+          <article class="feature-card"><span>🛠️</span><h3>Soporte técnico</h3><p>Mantenimiento, monitoreo y asistencia para asegurar continuidad del sistema.</p></article>
+          <article class="feature-card"><span>🚀</span><h3>Escalable</h3><p>Base preparada para agregar WhatsApp, reservas, referidos, NFC o integración POS en futuras fases.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad blue-section" id="precios">
+      <div class="container pricing-layout">
+        <div class="pricing-copy reveal">
+          <span class="eyebrow light">Inversión</span>
+          <h2>Plan de implementación para el primer año.</h2>
+          <p>
+            El primer pago cubre desarrollo, configuración, puesta en marcha y uso del sistema durante el primer año. Desde el segundo año se paga únicamente una mensualidad por sucursal activa.
+          </p>
+        </div>
+
+        <div class="pricing-card reveal delay-1">
+          <div class="price-top">
+            <span>Primer año</span>
+            <strong>Q5,200</strong>
+            <small>Implementación + uso del sistema</small>
+          </div>
+          <ul class="check-list">
+            <li>App Web PWA para clientes</li>
+            <li>Dashboard administrativo</li>
+            <li>QR y tarjeta de lealtad</li>
+            <li>Inventario y catálogo</li>
+            <li>2 sucursales iniciales</li>
+            <li>Configuración y capacitación básica</li>
+          </ul>
+          <a class="btn btn-light" href="#contacto">Solicitar inicio</a>
+        </div>
+
+        <div class="calculator-card reveal delay-2">
+          <h3>Renovación desde el segundo año</h3>
+          <p>Calcula la mensualidad según sucursales activas.</p>
+
+          <label for="branches">Sucursales</label>
+          <div class="calc-row">
+            <input type="range" id="branches" min="1" max="10" value="2" />
+            <strong><span id="branchCount">2</span></strong>
+          </div>
+
+          <div class="calc-total">
+            <span>Total mensual</span>
+            <strong id="monthlyTotal">Q300</strong>
+            <small>Q150 por sucursal activa</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad" id="alcance">
+      <div class="container scope-grid">
+        <div class="scope-card reveal">
+          <h2>Incluido</h2>
+          <ul class="check-list dark">
+            <li>Diseño y desarrollo de la App Web PWA.</li>
+            <li>Dashboard administrativo para la empresa.</li>
+            <li>Gestión de clientes, productos, servicios e inventario.</li>
+            <li>Tarjeta de lealtad virtual con QR único.</li>
+            <li>Promociones por correo y notificaciones push.</li>
+            <li>Mapa de sucursales y base multi-sucursal.</li>
+            <li>Soporte técnico, monitoreo y mantenimiento.</li>
+          </ul>
+        </div>
+
+        <div class="scope-card muted reveal delay-1">
+          <h2>Futuras integraciones</h2>
+          <ul class="dash-list">
+            <li>WhatsApp automático.</li>
+            <li>SMS / OTP por teléfono.</li>
+            <li>Reservas de citas.</li>
+            <li>Integración con POS externo.</li>
+            <li>Factura electrónica FEL.</li>
+            <li>Tarjetas NFC físicas.</li>
+            <li>Sistema avanzado de referidos.</li>
+          </ul>
+          <p class="note">Estas funciones pueden cotizarse por separado según la necesidad de la barbería.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad soft-bg">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="eyebrow">Preguntas rápidas</span>
+          <h2>Detalles importantes antes de iniciar.</h2>
+        </div>
+
+        <div class="faq-list reveal delay-1">
+          <article class="faq-item active">
+            <button class="faq-question">¿La app estará en Play Store o App Store?<span>+</span></button>
+            <div class="faq-answer"><p>No. Será una App Web PWA personalizada para Taper Barbería. Los clientes podrán instalarla en su teléfono desde el navegador y usarla como una app.</p></div>
+          </article>
+          <article class="faq-item">
+            <button class="faq-question">¿El QR registra automáticamente el corte?</button>
+            <div class="faq-answer"><p>El QR identifica al cliente. Luego el personal confirma los servicios y productos comprados para guardar la venta correctamente.</p></div>
+          </article>
+          <article class="faq-item">
+            <button class="faq-question">¿Incluye factura electrónica FEL?</button>
+            <div class="faq-answer"><p>No en la primera fase. El sistema incluye comprobante interno o recibo digital. La integración FEL puede cotizarse aparte.</p></div>
+          </article>
+          <article class="faq-item">
+            <button class="faq-question">¿Se pueden agregar más sucursales?</button>
+            <div class="faq-answer"><p>Sí. La plataforma queda preparada para agregar más sucursales en el futuro con una mensualidad de Q150 por sucursal activa desde el segundo año.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section section-pad" id="contacto">
+      <div class="container cta-card reveal">
+        <span class="eyebrow light">Servicios Digitales</span>
+        <h2>Listos para crear la plataforma digital de Taper Barbería.</h2>
+        <p>
+          Una solución hecha para fidelizar clientes, controlar operación y preparar el crecimiento de nuevas sucursales.
+        </p>
+        <div class="cta-actions">
+          <a class="btn btn-light" href="mailto:info@serviciosdigitalesgtm.com?subject=Propuesta%20CRM%20%2B%20PWA%20para%20Taper%20Barber%C3%ADa">Enviar por correo</a>
+          <a class="btn btn-ghost-light" href="https://wa.me/50239607045" target="_blank" rel="noopener">Contactar por WhatsApp</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <strong>Servicios Digitales</strong>
+        <p>Digital y verdaderamente tuyo.</p>
+      </div>
+      <div>
+        <span>Contacto</span>
+        <a href="mailto:info@serviciosdigitalesgtm.com">info@serviciosdigitalesgtm.com</a>
+        <a href="tel:+50239607045">+502 3960 7045</a>
+      </div>
+      <div>
+        <span>Propuesta</span>
+        <p>CRM + App Web PWA para Taper Barbería</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
