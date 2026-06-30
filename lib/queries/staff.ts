@@ -1,0 +1,27 @@
+import { createClient } from "@/lib/supabase/server";
+
+export type RolStaff = "cajero" | "barbero" | "admin" | "dueno";
+
+export interface StaffSession {
+  id: string;
+  nombre: string;
+  rol: RolStaff;
+}
+
+/** Staff autenticado actual, o null si no hay sesión / no es staff activo. */
+export async function getStaff(): Promise<StaffSession | null> {
+  const sb = await createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await sb
+    .from("staff")
+    .select("id, nombre, rol, activo")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!data || !data.activo) return null;
+  return { id: data.id, nombre: data.nombre, rol: data.rol as RolStaff };
+}

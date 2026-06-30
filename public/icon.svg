@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Taper Barbershop">
+  <rect width="512" height="512" rx="112" fill="#181818"/>
+  <rect x="1" y="1" width="510" height="510" rx="111" stroke="#F5C800" stroke-opacity="0.16" stroke-width="2"/>
+  <!-- Diamante de marca -->
+  <rect x="218" y="120" width="76" height="76" rx="12" transform="rotate(45 256 158)" fill="#F5C800"/>
+  <!-- Taper / fade: barras que se acortan -->
+  <rect x="146" y="268" width="220" height="26" rx="13" fill="#F5C800"/>
+  <rect x="166" y="320" width="180" height="26" rx="13" fill="#F5C800" fill-opacity="0.78"/>
+  <rect x="190" y="372" width="132" height="26" rx="13" fill="#F5C800" fill-opacity="0.55"/>
+  <rect x="216" y="424" width="80" height="26" rx="13" fill="#F5C800" fill-opacity="0.34"/>
+</svg>

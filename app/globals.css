@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════════
+   Taper Barbershop — Design Tokens (fuente: DESIGN.md)
+   Tailwind v4 · dark theme · accent amarillo dorado
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  /* Backgrounds — near-black neutro cálido */
+  --bg-void:     #0f0f0f;
+  --bg:          #181818;
+  --bg-elevated: #222222;
+  --bg-surface:  #2c2c2c;
+
+  /* Foregrounds */
+  --ink:    #ffffff;
+  --muted:  #a0a0a0;
+  --subtle: #8a8a8a; /* AA 4.5:1 sobre --bg/--elevated (texto caption/label) */
+
+  /* Lines */
+  --line:        rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  /* Brand accent — yellow gold */
+  --accent:      #f5c800;
+  --accent-dark: #d4ab00;
+  --accent-ink:  #0f0f0f;
+  --accent-dim:  rgba(245, 200, 0, 0.12);
+  --accent-glow: rgba(245, 200, 0, 0.2);
+
+  /* Semantic */
+  --success:     #22c55e;
+  --success-dim: rgba(34, 197, 94, 0.15);
+  --success-ink: #06250f; /* texto sobre fondo success sólido (contraste alto) */
+  --warning:     #f59e0b;
+  --danger:      #ef4444;
+  --focus:       #f5c800;
+
+  /* VIP tiers */
+  --tier-silver-from: #71717a;
+  --tier-silver-to:   #3f3f46;
+  --tier-silver-glow: rgba(161, 161, 170, 0.35);
+  --tier-silver-ink:  #e4e4e7;
+  --tier-gold-from:   #f59e0b;
+  --tier-gold-to:     #92400e;
+  --tier-gold-glow:   rgba(245, 158, 11, 0.45);
+  --tier-gold-ink:    #fffbeb;
+  --tier-plat-from:   #3b82f6;
+  --tier-plat-to:     #1e1b4b;
+  --tier-plat-glow:   rgba(59, 130, 246, 0.45);
+  --tier-plat-ink:    #eff6ff;
+  --tier-black-from:  #27272a;
+  --tier-black-to:    #09090b;
+  --tier-black-glow:  rgba(245, 200, 0, 0.4);
+  --tier-black-ink:   #f4f4f5;
+
+  /* Radii */
+  --radius-sm:  0.5rem;   /* 8  */
+  --radius-md:  0.75rem;  /* 12 */
+  --radius-lg:  1rem;     /* 16 */
+  --radius-xl:  1.25rem;  /* 20 */
+  --radius-2xl: 1.5rem;   /* 24 */
+
+  /* Elevation */
+  --shadow-card:  0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.6);
+  --shadow-accent: 0 0 24px var(--accent-glow);
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Z-scale (semántica, no números mágicos) */
+  --z-sticky:         20;
+  --z-modal-backdrop: 40;
+  --z-modal:          50;
+  --z-toast:          60;
+  --z-tooltip:        70;
+}
+
+/* ── Tailwind theme bridge (utilidades: bg-bg, text-ink, border-line…) ── */
+@theme inline {
+  --color-void:         var(--bg-void);
+  --color-bg:           var(--bg);
+  --color-elevated:     var(--bg-elevated);
+  --color-surface:      var(--bg-surface);
+  --color-ink:          var(--ink);
+  --color-muted:        var(--muted);
+  --color-subtle:       var(--subtle);
+  --color-line:         var(--line);
+  --color-line-strong:  var(--line-strong);
+  --color-accent:       var(--accent);
+  --color-accent-dark:  var(--accent-dark);
+  --color-accent-ink:   var(--accent-ink);
+  --color-success:      var(--success);
+  --color-warning:      var(--warning);
+  --color-danger:       var(--danger);
+
+  --font-display: var(--font-barlow-condensed), "Barlow Condensed", sans-serif;
+  --font-body:    var(--font-barlow), "Barlow", sans-serif;
+  --font-sans:    var(--font-barlow), "Barlow", sans-serif;
+
+  --radius-sm:  var(--radius-sm);
+  --radius-md:  var(--radius-md);
+  --radius-lg:  var(--radius-lg);
+  --radius-xl:  var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Base reset
+   ════════════════════════════════════════════════════════════════ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--bg);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-barlow), "Barlow", system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Touch targets on coarse pointers */
+@media (pointer: coarse) {
+  button,
+  a[role="button"],
+  select {
+    min-height: 44px;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-glow);
+  color: var(--ink);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   VIP tier surfaces — la tarjeta se ve físicamente distinta por tier
+   ════════════════════════════════════════════════════════════════ */
+
+.tier-silver {
+  background: linear-gradient(150deg, var(--tier-silver-from) 0%, var(--tier-silver-to) 100%);
+  --tier-glow: var(--tier-silver-glow);
+  --tier-ink:  var(--tier-silver-ink);
+}
+.tier-gold {
+  background: linear-gradient(150deg, var(--tier-gold-from) 0%, var(--tier-gold-to) 100%);
+  --tier-glow: var(--tier-gold-glow);
+  --tier-ink:  var(--tier-gold-ink);
+}
+.tier-platinum {
+  background: linear-gradient(150deg, var(--tier-plat-from) 0%, var(--tier-plat-to) 100%);
+  --tier-glow: var(--tier-plat-glow);
+  --tier-ink:  var(--tier-plat-ink);
+}
+.tier-black {
+  background: linear-gradient(150deg, var(--tier-black-from) 0%, var(--tier-black-to) 100%);
+  --tier-glow: var(--tier-black-glow);
+  --tier-ink:  var(--tier-black-ink);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Keyframes
+   ════════════════════════════════════════════════════════════════ */
+
+@keyframes taperFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes taperCardAppear {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes taperPulseSuccess {
+  0%, 100% { box-shadow: 0 0 22px rgba(34, 197, 94, 0.25); }
+  50%      { box-shadow: 0 0 40px rgba(34, 197, 94, 0.55); }
+}
+@keyframes taperPop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes taperConfetti {
+  from { transform: translateY(-10px) rotate(0deg);   opacity: 1; }
+  to   { transform: translateY(620px) rotate(540deg); opacity: 0; }
+}
+@keyframes taperShimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+.animate-fade-up     { animation: taperFadeUp 300ms ease-out both; }
+.animate-card-appear { animation: taperCardAppear 400ms var(--ease-spring) both; }
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--bg-surface) 37%,
+    var(--bg-elevated) 63%
+  );
+  background-size: 200% 100%;
+  animation: taperShimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Reduced motion — toda gamificación con alternativa estática
+   ════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
