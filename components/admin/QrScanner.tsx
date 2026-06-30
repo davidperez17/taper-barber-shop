@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import jsQR from "jsqr";
 import { createClient } from "@/lib/supabase/client";
 
 // BarcodeDetector no está en los tipos de TS por defecto.
@@ -46,8 +47,10 @@ export function QrScanner() {
     }
 
     async function start() {
-      if (!window.BarcodeDetector) {
+      // La cámara exige contexto seguro (HTTPS o localhost).
+      if (!navigator.mediaDevices?.getUserMedia) {
         setEstado("sin-soporte");
+        setMensaje("Tu navegador no permite usar la cámara aquí.");
         return;
       }
       try {
@@ -56,10 +59,38 @@ export function QrScanner() {
         const video = videoRef.current!;
         video.srcObject = stream;
         await video.play();
-        const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+
+        // Decodificador: BarcodeDetector nativo (rápido) cuando existe;
+        // si no (iOS Safari, Firefox…), fallback a jsQR sobre canvas.
+        const nativo = window.BarcodeDetector ? new window.BarcodeDetector({ formats: ["qr_code"] }) : null;
+        let canvas: HTMLCanvasElement | null = null;
+        let ctx: CanvasRenderingContext2D | null = null;
+        if (!nativo) {
+          canvas = document.createElement("canvas");
+          ctx = canvas.getContext("2d", { willReadFrequently: true });
+        }
+
+        const detectar = async (): Promise<string | null> => {
+          if (nativo) {
+            const codes = await nativo.detect(video);
+            return codes.length > 0 ? codes[0].rawValue || null : null;
+          }
+          if (!ctx || !canvas || !video.videoWidth) return null;
+          // Escalar a máx. 640px de ancho para que jsQR sea fluido en el teléfono.
+          const escala = Math.min(1, 640 / video.videoWidth);
+          const w = Math.round(video.videoWidth * escala);
+          const h = Math.round(video.videoHeight * escala);
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(video, 0, 0, w, h);
+          const img = ctx.getImageData(0, 0, w, h);
+          const res = jsQR(img.data, w, h, { inversionAttempts: "dontInvert" });
+          return res?.data || null;
+        };
+
         setEstado("escaneando");
 
-        // ~10fps: el detector es costoso; 60fps gasta CPU/batería sin ganar nada.
+        // ~10fps: detectar es costoso; 60fps gasta CPU/batería sin ganar nada.
         const INTERVALO = 100;
         let ultimo = 0;
         const tick = async (t: number) => {
@@ -67,10 +98,10 @@ export function QrScanner() {
           if (t - ultimo >= INTERVALO) {
             ultimo = t;
             try {
-              const codes = await detector.detect(video);
-              if (codes.length > 0 && codes[0].rawValue) {
+              const token = await detectar();
+              if (token) {
                 cancelAnimationFrame(raf);
-                await resolverToken(codes[0].rawValue);
+                await resolverToken(token);
                 return;
               }
             } catch {
