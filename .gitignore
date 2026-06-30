@@ -37,3 +37,6 @@ Thumbs.db
 
 # impeccable cache
 .impeccable/hook.cache.json
+
+# Windows download metadata
+*:Zone.Identifier

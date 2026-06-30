@@ -7,15 +7,12 @@ export default async function OnboardingPage() {
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden">
-      {/* Hero — placeholder de foto real de barbería (reemplazar por imagen) */}
+      {/* Hero — foto de barbería */}
       <div
         aria-hidden
-        className="absolute inset-0 z-0"
-        style={{ background: "repeating-linear-gradient(125deg,#211d18 0px,#211d18 14px,#1b1813 14px,#1b1813 28px)" }}
+        className="absolute inset-0 z-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/fondos/onboarding.webp')" }}
       />
-      <div className="absolute inset-0 z-0 flex items-center justify-center">
-        <span className="text-[11px] uppercase tracking-[0.12em] text-white/20">[ foto · barbero + cliente ]</span>
-      </div>
       <div
         aria-hidden
         className="absolute inset-x-0 bottom-0 z-[1] h-[72%]"

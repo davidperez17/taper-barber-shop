@@ -11,7 +11,20 @@ export default async function AdminLoginPage({
   const { next = "/admin" } = await searchParams;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[400px] flex-col justify-center px-6">
+    <main className="relative flex min-h-dvh w-full flex-col justify-center overflow-hidden px-6">
+      {/* Fondo + scrim para legibilidad del texto */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/fondos/login.webp')" }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 z-0"
+        style={{ background: "linear-gradient(to bottom,rgba(15,15,15,0.82),rgba(15,15,15,0.93))" }}
+      />
+
+      <div className="relative z-[1] mx-auto w-full max-w-[400px]">
       <div className="mb-8">
         <div className="mb-5 flex items-center gap-2.5">
           <span className="size-2.5 rotate-45 rounded-[2px] bg-accent" />
@@ -23,6 +36,7 @@ export default async function AdminLoginPage({
       </div>
 
       <LoginForm next={next} />
+      </div>
     </main>
   );
 }
