@@ -126,8 +126,8 @@ export default async function ReportesPage({
 function Metric({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <div className="rounded-xl border border-line bg-elevated p-4">
-      <p className={`font-display text-[24px] font-extrabold leading-none ${accent ? "text-accent" : "text-ink"}`}>{value}</p>
-      <p className="mt-1.5 text-[11px] uppercase tracking-[0.04em] text-subtle">{label}</p>
+      <p className={`font-display text-[24px] font-extrabold leading-none tabular-nums ${accent ? "text-accent" : "text-ink"}`}>{value}</p>
+      <p className="mt-1.5 text-[13px] font-medium text-muted">{label}</p>
     </div>
   );
 }
@@ -135,7 +135,7 @@ function Metric({ value, label, accent }: { value: string; label: string; accent
 function TopCard({ titulo, rows }: { titulo: string; rows: { nombre: string; n: number; monto: number }[] }) {
   return (
     <div className="rounded-2xl border border-line bg-elevated p-4">
-      <h3 className="mb-3 text-xs uppercase tracking-wider text-subtle">{titulo}</h3>
+      <h3 className="mb-3 text-sm font-semibold text-ink">{titulo}</h3>
       <TopBars rows={rows} />
     </div>
   );

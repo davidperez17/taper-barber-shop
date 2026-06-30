@@ -29,8 +29,8 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-4 rounded-xl border border-line bg-elevated p-4">
-        <p className="text-xs uppercase tracking-wider text-subtle">Barbero del mes</p>
-        <p className="mt-1 font-display text-xl font-bold text-ink">{m.top_barbero ?? "Sin datos aún"}</p>
+        <p className="text-sm font-semibold text-ink">Barbero del mes</p>
+        <p className="mt-1 font-display text-xl font-bold text-accent">{m.top_barbero ?? "Sin datos aún"}</p>
       </div>
     </div>
   );
@@ -39,8 +39,8 @@ export default async function DashboardPage() {
 function Metric({ value, label, sub, accent, warn }: { value: string; label: string; sub?: string; accent?: boolean; warn?: boolean }) {
   return (
     <div className="rounded-xl border border-line bg-elevated p-4">
-      <p className={`font-display text-[28px] font-extrabold leading-none ${accent ? "text-accent" : warn ? "text-warning" : "text-ink"}`}>{value}</p>
-      <p className="mt-1.5 text-xs uppercase tracking-[0.04em] text-subtle">{label}</p>
+      <p className={`font-display text-[28px] font-extrabold leading-none tabular-nums ${accent ? "text-accent" : warn ? "text-warning" : "text-ink"}`}>{value}</p>
+      <p className="mt-1.5 text-[13px] font-medium text-muted">{label}</p>
       {sub && <p className="mt-0.5 text-[11px] text-muted">{sub}</p>}
     </div>
   );
@@ -49,7 +49,7 @@ function Metric({ value, label, sub, accent, warn }: { value: string; label: str
 function TopList({ title, rows }: { title: string; rows: { nombre: string; n: number }[] }) {
   return (
     <div className="rounded-xl border border-line bg-elevated p-4">
-      <p className="mb-3 text-xs uppercase tracking-wider text-subtle">{title}</p>
+      <p className="mb-3 text-sm font-semibold text-ink">{title}</p>
       {rows.length === 0 ? (
         <p className="text-sm text-muted">Sin ventas aún.</p>
       ) : (

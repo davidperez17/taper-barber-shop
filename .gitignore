@@ -34,3 +34,6 @@ yarn-error.log*
 .vscode
 *.swp
 Thumbs.db
+
+# impeccable cache
+.impeccable/hook.cache.json

@@ -112,8 +112,8 @@ export function ClienteFicha({ ficha }: { ficha: Ficha }) {
 function Stat({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <div className="rounded-xl border border-line bg-elevated p-4">
-      <p className={`font-display text-[26px] font-extrabold leading-none ${accent ? "text-accent" : "text-ink"}`}>{value}</p>
-      <p className="mt-1.5 text-[11px] uppercase tracking-[0.04em] text-subtle">{label}</p>
+      <p className={`font-display text-[26px] font-extrabold leading-none tabular-nums ${accent ? "text-accent" : "text-ink"}`}>{value}</p>
+      <p className="mt-1.5 text-[13px] font-medium text-muted">{label}</p>
     </div>
   );
 }
@@ -287,7 +287,7 @@ function EditarSheet({ cliente, onClose }: { cliente: Ficha["cliente"]; onClose:
 function Field({ label, value, onChange, inputMode, placeholder }: { label: string; value: string; onChange: (v: string) => void; inputMode?: "tel" | "email"; placeholder?: string }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-[0.04em] text-subtle">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-muted">{label}</span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}

@@ -39,7 +39,7 @@ export function BusyPeriods({ cells, periodo, rango }: { cells: HeatCell[]; peri
       {/* Cabecera: pico + selector de periodo */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.04em] text-subtle">Hora pico</p>
+          <p className="text-[13px] font-medium text-muted">Hora pico</p>
           <p className="font-display text-lg font-bold text-ink">
             {pico >= 0 ? `${horaLabel(pico)} – ${horaLabel(pico + 1)}` : "Sin datos"}
           </p>

@@ -215,7 +215,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
       <div className="fixed inset-x-0 bottom-0 z-[var(--z-sticky)] border-t border-line bg-elevated/95 px-5 py-3.5 backdrop-blur">
         <div className="mx-auto flex max-w-[640px] items-center gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-subtle">Total</p>
+            <p className="text-[13px] font-medium text-muted">Total</p>
             <p className="font-display text-2xl font-bold text-ink">{fmtQ(total)}</p>
           </div>
           <button

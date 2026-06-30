@@ -101,7 +101,7 @@ function Sheet({ title, onClose, onSave, pending, error, children }: {
 function Campo({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-[0.04em] text-subtle">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-muted">{label}</span>
       {children}
     </label>
   );
