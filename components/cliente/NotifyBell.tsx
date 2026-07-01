@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { guardarSuscripcion, enviarPrueba, type SubJSON } from "@/app/push/actions";
 import { IconBell } from "@/components/icons";
 
-const VAPID = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+// Defensivo: si en Vercel se pegó la clave con comillas, quítalas.
+const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
 
 const isStandalone = () =>
   window.matchMedia("(display-mode: standalone)").matches ||
@@ -37,12 +38,14 @@ export function NotifyBell() {
   const [estado, setEstado] = useState<Estado>("no-disp");
 
   useEffect(() => {
-    if (!VAPID) return;
+    if (!VAPID) return void console.warn("[push] falta NEXT_PUBLIC_VAPID_PUBLIC_KEY en el build");
     const soporta =
       "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-    if (!soporta) return;
-    if (isIOS() && !isStandalone()) return;
-    if (Notification.permission === "denied") return;
+    if (!soporta) return void console.warn("[push] navegador sin soporte (SW/Push/Notification)");
+    if (isIOS() && !isStandalone())
+      return void console.warn("[push] iOS: instala la PWA para recibir push");
+    if (Notification.permission === "denied")
+      return void console.warn("[push] permiso denegado por el usuario");
     if (Notification.permission !== "granted") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setEstado("off");
@@ -62,29 +65,41 @@ export function NotifyBell() {
   }, []);
 
   const activar = async () => {
+    if (!VAPID) {
+      console.warn("[push] no se puede suscribir: falta la clave VAPID pública");
+      return;
+    }
     try {
       setEstado("guardando");
       const permiso = await Notification.requestPermission();
-      if (permiso !== "granted") return setEstado("no-disp");
+      if (permiso !== "granted") {
+        console.warn("[push] permiso no concedido:", permiso);
+        return setEstado("no-disp");
+      }
 
       const reg = await navigator.serviceWorker.ready;
       const sub =
         (await reg.pushManager.getSubscription()) ??
         (await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlB64ToUint8Array(VAPID!),
+          applicationServerKey: urlB64ToUint8Array(VAPID),
         }));
 
       const { ok } = await guardarSuscripcion(sub.toJSON() as SubJSON);
+      console.log("[push] suscripción guardada:", ok);
       setEstado(ok ? "on" : "off");
-    } catch {
+    } catch (e) {
+      console.error("[push] fallo al suscribir:", e);
       setEstado("off");
     }
   };
 
   const onClick = () => {
     if (estado === "guardando") return;
-    if (estado === "on") return void enviarPrueba();
+    if (estado === "on") {
+      void enviarPrueba().then((r) => console.log("[push] prueba enviada:", r));
+      return;
+    }
     void activar();
   };
 
