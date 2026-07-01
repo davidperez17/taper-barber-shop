@@ -79,9 +79,9 @@ const GROUPS: NavGroup[] = [
 
 // Accesos primarios del bottom nav (móvil). El resto vive en la hoja "Más".
 const PRIMARY: NavItem[] = [
-  { href: "/admin", label: "Venta", Icon: IconScan, roles: "all" },
-  { href: "/admin/agenda", label: "Agenda", Icon: IconCalendar, roles: "all" },
+  { href: "/admin/dashboard", label: "Resumen", Icon: IconStats, roles: ADMIN },
   { href: "/admin/clientes", label: "Clientes", Icon: IconUsers, roles: "all" },
+  { href: "/admin", label: "Ventas", Icon: IconScan, roles: "all" },
   { href: "/admin/caja", label: "Caja", Icon: IconCard, roles: "all" },
 ];
 
