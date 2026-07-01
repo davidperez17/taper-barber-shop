@@ -8,6 +8,8 @@ import { getStaff } from "@/lib/queries/staff";
 import { getSucursalActiva, getSucursales, SUCURSAL_COOKIE } from "@/lib/sucursal";
 import { computeLoyalty, type LoyaltyRaw } from "@/lib/loyalty";
 import { pushRecompensaLista, pushCitaCliente, pushStockBajoStaff } from "@/lib/push/eventos";
+import { enviarPush } from "@/lib/push/send";
+import { subsPorTipo } from "@/lib/push/targets";
 
 /** Recompensas disponibles de un cliente ahora mismo (0 si no tiene fila de lealtad). */
 async function recompensasDisponibles(
@@ -616,4 +618,35 @@ export async function updateConfigLealtad(cortes_objetivo: number, ventana_meses
   if (error) return { ok: false, error: catalogoError(error.message) };
   revalidatePath("/admin/catalogo");
   return { ok: true };
+}
+
+// ── Difusión: notificación manual a clientes o staff (admin/dueño) ──────
+export type DifusionResult =
+  | { ok: true; enviadas: number; podadas: number }
+  | { ok: false; error: string };
+
+export async function enviarDifusion(input: {
+  titulo: string;
+  mensaje: string;
+  url: string;
+  audiencia: "clientes" | "staff";
+}): Promise<DifusionResult> {
+  const staff = await getStaff();
+  if (!staff || (staff.rol !== "admin" && staff.rol !== "dueno")) {
+    return { ok: false, error: "No tienes permiso para enviar difusiones." };
+  }
+
+  const titulo = input.titulo.trim();
+  const mensaje = input.mensaje.trim();
+  if (!titulo) return { ok: false, error: "Escribe un título." };
+  if (!mensaje) return { ok: false, error: "Escribe el mensaje." };
+
+  const subs = await subsPorTipo(input.audiencia === "clientes" ? "cliente" : "staff");
+  const { enviadas, podadas } = await enviarPush(subs, {
+    title: titulo,
+    body: mensaje,
+    url: input.url.trim() || "/",
+    tag: "difusion",
+  });
+  return { ok: true, enviadas, podadas };
 }

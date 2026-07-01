@@ -8,7 +8,7 @@ import { logoutStaff } from "@/app/admin/actions";
 import type { RolStaff } from "@/lib/queries/staff";
 import {
   IconScan, IconUsers, IconBox, IconChart, IconRefresh, IconCard,
-  IconTag, IconStack, IconCalendar, IconStats, IconGrid, IconId, IconStore,
+  IconTag, IconStack, IconCalendar, IconStats, IconGrid, IconId, IconStore, IconBell,
 } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
 import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
@@ -56,7 +56,10 @@ const GROUPS: NavGroup[] = [
   },
   {
     label: "Promociones",
-    items: [{ href: "/admin/cupones", label: "Cupones", Icon: IconTag, roles: ADMIN }],
+    items: [
+      { href: "/admin/cupones", label: "Cupones", Icon: IconTag, roles: ADMIN },
+      { href: "/admin/notificaciones", label: "Notificaciones", Icon: IconBell, roles: ADMIN },
+    ],
   },
   {
     label: "Reportes",
