@@ -39,14 +39,14 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const mostrarSwitcher = sucursales.length > 1;
 
   return (
-    <div className="flex w-full bg-bg lg:h-dvh lg:overflow-hidden">
+    <div data-app-shell className="flex h-dvh w-full overflow-hidden bg-bg">
       <AdminSidebar rol={staff.rol} nombre={staff.nombre} sucursal={sucursalNav} />
 
-      <div className="flex min-w-0 flex-1 flex-col bg-bg lg:min-h-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg pt-[env(safe-area-inset-top)]">
         <OfflineSync />
 
         {/* Header solo en móvil/tablet; en desktop la sidebar lo cubre */}
-        <div className="sticky top-0 z-[var(--z-sticky)] bg-bg pt-[env(safe-area-inset-top)] lg:hidden">
+        <div className="lg:hidden">
           <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
             <PanelHeaderNav />
             <div className="flex items-center gap-3">
@@ -69,7 +69,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           )}
         </div>
 
-        <main className="flex-1 px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+84px)] lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:pb-6">
+        <main className="min-h-0 flex-1 overflow-y-auto px-5 py-6 lg:px-8">
           <div className="mx-auto max-w-[420px] lg:mx-0">
             <NotifyOptIn />
           </div>

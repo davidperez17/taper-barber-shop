@@ -133,6 +133,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* App shell (cliente/panel): bloquea el scroll del documento para que el
+   bottom nav quede SIEMPRE fijo al borde inferior (incluye PWA en iOS). El
+   scroll vive en el contenedor interno. Las páginas sin shell (login,
+   registro) siguen scrolleando el body normalmente. */
+html:has([data-app-shell]),
+body:has([data-app-shell]) {
+  overflow: hidden;
+}
+
 button,
 input,
 select,
