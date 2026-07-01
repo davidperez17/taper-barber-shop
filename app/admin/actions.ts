@@ -198,6 +198,46 @@ export async function updateCliente(
   return { ok: true };
 }
 
+// ── Cierre de caja ──────────────────────────────────────────────
+export async function crearMovimientoCaja(
+  tipo: "egreso" | "ingreso",
+  monto: number,
+  motivo: string,
+): Promise<ActionResult> {
+  if (!(monto > 0)) return { ok: false, error: "Monto inválido." };
+  const sb = await createClient();
+  const { error } = await sb.rpc("caja_movimiento_crear", { p_tipo: tipo, p_monto: monto, p_motivo: motivo });
+  if (error) return { ok: false, error: error.message.includes("cerrada") ? "La caja del día ya está cerrada." : "No se pudo registrar." };
+  revalidatePath("/admin/caja");
+  return { ok: true };
+}
+
+export async function borrarMovimientoCaja(id: string): Promise<ActionResult> {
+  const sb = await createClient();
+  const { error } = await sb.rpc("caja_movimiento_borrar", { p_id: id });
+  if (error) return { ok: false, error: "No se pudo borrar." };
+  revalidatePath("/admin/caja");
+  return { ok: true };
+}
+
+export async function cerrarCaja(
+  fecha: string,
+  fondoInicial: number,
+  efectivoContado: number,
+  notas: string,
+): Promise<ActionResult> {
+  const sb = await createClient();
+  const { error } = await sb.rpc("caja_cerrar", {
+    p_fecha: fecha,
+    p_fondo_inicial: fondoInicial,
+    p_efectivo_contado: efectivoContado,
+    p_notas: notas,
+  });
+  if (error) return { ok: false, error: error.message.includes("cerrada") ? "La caja de ese día ya está cerrada." : "No se pudo cerrar la caja." };
+  revalidatePath("/admin/caja");
+  return { ok: true };
+}
+
 // ── CRM: catálogo (escritura solo admin/dueño vía RLS) ──────────
 const RLS_DENY = "No tienes permiso para esta acción.";
 

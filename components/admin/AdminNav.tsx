@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 import { logoutStaff } from "@/app/admin/actions";
 import type { RolStaff } from "@/lib/queries/staff";
-import { IconScan, IconUsers, IconBox, IconChart, IconRefresh } from "@/components/icons";
+import { IconScan, IconUsers, IconBox, IconChart, IconRefresh, IconCard } from "@/components/icons";
 
 interface NavItem {
   href: string;
@@ -17,6 +17,7 @@ interface NavItem {
 const ITEMS: NavItem[] = [
   { href: "/admin", label: "Inicio", Icon: IconScan, roles: "all" },
   { href: "/admin/clientes", label: "Clientes", Icon: IconUsers, roles: "all" },
+  { href: "/admin/caja", label: "Caja", Icon: IconCard, roles: "all" },
   { href: "/admin/recuperacion", label: "Recuperar", Icon: IconRefresh, roles: ["admin", "dueno"] },
   { href: "/admin/catalogo", label: "Catálogo", Icon: IconBox, roles: ["admin", "dueno"] },
   { href: "/admin/reportes", label: "Reportes", Icon: IconChart, roles: ["admin", "dueno"] },
