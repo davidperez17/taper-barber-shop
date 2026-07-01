@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { StaffSession } from "@/lib/queries/staff";
@@ -5,12 +6,12 @@ import type { Sucursal } from "@/lib/types";
 
 export const SUCURSAL_COOKIE = "taper_sucursal";
 
-/** Sucursales activas, ordenadas. */
-export async function getSucursales(): Promise<Sucursal[]> {
+/** Sucursales activas, ordenadas. Memoizado por request (layout + páginas). */
+export const getSucursales = cache(async (): Promise<Sucursal[]> => {
   const sb = await createClient();
   const { data } = await sb.from("sucursales").select("*").eq("activo", true).order("orden");
   return (data as Sucursal[]) ?? [];
-}
+});
 
 /**
  * Sucursal activa para el staff dado.
