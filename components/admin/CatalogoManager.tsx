@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   saveServicio,
@@ -101,21 +102,30 @@ function Sheet({ title, onClose, onSave, pending, error, children }: {
   title: string; onClose: () => void; onSave: () => void; pending: boolean; error: string | null; children: ReactNode;
 }) {
   const ref = useModalA11y(onClose);
-  return (
+  if (typeof document === "undefined") return null;
+
+  // Portal a document.body: escapa del contenedor animate-fade-up (transform
+  // persistente) que atraparía el position:fixed. Ver [[feedback-modal-portal]].
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
-        <h2 className="mb-4 font-display text-xl font-bold text-ink">{title}</h2>
-        <div className="flex flex-col gap-3">{children}</div>
-        {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
-        <div className="mt-5 flex gap-3">
-          <button onClick={onClose} className="min-h-[48px] flex-1 rounded-full border border-line text-sm font-medium text-muted hover:text-ink">Cancelar</button>
-          <button onClick={onSave} disabled={pending} className="min-h-[48px] flex-1 rounded-full bg-accent text-sm font-semibold text-accent-ink disabled:opacity-50">
-            {pending ? "Guardando…" : "Guardar"}
-          </button>
+      <div ref={ref} className="animate-fade-up relative flex max-h-[90dvh] w-full max-w-[440px] flex-col overflow-hidden rounded-t-2xl border border-line bg-bg sm:max-h-[85dvh] sm:rounded-2xl">
+        <h2 className="shrink-0 border-b border-line px-5 py-4 font-display text-xl font-bold text-ink">{title}</h2>
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
+          {children}
+          {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+        </div>
+        <div className="shrink-0 border-t border-line px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3.5">
+          <div className="flex gap-3">
+            <button onClick={onClose} className="min-h-[48px] flex-1 rounded-full border border-line text-sm font-medium text-muted hover:text-ink">Cancelar</button>
+            <button onClick={onSave} disabled={pending} className="min-h-[48px] flex-1 rounded-full bg-accent text-sm font-semibold text-accent-ink disabled:opacity-50">
+              {pending ? "Guardando…" : "Guardar"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
