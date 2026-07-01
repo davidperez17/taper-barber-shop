@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { saveCupon, toggleCuponActivo, deleteCupon, type ActionResult } from "@/app/admin/actions";
 import { fmtQ } from "@/lib/format";
 import type { Cupon, CuponTipo } from "@/lib/types";
-import { IconPlus } from "@/components/icons";
+import { IconPlus, IconPencil } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
 
 export function CuponesManager({ cupones }: { cupones: Cupon[] }) {
@@ -91,13 +91,28 @@ function CuponFila({ cupon, onEdit }: { cupon: Cupon; onEdit: () => void }) {
         {vig && <p className="text-[11px] tabular-nums text-subtle">{vig}</p>}
       </div>
       <button
+        type="button"
+        role="switch"
+        aria-checked={cupon.activo}
+        aria-label={`${cupon.activo ? "Desactivar" : "Activar"} cupón ${cupon.codigo}`}
         onClick={() => run(() => toggleCuponActivo(cupon.id, !cupon.activo))}
         disabled={pending}
-        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${cupon.activo ? "bg-success-dim text-success" : "border border-line text-subtle"}`}
+        className="flex min-h-11 shrink-0 items-center gap-2 rounded-full px-1.5 disabled:opacity-50"
       >
-        {cupon.activo ? "Activo" : "Inactivo"}
+        <span className={`w-14 text-right text-[11px] font-semibold tabular-nums ${cupon.activo ? "text-success" : "text-subtle"}`}>
+          {cupon.activo ? "Activo" : "Inactivo"}
+        </span>
+        <span className={`relative inline-flex h-[26px] w-[46px] shrink-0 items-center rounded-full transition-colors ${cupon.activo ? "bg-success" : "bg-line-strong"}`}>
+          <span className={`absolute size-5 rounded-full bg-white shadow-sm transition-transform ${cupon.activo ? "translate-x-[23px]" : "translate-x-[3px]"}`} />
+        </span>
       </button>
-      <button onClick={onEdit} className="text-[13px] text-muted hover:text-ink">Editar</button>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink"
+      >
+        <IconPencil size={15} /> Editar
+      </button>
     </div>
   );
 }

@@ -13,7 +13,7 @@ import {
 import { fmtQ } from "@/lib/format";
 import type { CatalogoAdmin } from "@/lib/queries/catalogo";
 import type { Servicio, Producto, Barbero } from "@/lib/types";
-import { IconPlus } from "@/components/icons";
+import { IconPlus, IconPencil } from "@/components/icons";
 import { Thumb } from "@/components/admin/Thumb";
 import { ImagePicker } from "@/components/admin/ImagePicker";
 import { useModalA11y } from "@/components/admin/useModalA11y";
@@ -63,15 +63,36 @@ function useAction() {
   return { pending, error, setError, run };
 }
 
-function ToggleActivo({ tabla, id, activo }: { tabla: "servicios" | "productos" | "barberos"; id: string; activo: boolean }) {
+function ToggleActivo({ tabla, id, activo, nombre }: { tabla: "servicios" | "productos" | "barberos"; id: string; activo: boolean; nombre: string }) {
   const { pending, run } = useAction();
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={activo}
+      aria-label={`${activo ? "Desactivar" : "Activar"} ${nombre}`}
       onClick={() => run(() => toggleActivo(tabla, id, !activo))}
       disabled={pending}
-      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${activo ? "bg-success-dim text-success" : "border border-line text-subtle"}`}
+      className="flex min-h-11 shrink-0 items-center gap-2 rounded-full px-1.5 disabled:opacity-50"
     >
-      {activo ? "Activo" : "Inactivo"}
+      <span className={`w-14 text-right text-[11px] font-semibold tabular-nums ${activo ? "text-success" : "text-subtle"}`}>
+        {activo ? "Activo" : "Inactivo"}
+      </span>
+      <span className={`relative inline-flex h-[26px] w-[46px] shrink-0 items-center rounded-full transition-colors ${activo ? "bg-success" : "bg-line-strong"}`}>
+        <span className={`absolute size-5 rounded-full bg-white shadow-sm transition-transform ${activo ? "translate-x-[23px]" : "translate-x-[3px]"}`} />
+      </span>
+    </button>
+  );
+}
+
+function EditarBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink"
+    >
+      <IconPencil size={15} /> Editar
     </button>
   );
 }
@@ -135,8 +156,8 @@ function ServiciosTab({ servicios }: { servicios: Servicio[] }) {
                 {fmtQ(Number(s.precio))}{s.categoria ? ` · ${s.categoria}` : ""}{s.cuenta_lealtad ? " · cuenta lealtad" : ""}
               </p>
             </div>
-            <ToggleActivo tabla="servicios" id={s.id} activo={s.activo} />
-            <button onClick={() => setEdit(s)} className="text-[13px] text-muted hover:text-ink">Editar</button>
+            <ToggleActivo tabla="servicios" id={s.id} activo={s.activo} nombre={s.nombre} />
+            <EditarBtn onClick={() => setEdit(s)} />
           </Fila>
         ))}
       </div>
@@ -196,8 +217,8 @@ function ProductosTab({ productos }: { productos: Producto[] }) {
               <p className={`font-semibold ${p.activo ? "text-ink" : "text-subtle line-through"}`}>{p.nombre}</p>
               <p className="text-[13px] text-muted">{fmtQ(Number(p.precio))}{p.categoria ? ` · ${p.categoria}` : ""}</p>
             </div>
-            <ToggleActivo tabla="productos" id={p.id} activo={p.activo} />
-            <button onClick={() => setEdit(p)} className="text-[13px] text-muted hover:text-ink">Editar</button>
+            <ToggleActivo tabla="productos" id={p.id} activo={p.activo} nombre={p.nombre} />
+            <EditarBtn onClick={() => setEdit(p)} />
           </Fila>
         ))}
       </div>
@@ -235,8 +256,8 @@ function BarberosTab({ barberos }: { barberos: Barbero[] }) {
         {barberos.map((b) => (
           <Fila key={b.id}>
             <p className={`min-w-0 flex-1 font-semibold ${b.activo ? "text-ink" : "text-subtle line-through"}`}>{b.nombre}</p>
-            <ToggleActivo tabla="barberos" id={b.id} activo={b.activo} />
-            <button onClick={() => setEdit(b)} className="text-[13px] text-muted hover:text-ink">Editar</button>
+            <ToggleActivo tabla="barberos" id={b.id} activo={b.activo} nombre={b.nombre} />
+            <EditarBtn onClick={() => setEdit(b)} />
           </Fila>
         ))}
       </div>
