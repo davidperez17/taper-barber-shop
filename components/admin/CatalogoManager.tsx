@@ -225,7 +225,12 @@ function ProductosTab({ productos }: { productos: Producto[] }) {
             <Thumb src={p.imagen_url} nombre={p.nombre} />
             <div className="min-w-0 flex-1">
               <p className={`font-semibold ${p.activo ? "text-ink" : "text-subtle line-through"}`}>{p.nombre}</p>
-              <p className="text-[13px] text-muted">{fmtQ(Number(p.precio))}{p.categoria ? ` · ${p.categoria}` : ""}</p>
+              <p className="text-[13px] text-muted">
+                {fmtQ(Number(p.precio))}{p.categoria ? ` · ${p.categoria}` : ""}
+                {p.controla_stock && (
+                  <span className={p.stock <= p.stock_min ? "text-warning" : "text-muted"}> · {p.stock} en stock</span>
+                )}
+              </p>
             </div>
             <ToggleActivo tabla="productos" id={p.id} activo={p.activo} nombre={p.nombre} />
             <EditarBtn onClick={() => setEdit(p)} />
@@ -243,15 +248,46 @@ function ProductoSheet({ producto, onClose }: { producto: Producto | null; onClo
   const [precio, setPrecio] = useState(String(producto?.precio ?? ""));
   const [categoria, setCategoria] = useState(producto?.categoria ?? "");
   const [imagen, setImagen] = useState<string | null>(producto?.imagen_url ?? null);
+  const [controlaStock, setControlaStock] = useState(producto?.controla_stock ?? true);
+  const [stockMin, setStockMin] = useState(producto ? String(producto.stock_min) : "0");
+  const [stockInicial, setStockInicial] = useState("0");
+
   return (
     <Sheet title={producto ? "Editar producto" : "Nuevo producto"} onClose={onClose} pending={pending} error={error}
-      onSave={() => run(() => saveProducto({ id: producto?.id, nombre, precio: Number(precio) || 0, categoria, imagen_url: imagen }), onClose)}>
+      onSave={() => run(() => saveProducto({
+        id: producto?.id, nombre, precio: Number(precio) || 0, categoria, imagen_url: imagen,
+        controla_stock: controlaStock, stock_min: Number(stockMin) || 0,
+        stock_inicial: producto ? undefined : Number(stockInicial) || 0,
+      }), onClose)}>
       <Campo label="Foto"><ImagePicker value={imagen} onChange={setImagen} /></Campo>
       <Campo label="Nombre"><input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} autoFocus /></Campo>
       <div className="grid grid-cols-2 gap-3">
         <Campo label="Precio (Q)"><input value={precio} onChange={(e) => setPrecio(e.target.value)} inputMode="decimal" className={inputCls} /></Campo>
         <Campo label="Categoría"><input value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="styling…" className={inputCls} /></Campo>
       </div>
+
+      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-elevated p-3">
+        <input type="checkbox" checked={controlaStock} onChange={(e) => setControlaStock(e.target.checked)} className="size-5 accent-[var(--accent)]" />
+        <span className="text-sm text-ink">Controlar stock de este producto</span>
+      </label>
+
+      {controlaStock && (
+        <div className="grid grid-cols-2 gap-3">
+          {producto ? (
+            <Campo label="Stock actual">
+              <div className={`flex min-h-[46px] items-center rounded-lg border border-line bg-surface px-3.5 text-base tabular-nums ${producto.stock <= producto.stock_min ? "text-warning" : "text-ink"}`}>
+                {producto.stock}
+              </div>
+            </Campo>
+          ) : (
+            <Campo label="Stock inicial"><input value={stockInicial} onChange={(e) => setStockInicial(e.target.value)} inputMode="numeric" className={inputCls} /></Campo>
+          )}
+          <Campo label="Alerta bajo stock (mín.)"><input value={stockMin} onChange={(e) => setStockMin(e.target.value)} inputMode="numeric" className={inputCls} /></Campo>
+        </div>
+      )}
+      {producto && controlaStock && (
+        <p className="text-[12px] text-subtle">El stock se ajusta desde Inventario (entradas, salidas y conteos).</p>
+      )}
     </Sheet>
   );
 }

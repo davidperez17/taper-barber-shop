@@ -31,6 +31,7 @@ export interface DashboardMetrics {
   clientes_total: number;
   clientes_activos: number;
   clientes_inactivos: number;
+  productos_bajo_stock: number;
   top_servicios: { nombre: string; n: number }[];
   top_productos: { nombre: string; n: number }[];
   top_barbero: string | null;

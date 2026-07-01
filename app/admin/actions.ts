@@ -304,16 +304,58 @@ export async function saveProducto(input: {
   precio: number;
   categoria: string;
   imagen_url: string | null;
+  controla_stock: boolean;
+  stock_min: number;
+  stock_inicial?: number;
 }): Promise<ActionResult> {
   if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio." };
   if (input.precio < 0) return { ok: false, error: "Precio inválido." };
+  if (input.stock_min < 0) return { ok: false, error: "Stock mínimo inválido." };
 
   const sb = await createClient();
-  const fila = { nombre: input.nombre.trim(), precio: input.precio, categoria: input.categoria.trim() || null, imagen_url: input.imagen_url };
+  const fila: Record<string, unknown> = {
+    nombre: input.nombre.trim(),
+    precio: input.precio,
+    categoria: input.categoria.trim() || null,
+    imagen_url: input.imagen_url,
+    controla_stock: input.controla_stock,
+    stock_min: input.stock_min,
+  };
+  // El stock se gestiona con movimientos; solo se fija el inicial al crear.
+  if (!input.id) fila.stock = Math.max(0, Math.round(input.stock_inicial ?? 0));
+
   const { error } = input.id
     ? await sb.from("productos").update(fila).eq("id", input.id)
     : await sb.from("productos").insert(fila);
   if (error) return { ok: false, error: catalogoError(error.message) };
+  revalidatePath("/admin/catalogo");
+  revalidatePath("/admin/inventario");
+  return { ok: true };
+}
+
+// ── Inventario: movimiento manual (entrada/salida/ajuste) ───────
+export async function movimientoInventario(
+  productoId: string,
+  tipo: "entrada" | "salida" | "ajuste",
+  cantidad: number,
+  motivo: string,
+): Promise<ActionResult> {
+  if (!Number.isFinite(cantidad) || cantidad < 0) return { ok: false, error: "Cantidad inválida." };
+  const sb = await createClient();
+  const { error } = await sb.rpc("inventario_movimiento_crear", {
+    p_producto_id: productoId,
+    p_tipo: tipo,
+    p_cantidad: Math.round(cantidad),
+    p_motivo: motivo.trim() || null,
+  });
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("suficiente")) return { ok: false, error: "No hay stock suficiente para esa salida." };
+    if (msg.includes("no controla")) return { ok: false, error: "Este producto no controla stock." };
+    if (msg.includes("autorizado") || msg.includes("row-level")) return { ok: false, error: RLS_DENY };
+    return { ok: false, error: "No se pudo registrar el movimiento." };
+  }
+  revalidatePath("/admin/inventario");
   revalidatePath("/admin/catalogo");
   return { ok: true };
 }

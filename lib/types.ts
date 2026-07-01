@@ -96,6 +96,9 @@ export interface Producto {
   categoria: string | null;
   activo: boolean;
   imagen_url: string | null;
+  stock: number;
+  stock_min: number;
+  controla_stock: boolean;
 }
 
 export interface Barbero {

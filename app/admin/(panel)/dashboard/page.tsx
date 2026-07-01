@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { getDashboardMetrics } from "@/lib/queries/admin";
@@ -22,6 +23,21 @@ export default async function DashboardPage() {
         <Metric value={String(m.clientes_activos)} label="Activos (30d)" />
         <Metric value={String(m.clientes_inactivos)} label="Inactivos (30d)" warn={m.clientes_inactivos > 0} />
       </div>
+
+      {m.productos_bajo_stock > 0 && (
+        <Link
+          href="/admin/inventario"
+          className="mt-4 flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 transition-colors hover:bg-warning/15"
+        >
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/20 font-display text-lg font-bold tabular-nums text-warning">
+            {m.productos_bajo_stock}
+          </span>
+          <span className="text-sm text-ink">
+            {m.productos_bajo_stock === 1 ? "1 producto bajo el mínimo o agotado" : `${m.productos_bajo_stock} productos bajo el mínimo o agotados`}
+            <span className="block text-[13px] text-muted">Toca para revisar el inventario.</span>
+          </span>
+        </Link>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <TopList title="Servicios más vendidos" rows={m.top_servicios} />
