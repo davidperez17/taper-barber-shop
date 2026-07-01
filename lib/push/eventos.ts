@@ -51,6 +51,37 @@ export async function pushCitaCliente(clienteId: string, evento: CitaEvento, ini
   } catch {}
 }
 
+/** Recordatorio programado: la cita del cliente es hoy/próxima. */
+export async function pushRecordatorioCita(clienteId: string, iniciaIso: string): Promise<number> {
+  try {
+    const { enviadas } = await enviarPush(await subsDeCliente(clienteId), {
+      title: "Recordatorio de tu cita ⏰",
+      body: `Te esperamos el ${cuandoGT(iniciaIso)}.`,
+      url: "/perfil",
+      tag: "recordatorio-cita",
+    });
+    return enviadas;
+  } catch {
+    return 0;
+  }
+}
+
+/** Reactivación programada: cliente inactivo, invitarlo a volver. */
+export async function pushReactivacion(clienteId: string, nombre: string): Promise<number> {
+  try {
+    const primer = nombre.trim().split(/\s+/)[0] || "";
+    const { enviadas } = await enviarPush(await subsDeCliente(clienteId), {
+      title: "Te extrañamos 💈",
+      body: `${primer}, ¿listo para tu próximo corte? Pasa cuando quieras.`,
+      url: "/tarjeta",
+      tag: "reactivacion",
+    });
+    return enviadas;
+  } catch {
+    return 0;
+  }
+}
+
 /** Aviso al staff: un cliente se registró solo desde la app. */
 export async function pushNuevoClienteStaff(nombre: string): Promise<void> {
   try {
