@@ -8,9 +8,9 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   if (!(await getQrToken())) redirect("/");
 
   return (
-    <div className="fixed inset-x-0 top-0 mx-auto flex h-dvh w-full max-w-[440px] flex-col overflow-hidden bg-bg pt-[env(safe-area-inset-top)]">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col bg-bg pt-[env(safe-area-inset-top)]">
       <AutoRefresh />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="flex-1">
         <div className="px-5">
           <NotifyOptIn />
         </div>

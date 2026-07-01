@@ -177,7 +177,7 @@ export function AdminBottomNav({ rol }: { rol: RolStaff }) {
     <>
       <nav
         aria-label="Navegación del panel"
-        className="flex shrink-0 items-center justify-around border-t border-line bg-elevated px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 lg:hidden"
+        className="sticky bottom-0 z-[var(--z-sticky)] flex shrink-0 items-stretch border-t border-line bg-elevated px-1 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 lg:hidden"
       >
         {primarios.map(({ href, label, Icon }) => (
           <Link
@@ -185,12 +185,12 @@ export function AdminBottomNav({ rol }: { rol: RolStaff }) {
             href={href}
             aria-current={active === href ? "page" : undefined}
             className={[
-              "flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg px-3 text-[11px] font-medium transition-colors",
+              "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-medium transition-colors",
               active === href ? "text-accent" : "text-subtle hover:text-ink",
             ].join(" ")}
           >
             <Icon size={22} />
-            {label}
+            <span className="max-w-full truncate">{label}</span>
           </Link>
         ))}
         <button
@@ -198,12 +198,12 @@ export function AdminBottomNav({ rol }: { rol: RolStaff }) {
           onClick={() => setMasAbierto(true)}
           aria-haspopup="dialog"
           className={[
-            "flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg px-3 text-[11px] font-medium transition-colors",
+            "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-medium transition-colors",
             masActivo ? "text-accent" : "text-subtle hover:text-ink",
           ].join(" ")}
         >
           <IconGrid size={22} />
-          Más
+          <span className="max-w-full truncate">Más</span>
         </button>
       </nav>
 
