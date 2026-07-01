@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ClipboardEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 
 interface Props {
   /** Valor actual (string de hasta 6 dígitos). */
@@ -20,6 +20,16 @@ export function PinInput({ value, onChange, name, label, autoFocus, disabled }: 
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = value.padEnd(LEN).split("").slice(0, LEN);
 
+  // "Peek": el dígito recién escrito se ve ~800ms y luego se enmascara.
+  const [peek, setPeek] = useState<number | null>(null);
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revelar = (i: number) => {
+    setPeek(i);
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+    peekTimer.current = setTimeout(() => setPeek(null), 800);
+  };
+  useEffect(() => () => { if (peekTimer.current) clearTimeout(peekTimer.current); }, []);
+
   const setDigit = (i: number, d: string) => {
     const arr = value.padEnd(LEN).split("").slice(0, LEN);
     arr[i] = d;
@@ -30,6 +40,7 @@ export function PinInput({ value, onChange, name, label, autoFocus, disabled }: 
     const d = raw.replace(/\D/g, "");
     if (!d) return;
     setDigit(i, d[d.length - 1]);
+    revelar(i);
     if (i < LEN - 1) refs.current[i + 1]?.focus();
   };
 
@@ -70,7 +81,7 @@ export function PinInput({ value, onChange, name, label, autoFocus, disabled }: 
             onKeyDown={(e) => onKeyDown(i, e)}
             onPaste={onPaste}
             onFocus={(e) => e.target.select()}
-            type="password"
+            type={peek === i ? "text" : "password"}
             inputMode="numeric"
             autoComplete={i === 0 ? "one-time-code" : "off"}
             maxLength={1}

@@ -125,3 +125,17 @@ export const IconCamera = ({ size = 20, ...p }: IconProps) => (
     <circle cx="12" cy="12.5" r="3" stroke="currentColor" strokeWidth="1.6" />
   </svg>
 );
+
+export const IconEye = ({ size = 22, ...p }: IconProps) => (
+  <svg {...base(size, p)}>
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
+  </svg>
+);
+
+export const IconEyeOff = ({ size = 22, ...p }: IconProps) => (
+  <svg {...base(size, p)}>
+    <path d="M4 12s3.5-6.5 8-6.5c1.3 0 2.5.35 3.5.9M20 12s-1.2 2.2-3.4 3.9M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);

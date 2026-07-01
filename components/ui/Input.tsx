@@ -1,5 +1,8 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+"use client";
+
+import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { IconEye, IconEyeOff } from "@/components/icons";
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -7,8 +10,12 @@ interface Props extends InputHTMLAttributes<HTMLInputElement> {
   prefix?: string;
 }
 
-export function Input({ label, hint, prefix, className, id, ...props }: Props) {
+export function Input({ label, hint, prefix, className, id, type, ...props }: Props) {
   const inputId = id ?? props.name;
+  const [reveal, setReveal] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (reveal ? "text" : "password") : type;
+
   return (
     <div className="mb-4">
       <label
@@ -29,9 +36,21 @@ export function Input({ label, hint, prefix, className, id, ...props }: Props) {
         )}
         <input
           id={inputId}
+          type={inputType}
           className={cn("w-full bg-transparent text-base text-ink outline-none placeholder:text-muted", className)}
           {...props}
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setReveal((v) => !v)}
+            aria-label={reveal ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-pressed={reveal}
+            className="ml-2 flex size-9 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:text-ink"
+          >
+            {reveal ? <IconEyeOff size={20} /> : <IconEye size={20} />}
+          </button>
+        )}
       </div>
     </div>
   );
