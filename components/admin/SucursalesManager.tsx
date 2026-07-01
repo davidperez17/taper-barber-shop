@@ -61,35 +61,42 @@ function useAction() {
 function SucursalFila({ sucursal, onEdit }: { sucursal: Sucursal; onEdit: () => void }) {
   const { pending, run } = useAction();
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-line bg-elevated px-4 py-3">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface text-muted">
-        <IconStore size={20} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className={`truncate font-semibold ${sucursal.activo ? "text-ink" : "text-subtle line-through"}`}>{sucursal.nombre}</p>
-        <p className="truncate text-[13px] text-muted">
-          {sucursal.direccion || "Sin dirección"}{sucursal.telefono ? ` · ${sucursal.telefono}` : ""}
-        </p>
+    <div className="rounded-xl border border-line bg-elevated px-4 py-3">
+      {/* Identidad: nombre y dirección a ancho completo, sin competir con los controles */}
+      <div className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface text-muted">
+          <IconStore size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className={`truncate font-semibold ${sucursal.activo ? "text-ink" : "text-subtle line-through"}`}>{sucursal.nombre}</p>
+          <p className="truncate text-[13px] text-muted">
+            {sucursal.direccion || "Sin dirección"}{sucursal.telefono ? ` · ${sucursal.telefono}` : ""}
+          </p>
+        </div>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={sucursal.activo}
-        aria-label={`${sucursal.activo ? "Desactivar" : "Activar"} ${sucursal.nombre}`}
-        disabled={pending}
-        onClick={() => run(() => toggleSucursalActiva(sucursal.id, !sucursal.activo))}
-        className="flex min-h-11 shrink-0 items-center gap-2 rounded-full px-1.5 disabled:opacity-50"
-      >
-        <span className={`w-14 text-right text-[11px] font-semibold tabular-nums ${sucursal.activo ? "text-success" : "text-subtle"}`}>
-          {sucursal.activo ? "Activa" : "Inactiva"}
-        </span>
-        <span className={`relative inline-flex h-[26px] w-[46px] shrink-0 items-center rounded-full transition-colors ${sucursal.activo ? "bg-success" : "bg-line-strong"}`}>
-          <span className={`absolute size-5 rounded-full bg-white shadow-sm transition-transform ${sucursal.activo ? "translate-x-[23px]" : "translate-x-[3px]"}`} />
-        </span>
-      </button>
-      <button onClick={onEdit} className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink">
-        <IconPencil size={15} /> Editar
-      </button>
+
+      {/* Controles en su propia fila, con espacio para tocar */}
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={sucursal.activo}
+          aria-label={`${sucursal.activo ? "Desactivar" : "Activar"} ${sucursal.nombre}`}
+          disabled={pending}
+          onClick={() => run(() => toggleSucursalActiva(sucursal.id, !sucursal.activo))}
+          className="flex min-h-11 items-center gap-2 rounded-full pr-1.5 disabled:opacity-50"
+        >
+          <span className={`relative inline-flex h-[26px] w-[46px] shrink-0 items-center rounded-full transition-colors ${sucursal.activo ? "bg-success" : "bg-line-strong"}`}>
+            <span className={`absolute size-5 rounded-full bg-white shadow-sm transition-transform ${sucursal.activo ? "translate-x-[23px]" : "translate-x-[3px]"}`} />
+          </span>
+          <span className={`text-[13px] font-semibold ${sucursal.activo ? "text-success" : "text-subtle"}`}>
+            {sucursal.activo ? "Activa" : "Inactiva"}
+          </span>
+        </button>
+        <button onClick={onEdit} className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-4 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink">
+          <IconPencil size={15} /> Editar
+        </button>
+      </div>
     </div>
   );
 }
