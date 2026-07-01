@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { saveCupon, toggleCuponActivo, deleteCupon, type ActionResult } from "@/app/admin/actions";
 import { fmtQ } from "@/lib/format";
@@ -138,7 +139,9 @@ function CuponSheet({ cupon, onClose }: { cupon: Cupon | null; onClose: () => vo
       activo,
     }), onClose);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={cupon ? "Editar cupón" : "Nuevo cupón"}>
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div ref={ref} className="animate-fade-up relative flex max-h-[90dvh] w-full max-w-[440px] flex-col overflow-hidden rounded-t-2xl border border-line bg-bg sm:max-h-[85dvh] sm:rounded-2xl">
@@ -212,7 +215,8 @@ function CuponSheet({ cupon, onClose }: { cupon: Cupon | null; onClose: () => vo
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
