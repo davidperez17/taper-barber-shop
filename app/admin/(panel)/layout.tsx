@@ -39,7 +39,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const mostrarSwitcher = sucursales.length > 1;
 
   return (
-    <div className="fixed inset-0 flex w-full overflow-hidden">
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-bg pt-[env(safe-area-inset-top)]">
       <AdminSidebar rol={staff.rol} nombre={staff.nombre} sucursal={sucursalNav} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg">
