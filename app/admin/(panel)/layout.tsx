@@ -28,10 +28,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const mostrarSwitcher = sucursales.length > 1;
 
   return (
-    <div className="flex min-h-dvh w-full">
+    <div className="flex h-dvh w-full overflow-hidden">
       <AdminSidebar rol={staff.rol} nombre={staff.nombre} sucursal={sucursalNav} />
 
-      <div className="flex min-w-0 flex-1 flex-col bg-bg">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg">
         <OfflineSync />
 
         {/* Header solo en móvil/tablet; en desktop la sidebar lo cubre */}
@@ -55,7 +55,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-6 lg:px-8">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto px-5 py-6 lg:px-8">{children}</main>
 
         <AdminBottomNav rol={staff.rol} />
       </div>

@@ -7,9 +7,9 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   if (!(await getQrToken())) redirect("/");
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col bg-bg">
+    <div className="mx-auto flex h-dvh w-full max-w-[440px] flex-col overflow-hidden bg-bg">
       <AutoRefresh />
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
       <BottomNav />
     </div>
   );
