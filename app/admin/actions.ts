@@ -2,14 +2,30 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getStaff } from "@/lib/queries/staff";
-import { getSucursalActiva } from "@/lib/sucursal";
+import { getSucursalActiva, getSucursales, SUCURSAL_COOKIE } from "@/lib/sucursal";
 
 /** Sucursal activa del staff actual (o null). Se resuelve en el servidor. */
 async function sucursalActiva(): Promise<string | null> {
   const staff = await getStaff();
   return staff ? getSucursalActiva(staff) : null;
+}
+
+/** Cambia la sucursal activa (dueño/admin). Los trabajadores tienen la suya fija. */
+export async function setSucursalActiva(sucursalId: string): Promise<ActionResult> {
+  const staff = await getStaff();
+  if (staff?.rol !== "dueno" && staff?.rol !== "admin") {
+    return { ok: false, error: "No autorizado." };
+  }
+  const sucursales = await getSucursales();
+  if (!sucursales.some((s) => s.id === sucursalId)) return { ok: false, error: "Sucursal inválida." };
+
+  const jar = await cookies();
+  jar.set(SUCURSAL_COOKIE, sucursalId, { httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 * 180, path: "/" });
+  revalidatePath("/admin", "layout");
+  return { ok: true };
 }
 
 export interface AuthState {

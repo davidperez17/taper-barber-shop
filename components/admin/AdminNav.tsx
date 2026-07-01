@@ -8,9 +8,16 @@ import { logoutStaff } from "@/app/admin/actions";
 import type { RolStaff } from "@/lib/queries/staff";
 import {
   IconScan, IconUsers, IconBox, IconChart, IconRefresh, IconCard,
-  IconTag, IconStack, IconCalendar, IconStats, IconGrid, IconId,
+  IconTag, IconStack, IconCalendar, IconStats, IconGrid, IconId, IconStore,
 } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
+import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
+
+export interface SucursalNav {
+  sucursales: { id: string; nombre: string }[];
+  activeId: string | null;
+  canSwitch: boolean;
+}
 
 type Roles = RolStaff[] | "all";
 interface NavItem {
@@ -60,7 +67,10 @@ const GROUPS: NavGroup[] = [
   },
   {
     label: "Administración",
-    items: [{ href: "/admin/personal", label: "Personal", Icon: IconId, roles: ["dueno"] }],
+    items: [
+      { href: "/admin/sucursales", label: "Sucursales", Icon: IconStore, roles: ["dueno"] },
+      { href: "/admin/personal", label: "Personal", Icon: IconId, roles: ["dueno"] },
+    ],
   },
 ];
 
@@ -94,7 +104,7 @@ function useActiveHref(): string | null {
 }
 
 // ── Sidebar fija (≥lg) ──────────────────────────────────────────
-export function AdminSidebar({ rol, nombre }: { rol: RolStaff; nombre: string }) {
+export function AdminSidebar({ rol, nombre, sucursal }: { rol: RolStaff; nombre: string; sucursal?: SucursalNav }) {
   const active = useActiveHref();
   return (
     <aside className="hidden w-[224px] shrink-0 flex-col border-r border-line bg-bg lg:flex">
@@ -103,6 +113,12 @@ export function AdminSidebar({ rol, nombre }: { rol: RolStaff; nombre: string })
         <span className="font-display text-[15px] font-bold tracking-[0.3em] text-ink">TAPER</span>
         <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Panel</span>
       </div>
+
+      {sucursal && sucursal.sucursales.length > 1 && (
+        <div className="px-3 pb-2">
+          <SucursalSwitcher sucursales={sucursal.sucursales} activeId={sucursal.activeId} canSwitch={sucursal.canSwitch} />
+        </div>
+      )}
 
       <nav aria-label="Navegación del panel" className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 py-2">
         {GROUPS.map((g) => {

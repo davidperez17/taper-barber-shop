@@ -30,6 +30,7 @@ export async function crearStaff(input: {
   email: string;
   password: string;
   rol: RolStaff;
+  sucursalId?: string | null;
 }): Promise<PersonalResult> {
   if (!(await soloDueno())) return { ok: false, error: "Solo el dueño puede gestionar el personal." };
 
@@ -58,6 +59,7 @@ export async function crearStaff(input: {
     email,
     rol: input.rol,
     activo: true,
+    ...(input.sucursalId ? { sucursal_id: input.sucursalId } : {}),
   });
   if (insErr) {
     // Rollback: no dejar un usuario Auth huérfano sin fila de staff.
@@ -71,7 +73,7 @@ export async function crearStaff(input: {
 
 export async function actualizarStaff(
   id: string,
-  input: { nombre: string; rol: RolStaff },
+  input: { nombre: string; rol: RolStaff; sucursalId?: string | null },
 ): Promise<PersonalResult> {
   const yo = await soloDueno();
   if (!yo) return { ok: false, error: "Solo el dueño puede gestionar el personal." };
@@ -84,7 +86,9 @@ export async function actualizarStaff(
   }
 
   const admin = createAdmin();
-  const { error } = await admin.from("staff").update({ nombre, rol: input.rol }).eq("id", id);
+  const fila: Record<string, unknown> = { nombre, rol: input.rol };
+  if (input.sucursalId) fila.sucursal_id = input.sucursalId;
+  const { error } = await admin.from("staff").update(fila).eq("id", id);
   if (error) {
     if (error.message.includes("dueño")) return { ok: false, error: "Debe quedar al menos un dueño activo." };
     return { ok: false, error: "No se pudo guardar." };

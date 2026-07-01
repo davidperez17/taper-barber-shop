@@ -136,6 +136,8 @@ export interface StaffRow {
   activo: boolean;
   created_at: string;
   last_sign_in_at: string | null;
+  sucursal_id: string | null;
+  sucursal_nombre: string | null;
 }
 
 // ── Agenda (citas) ──────────────────────────────────────────────

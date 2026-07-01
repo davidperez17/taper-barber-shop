@@ -38,7 +38,9 @@ function generarPassword(): string {
   return out;
 }
 
-export function PersonalManager({ personal, yoId }: { personal: StaffRow[]; yoId: string }) {
+interface SucursalMini { id: string; nombre: string }
+
+export function PersonalManager({ personal, yoId, sucursales }: { personal: StaffRow[]; yoId: string; sucursales: SucursalMini[] }) {
   const [modal, setModal] = useState<StaffRow | "nuevo" | null>(null);
 
   return (
@@ -61,6 +63,7 @@ export function PersonalManager({ personal, yoId }: { personal: StaffRow[]; yoId
         <PersonalSheet
           staff={modal === "nuevo" ? null : modal}
           esYo={modal !== "nuevo" && modal.id === yoId}
+          sucursales={sucursales}
           onClose={() => setModal(null)}
         />
       )}
@@ -95,7 +98,10 @@ function PersonalFila({ staff, esYo, onEdit }: { staff: StaffRow; esYo: boolean;
           {esYo && <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-subtle">Tú</span>}
         </div>
         <p className="truncate text-[13px] text-muted">{staff.email ?? "Sin email"}</p>
-        <p className="text-[11px] text-subtle">{fmtAcceso(staff.last_sign_in_at)}</p>
+        <p className="text-[11px] text-subtle">
+          {fmtAcceso(staff.last_sign_in_at)}
+          {(staff.rol === "cajero" || staff.rol === "barbero") && staff.sucursal_nombre ? ` · ${staff.sucursal_nombre}` : ""}
+        </p>
       </div>
 
       {/* Switch de estado (bloqueado para la propia cuenta) */}
@@ -182,20 +188,23 @@ function RolSelector({ value, onChange, disabled }: { value: RolStaff; onChange:
   );
 }
 
-function PersonalSheet({ staff, esYo, onClose }: { staff: StaffRow | null; esYo: boolean; onClose: () => void }) {
+function PersonalSheet({ staff, esYo, sucursales, onClose }: { staff: StaffRow | null; esYo: boolean; sucursales: SucursalMini[]; onClose: () => void }) {
   const { pending, error, run } = useAction();
   const ref = useModalA11y(onClose);
   const [nombre, setNombre] = useState(staff?.nombre ?? "");
   const [email, setEmail] = useState(staff?.email ?? "");
   const [password, setPassword] = useState("");
   const [rol, setRol] = useState<RolStaff>(staff?.rol ?? "cajero");
+  const [sucursalId, setSucursalId] = useState<string>(staff?.sucursal_id ?? sucursales[0]?.id ?? "");
 
   const esNuevo = staff === null;
+  // La sucursal solo aplica a trabajadores (dueño/admin ven todas).
+  const asignaSucursal = rol === "cajero" || rol === "barbero";
 
   const guardar = () =>
     esNuevo
-      ? run(() => crearStaff({ nombre, email, password, rol }), onClose)
-      : run(() => actualizarStaff(staff.id, { nombre, rol }), onClose);
+      ? run(() => crearStaff({ nombre, email, password, rol, sucursalId: asignaSucursal ? sucursalId : null }), onClose)
+      : run(() => actualizarStaff(staff.id, { nombre, rol, sucursalId: asignaSucursal ? sucursalId : null }), onClose);
 
   if (typeof document === "undefined") return null;
 
@@ -230,6 +239,14 @@ function PersonalSheet({ staff, esYo, onClose }: { staff: StaffRow | null; esYo:
 
           <Campo label="Rol y permisos"><RolSelector value={rol} onChange={setRol} disabled={esYo} /></Campo>
           {esYo && <p className="text-[12px] text-subtle">No puedes cambiar tu propio rol de dueño.</p>}
+
+          {asignaSucursal && sucursales.length > 0 && (
+            <Campo label="Sucursal asignada">
+              <select value={sucursalId} onChange={(e) => setSucursalId(e.target.value)} className={inputCls}>
+                {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+              </select>
+            </Campo>
+          )}
 
           {!esNuevo && <ResetPassword staffId={staff.id} />}
 
