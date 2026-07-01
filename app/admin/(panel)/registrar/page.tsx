@@ -16,7 +16,7 @@ export default function RegistrarClientePage() {
       <p className="mb-6 mt-1 text-sm text-muted">Alta rápida — luego registras su venta.</p>
 
       <form action={action}>
-        <Input label="Nombre completo" name="nombre" placeholder="Nombre del cliente" autoComplete="off" autoFocus required />
+        <Input label="Nombre completo" name="nombre" placeholder="Nombre del cliente" autoComplete="off" required />
         <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" required />
         <Input label="Correo" hint="· opcional" name="correo" placeholder="correo@cliente.com" inputMode="email" />
 

@@ -13,7 +13,7 @@ export function LoginForm({ next }: { next: string }) {
   return (
     <form action={action}>
       <input type="hidden" name="next" value={next} />
-      <Input label="Email" name="email" type="email" placeholder="staff@taper.com" autoComplete="email" autoFocus required />
+      <Input label="Email" name="email" type="email" placeholder="staff@taper.com" autoComplete="email" required />
       <Input label="Contraseña" name="password" type="password" placeholder="••••••••" autoComplete="current-password" required />
 
       {state.error && <p role="alert" className="mb-4 text-sm text-danger">{state.error}</p>}

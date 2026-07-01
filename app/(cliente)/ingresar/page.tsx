@@ -22,7 +22,7 @@ export default function IngresarPage() {
       <p className="mb-7 mt-1.5 text-sm text-muted">Con el teléfono de tu cuenta</p>
 
       <form action={action}>
-        <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" autoFocus required />
+        <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" required />
 
         {state.error && <p role="alert" className="mb-4 text-sm text-danger">{state.error}</p>}
 

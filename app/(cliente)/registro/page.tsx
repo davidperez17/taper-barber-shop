@@ -22,7 +22,7 @@ export default function RegistroPage() {
       <p className="mb-7 mt-1.5 text-sm text-muted">Tarda menos de 1 minuto</p>
 
       <form action={action}>
-        <Input label="Nombre completo" name="nombre" placeholder="Tu nombre" autoFocus autoComplete="name" required />
+        <Input label="Nombre completo" name="nombre" placeholder="Tu nombre" autoComplete="name" required />
         <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" required />
         <Input label="Correo" hint="· opcional" name="correo" placeholder="tu@correo.com" inputMode="email" autoComplete="email" />
 
