@@ -18,6 +18,15 @@ export const IconCard = ({ size = 22, ...p }: IconProps) => (
   </svg>
 );
 
+export const IconGrid = ({ size = 22, ...p }: IconProps) => (
+  <svg {...base(size, p)}>
+    <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" stroke="currentColor" strokeWidth="1.7" />
+    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" stroke="currentColor" strokeWidth="1.7" />
+    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" stroke="currentColor" strokeWidth="1.7" />
+    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+);
+
 export const IconCalendar = ({ size = 22, ...p }: IconProps) => (
   <svg {...base(size, p)}>
     <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
