@@ -444,6 +444,72 @@ export async function deleteCupon(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+// ── Agenda: citas (gestión del staff) ───────────────────────────
+export async function saveCita(input: {
+  id?: string;
+  clienteId: string | null;
+  clienteNombre: string;
+  barberoId: string | null;
+  servicioId: string | null;
+  fecha: string; // YYYY-MM-DD
+  hora: string; // HH:MM
+  duracionMin: number;
+  ubicacion: "barberia" | "domicilio";
+  direccion: string;
+  nota: string;
+}): Promise<ActionResult> {
+  const nombre = input.clienteNombre.trim();
+  if (!input.clienteId && !nombre) return { ok: false, error: "Elige un cliente o escribe un nombre." };
+  if (!input.fecha || !input.hora) return { ok: false, error: "Falta la fecha u hora." };
+  if (input.duracionMin <= 0) return { ok: false, error: "Duración inválida." };
+  if (input.ubicacion === "domicilio" && !input.direccion.trim()) {
+    return { ok: false, error: "Escribe la dirección del domicilio/evento." };
+  }
+
+  // Hora local de Guatemala (UTC-6, sin horario de verano).
+  const inicia = new Date(`${input.fecha}T${input.hora}:00-06:00`);
+  if (Number.isNaN(inicia.getTime())) return { ok: false, error: "Fecha u hora inválida." };
+
+  const sb = await createClient();
+  const staff = await getStaff();
+  const fila = {
+    cliente_id: input.clienteId,
+    cliente_nombre: input.clienteId ? null : nombre,
+    barbero_id: input.barberoId,
+    servicio_id: input.servicioId,
+    inicia_en: inicia.toISOString(),
+    duracion_min: input.duracionMin,
+    ubicacion: input.ubicacion,
+    direccion: input.ubicacion === "domicilio" ? input.direccion.trim() : null,
+    nota: input.nota.trim() || null,
+  };
+  const { error } = input.id
+    ? await sb.from("citas").update(fila).eq("id", input.id)
+    : await sb.from("citas").insert({ ...fila, creada_por: staff?.id ?? null });
+  if (error) return { ok: false, error: catalogoError(error.message) };
+  revalidatePath("/admin/agenda");
+  return { ok: true };
+}
+
+export async function updateEstadoCita(
+  id: string,
+  estado: "pendiente" | "confirmada" | "completada" | "cancelada",
+): Promise<ActionResult> {
+  const sb = await createClient();
+  const { error } = await sb.from("citas").update({ estado }).eq("id", id);
+  if (error) return { ok: false, error: catalogoError(error.message) };
+  revalidatePath("/admin/agenda");
+  return { ok: true };
+}
+
+export async function deleteCita(id: string): Promise<ActionResult> {
+  const sb = await createClient();
+  const { error } = await sb.from("citas").delete().eq("id", id);
+  if (error) return { ok: false, error: catalogoError(error.message) };
+  revalidatePath("/admin/agenda");
+  return { ok: true };
+}
+
 export async function updateConfigLealtad(cortes_objetivo: number, ventana_meses: number): Promise<ActionResult> {
   if (cortes_objetivo < 1 || cortes_objetivo > 50) return { ok: false, error: "Cortes objetivo entre 1 y 50." };
   if (ventana_meses < 1 || ventana_meses > 60) return { ok: false, error: "Ventana entre 1 y 60 meses." };

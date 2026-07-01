@@ -113,6 +113,27 @@ export interface ConfigLealtad {
   ventana_meses: number;
 }
 
+// ── Agenda (citas) ──────────────────────────────────────────────
+export type CitaUbicacion = "barberia" | "domicilio";
+export type CitaEstado = "pendiente" | "confirmada" | "completada" | "cancelada";
+
+export interface CitaRow {
+  id: string;
+  cliente_id: string | null;
+  cliente_nombre: string | null;
+  barbero_id: string | null;
+  servicio_id: string | null;
+  inicia_en: string;
+  duracion_min: number;
+  ubicacion: CitaUbicacion;
+  direccion: string | null;
+  nota: string | null;
+  estado: CitaEstado;
+  cliente: { nombre: string; telefono: string } | null;
+  barbero: { nombre: string } | null;
+  servicio: { nombre: string; precio: number; duracion_min: number | null } | null;
+}
+
 // ── Cupones (promociones) ───────────────────────────────────────
 export type CuponTipo = "porcentaje" | "monto";
 
