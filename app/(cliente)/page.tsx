@@ -20,7 +20,7 @@ export default async function OnboardingPage() {
       />
 
       {/* Contenido */}
-      <div className="relative z-[2] mt-auto px-6 pb-10">
+      <div className="relative z-[2] mx-auto mt-auto w-full max-w-[440px] px-6 pb-10">
         <div className="mb-6 flex items-center gap-2.5">
           <span className="size-2.5 rotate-45 rounded-[2px] bg-accent" />
           <span className="font-display text-[15px] font-bold tracking-[0.34em] text-ink">TAPER</span>

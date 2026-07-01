@@ -17,7 +17,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   if (!staff) redirect("/admin/login");
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[1200px]">
+    <div className="flex min-h-dvh w-full">
       <AdminSidebar rol={staff.rol} nombre={staff.nombre} />
 
       <div className="flex min-w-0 flex-1 flex-col bg-bg">

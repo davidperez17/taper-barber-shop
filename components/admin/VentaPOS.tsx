@@ -139,7 +139,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
   }
 
   return (
-    <div className="animate-fade-up pb-28">
+    <div className="mx-auto max-w-[720px] animate-fade-up">
       {/* Ficha del cliente */}
       <div className={`${TIER_SURFACE[loyalty.tier]} rounded-2xl border border-white/15 p-4`} style={{ boxShadow: "0 8px 30px var(--tier-glow)" }}>
         <div className="flex items-start justify-between" style={{ color: "var(--tier-ink)" }}>
@@ -172,7 +172,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
 
       {/* Servicios */}
       <h2 className="mb-2.5 mt-6 font-display text-lg font-bold text-ink">Servicios</h2>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {servicios.map((s) => {
           const q = serv[s.id] ?? 0;
           return (
@@ -184,7 +184,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
 
       {/* Productos */}
       <h2 className="mb-2.5 mt-6 font-display text-lg font-bold text-ink">Productos</h2>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {productos.map((p) => {
           const q = prod[p.id] ?? 0;
           return (
@@ -211,8 +211,8 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
 
       {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
-      {/* Barra fija: total + confirmar */}
-      <div className="fixed inset-x-0 bottom-0 z-[var(--z-sticky)] border-t border-line bg-elevated/95 px-5 py-3.5 backdrop-blur">
+      {/* Barra total + confirmar: sticky dentro del contenido (respeta sidebar y bottom-nav) */}
+      <div className="sticky bottom-0 z-[var(--z-sticky)] mt-8 border-t border-line bg-elevated/95 px-5 py-3.5 backdrop-blur">
         <div className="mx-auto flex max-w-[640px] items-center gap-4">
           <div>
             <p className="text-[13px] font-medium text-muted">Total</p>

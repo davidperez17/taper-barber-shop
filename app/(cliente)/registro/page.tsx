@@ -16,7 +16,7 @@ export default function RegistroPage() {
   const [pin2, setPin2] = useState("");
 
   return (
-    <main className="min-h-dvh animate-fade-up overflow-auto px-6 pb-8 pt-16">
+    <main className="mx-auto min-h-dvh w-full max-w-[440px] animate-fade-up overflow-auto px-6 pb-8 pt-16 sm:pt-24">
       <Link href="/" className="mb-7 inline-flex min-h-11 items-center gap-1.5 text-[15px] text-muted hover:text-ink">
         <IconChevronLeft /> Atrás
       </Link>

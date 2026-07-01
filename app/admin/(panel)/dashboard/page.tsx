@@ -14,7 +14,7 @@ export default async function DashboardPage() {
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Dashboard</h1>
       <p className="mb-5 mt-1 text-sm text-muted">Estado del negocio en tiempo real.</p>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <Metric value={fmtQ(m.ventas_hoy)} label="Ventas hoy" sub={`${m.num_ventas_hoy} ventas`} accent />
         <Metric value={fmtQ(m.ventas_mes)} label="Ventas del mes" />
         <Metric value={fmtQ(m.ticket_promedio)} label="Ticket promedio" />
