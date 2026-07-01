@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { LoginForm } from "@/components/admin/LoginForm";
 import { InstallPWA } from "@/components/InstallPWA";
+
+// Enlaza el manifest del app admin (instalable aparte del app cliente) + identidad iOS.
+export const metadata: Metadata = {
+  title: "Taper Admin",
+  applicationName: "Taper Admin",
+  manifest: "/staff-manifest",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Taper Admin" },
+  icons: { icon: "/icon-admin.svg", shortcut: "/icon-admin.svg", apple: "/icon-admin.svg" },
+};
 
 export default async function AdminLoginPage({
   searchParams,

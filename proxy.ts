@@ -77,6 +77,6 @@ export const config = {
     /*
      * Todas las rutas excepto assets estáticos e imágenes.
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon.*\\.svg|.*\\.(?:png|jpg|jpeg|svg|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|cliente-manifest|staff-manifest|icon.*\\.svg|.*\\.(?:png|jpg|jpeg|svg|webp)$).*)",
   ],
 };

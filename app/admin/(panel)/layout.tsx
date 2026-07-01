@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { getSucursalActiva, getSucursales } from "@/lib/sucursal";
@@ -7,6 +8,15 @@ import { OfflineSync } from "@/components/admin/OfflineSync";
 import { AdminSidebar, AdminBottomNav, type SucursalNav } from "@/components/admin/AdminNav";
 import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
 import { NotifyOptIn } from "@/components/NotifyOptIn";
+
+// Mantiene el manifest del app admin en todo el panel (instalable aparte del cliente).
+export const metadata: Metadata = {
+  title: "Taper Admin",
+  applicationName: "Taper Admin",
+  manifest: "/staff-manifest",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Taper Admin" },
+  icons: { icon: "/icon-admin.svg", shortcut: "/icon-admin.svg", apple: "/icon-admin.svg" },
+};
 
 const ROL_LABEL: Record<string, string> = {
   cajero: "Cajero",
