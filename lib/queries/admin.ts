@@ -43,12 +43,20 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   return data as DashboardMetrics;
 }
 
-export async function getCatalogo(): Promise<Catalogo> {
+export async function getCatalogo(sucursalId?: string | null): Promise<Catalogo> {
   const sb = await createClient();
+  let sQ = sb.from("servicios").select("*").eq("activo", true);
+  let pQ = sb.from("productos").select("*").eq("activo", true);
+  let bQ = sb.from("barberos").select("id, nombre, activo").eq("activo", true);
+  if (sucursalId) {
+    sQ = sQ.eq("sucursal_id", sucursalId);
+    pQ = pQ.eq("sucursal_id", sucursalId);
+    bQ = bQ.eq("sucursal_id", sucursalId);
+  }
   const [serv, prod, barb] = await Promise.all([
-    sb.from("servicios").select("*").eq("activo", true).order("orden"),
-    sb.from("productos").select("*").eq("activo", true).order("nombre"),
-    sb.from("barberos").select("id, nombre, activo").eq("activo", true).order("nombre"),
+    sQ.order("orden"),
+    pQ.order("nombre"),
+    bQ.order("nombre"),
   ]);
   return {
     servicios: (serv.data as Servicio[]) ?? [],

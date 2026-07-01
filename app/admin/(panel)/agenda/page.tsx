@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
+import { getSucursalActiva } from "@/lib/sucursal";
 import { getCatalogo } from "@/lib/queries/admin";
 import { getCitasDelDia, hoyGT } from "@/lib/queries/agenda";
 import { AgendaManager } from "@/components/admin/AgendaManager";
@@ -15,7 +16,8 @@ export default async function AgendaPage({
   const sp = await searchParams;
   const fecha = /^\d{4}-\d{2}-\d{2}$/.test(sp.d ?? "") ? sp.d! : hoyGT();
 
-  const [citas, catalogo] = await Promise.all([getCitasDelDia(fecha), getCatalogo()]);
+  const sucursalId = await getSucursalActiva(staff);
+  const [citas, catalogo] = await Promise.all([getCitasDelDia(fecha, sucursalId), getCatalogo(sucursalId)]);
 
   return (
     <AgendaManager

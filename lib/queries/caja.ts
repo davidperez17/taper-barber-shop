@@ -43,8 +43,10 @@ export function hoyGT(): string {
   }).format(new Date());
 }
 
-export async function getCajaResumen(fecha: string): Promise<CajaResumen | null> {
+export async function getCajaResumen(fecha: string, sucursalId?: string | null): Promise<CajaResumen | null> {
   const sb = await createClient();
-  const { data } = await sb.rpc("caja_resumen", { p_fecha: fecha });
+  const params: Record<string, unknown> = { p_fecha: fecha };
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { data } = await sb.rpc("caja_resumen", params);
   return (data as CajaResumen) ?? null;
 }

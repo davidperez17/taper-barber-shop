@@ -10,16 +10,17 @@ export function hoyGT(): string {
 }
 
 /** Citas de un día (hora local GT, UTC-6 sin horario de verano), ordenadas por hora. */
-export async function getCitasDelDia(fecha: string): Promise<CitaRow[]> {
+export async function getCitasDelDia(fecha: string, sucursalId?: string | null): Promise<CitaRow[]> {
   const inicio = new Date(`${fecha}T00:00:00-06:00`);
   const fin = new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
 
   const sb = await createClient();
-  const { data } = await sb
+  let q = sb
     .from("citas")
     .select(SELECT)
     .gte("inicia_en", inicio.toISOString())
-    .lt("inicia_en", fin.toISOString())
-    .order("inicia_en");
+    .lt("inicia_en", fin.toISOString());
+  if (sucursalId) q = q.eq("sucursal_id", sucursalId);
+  const { data } = await q.order("inicia_en");
   return (data as CitaRow[]) ?? [];
 }

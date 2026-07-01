@@ -4,6 +4,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getStaff } from "@/lib/queries/staff";
+import { getSucursalActiva } from "@/lib/sucursal";
+
+/** Sucursal activa del staff actual (o null). Se resuelve en el servidor. */
+async function sucursalActiva(): Promise<string | null> {
+  const staff = await getStaff();
+  return staff ? getSucursalActiva(staff) : null;
+}
 
 export interface AuthState {
   error?: string;
@@ -69,14 +76,17 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
   if (input.items.length === 0) return { ok: false, error: "Agrega al menos un servicio o producto." };
 
   const sb = await createClient();
-  const { data, error } = await sb.rpc("record_venta", {
+  const sucursalId = await sucursalActiva();
+  const params: Record<string, unknown> = {
     p_cliente_id: input.clienteId,
     p_barbero_id: input.barberoId,
     p_metodo: input.metodo,
     p_canjear: input.canjear,
     p_items: input.items,
     p_cupon_id: input.cuponId ?? null,
-  });
+  };
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { data, error } = await sb.rpc("record_venta", params);
 
   if (error) return { ok: false, error: "No se pudo registrar la venta. Intenta de nuevo." };
   return { ok: true, total: Number((data as { total: number }).total) };
@@ -226,7 +236,10 @@ export async function crearMovimientoCaja(
 ): Promise<ActionResult> {
   if (!(monto > 0)) return { ok: false, error: "Monto inválido." };
   const sb = await createClient();
-  const { error } = await sb.rpc("caja_movimiento_crear", { p_tipo: tipo, p_monto: monto, p_motivo: motivo });
+  const sucursalId = await sucursalActiva();
+  const params: Record<string, unknown> = { p_tipo: tipo, p_monto: monto, p_motivo: motivo };
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { error } = await sb.rpc("caja_movimiento_crear", params);
   if (error) return { ok: false, error: error.message.includes("cerrada") ? "La caja del día ya está cerrada." : "No se pudo registrar." };
   revalidatePath("/admin/caja");
   return { ok: true };
@@ -247,12 +260,15 @@ export async function cerrarCaja(
   notas: string,
 ): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.rpc("caja_cerrar", {
+  const sucursalId = await sucursalActiva();
+  const params: Record<string, unknown> = {
     p_fecha: fecha,
     p_fondo_inicial: fondoInicial,
     p_efectivo_contado: efectivoContado,
     p_notas: notas,
-  });
+  };
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { error } = await sb.rpc("caja_cerrar", params);
   if (error) return { ok: false, error: error.message.includes("cerrada") ? "La caja de ese día ya está cerrada." : "No se pudo cerrar la caja." };
   revalidatePath("/admin/caja");
   return { ok: true };
@@ -281,7 +297,7 @@ export async function saveServicio(input: {
   if (input.precio < 0) return { ok: false, error: "Precio inválido." };
 
   const sb = await createClient();
-  const fila = {
+  const fila: Record<string, unknown> = {
     nombre: input.nombre.trim(),
     precio: input.precio,
     categoria: input.categoria.trim() || null,
@@ -290,6 +306,10 @@ export async function saveServicio(input: {
     orden: input.orden,
     imagen_url: input.imagen_url,
   };
+  if (!input.id) {
+    const sucursalId = await sucursalActiva();
+    if (sucursalId) fila.sucursal_id = sucursalId;
+  }
   const { error } = input.id
     ? await sb.from("servicios").update(fila).eq("id", input.id)
     : await sb.from("servicios").insert(fila);
@@ -322,7 +342,11 @@ export async function saveProducto(input: {
     stock_min: input.stock_min,
   };
   // El stock se gestiona con movimientos; solo se fija el inicial al crear.
-  if (!input.id) fila.stock = Math.max(0, Math.round(input.stock_inicial ?? 0));
+  if (!input.id) {
+    fila.stock = Math.max(0, Math.round(input.stock_inicial ?? 0));
+    const sucursalId = await sucursalActiva();
+    if (sucursalId) fila.sucursal_id = sucursalId;
+  }
 
   const { error } = input.id
     ? await sb.from("productos").update(fila).eq("id", input.id)
@@ -363,7 +387,11 @@ export async function movimientoInventario(
 export async function saveBarbero(input: { id?: string; nombre: string }): Promise<ActionResult> {
   if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio." };
   const sb = await createClient();
-  const fila = { nombre: input.nombre.trim() };
+  const fila: Record<string, unknown> = { nombre: input.nombre.trim() };
+  if (!input.id) {
+    const sucursalId = await sucursalActiva();
+    if (sucursalId) fila.sucursal_id = sucursalId;
+  }
   const { error } = input.id
     ? await sb.from("barberos").update(fila).eq("id", input.id)
     : await sb.from("barberos").insert(fila);
@@ -483,9 +511,10 @@ export async function saveCita(input: {
     direccion: input.ubicacion === "domicilio" ? input.direccion.trim() : null,
     nota: input.nota.trim() || null,
   };
+  const sucursalId = input.id ? null : await sucursalActiva();
   const { error } = input.id
     ? await sb.from("citas").update(fila).eq("id", input.id)
-    : await sb.from("citas").insert({ ...fila, creada_por: staff?.id ?? null });
+    : await sb.from("citas").insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) });
   if (error) return { ok: false, error: catalogoError(error.message) };
   revalidatePath("/admin/agenda");
   return { ok: true };

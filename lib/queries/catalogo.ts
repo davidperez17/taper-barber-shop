@@ -8,13 +8,21 @@ export interface CatalogoAdmin {
   config: ConfigLealtad;
 }
 
-/** Catálogo completo (incluye inactivos) para gestión. */
-export async function getCatalogoAdmin(): Promise<CatalogoAdmin> {
+/** Catálogo completo (incluye inactivos) para gestión, filtrado por sucursal. */
+export async function getCatalogoAdmin(sucursalId?: string | null): Promise<CatalogoAdmin> {
   const sb = await createClient();
+  let sQ = sb.from("servicios").select("*");
+  let pQ = sb.from("productos").select("*");
+  let bQ = sb.from("barberos").select("id, nombre, activo");
+  if (sucursalId) {
+    sQ = sQ.eq("sucursal_id", sucursalId);
+    pQ = pQ.eq("sucursal_id", sucursalId);
+    bQ = bQ.eq("sucursal_id", sucursalId);
+  }
   const [servicios, productos, barberos, config] = await Promise.all([
-    sb.from("servicios").select("*").order("orden"),
-    sb.from("productos").select("*").order("nombre"),
-    sb.from("barberos").select("id, nombre, activo").order("nombre"),
+    sQ.order("orden"),
+    pQ.order("nombre"),
+    bQ.order("nombre"),
     sb.from("config_lealtad").select("*").eq("id", 1).single(),
   ]);
   return {

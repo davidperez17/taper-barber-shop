@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
+import { getSucursalActiva } from "@/lib/sucursal";
 import { getCajaResumen, hoyGT } from "@/lib/queries/caja";
 import { CajaCierre } from "@/components/admin/CajaCierre";
 
@@ -8,7 +9,8 @@ export default async function CajaPage() {
   if (!staff) redirect("/admin/login");
 
   const fecha = hoyGT();
-  const resumen = await getCajaResumen(fecha);
+  const sucursalId = await getSucursalActiva(staff);
+  const resumen = await getCajaResumen(fecha, sucursalId);
 
   return (
     <div className="animate-fade-up mx-auto max-w-[640px]">
