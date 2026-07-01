@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PinInput } from "@/components/ui/PinInput";
 import { IconChevronLeft } from "@/components/icons";
+import { InstallPWA } from "@/components/InstallPWA";
 
 const initial: FormState = {};
 type Paso = "telefono" | "pin" | "setup";
@@ -100,6 +101,8 @@ export default function IngresarPage() {
           </form>
         </>
       )}
+
+      <InstallPWA />
     </main>
   );
 }

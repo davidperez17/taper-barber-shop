@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { LoginForm } from "@/components/admin/LoginForm";
+import { InstallPWA } from "@/components/InstallPWA";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -61,6 +62,7 @@ export default async function AdminLoginPage({
           </div>
 
           <LoginForm next={next} />
+          <InstallPWA />
         </div>
       </div>
     </main>
