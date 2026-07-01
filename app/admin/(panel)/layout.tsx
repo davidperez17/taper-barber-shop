@@ -69,7 +69,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           )}
         </div>
 
-        <main className="flex-1 px-5 py-6 lg:min-h-0 lg:overflow-y-auto lg:px-8">
+        <main className="flex-1 px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+84px)] lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:pb-6">
           <div className="mx-auto max-w-[420px] lg:mx-0">
             <NotifyOptIn />
           </div>

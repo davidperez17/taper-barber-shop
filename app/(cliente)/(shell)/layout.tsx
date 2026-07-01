@@ -10,7 +10,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col bg-bg pt-[env(safe-area-inset-top)]">
       <AutoRefresh />
-      <div className="flex-1">
+      <div className="flex-1 pb-[calc(env(safe-area-inset-bottom)+80px)]">
         <div className="px-5">
           <NotifyOptIn />
         </div>
