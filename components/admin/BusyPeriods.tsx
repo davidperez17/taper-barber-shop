@@ -18,7 +18,8 @@ function horaLabel(h: number): string {
   return `${h12} ${ampm}`;
 }
 
-export function BusyPeriods({ cells, periodo, rango }: { cells: HeatCell[]; periodo: PeriodoBP; rango: string }) {
+export function BusyPeriods({ cells, periodo, rango, suc = "" }: { cells: HeatCell[]; periodo: PeriodoBP; rango: string; suc?: string }) {
+  const sucQS = suc ? `&suc=${suc}` : "";
   const tieneData = cells.length > 0;
   const horas = tieneData
     ? Array.from({ length: Math.max(...cells.map((c) => c.hora)) - Math.min(...cells.map((c) => c.hora)) + 1 }, (_, i) => Math.min(...cells.map((c) => c.hora)) + i)
@@ -50,7 +51,7 @@ export function BusyPeriods({ cells, periodo, rango }: { cells: HeatCell[]; peri
             return (
               <Link
                 key={p.key}
-                href={`/admin/reportes?rango=${rango}&bp=${p.key}`}
+                href={`/admin/reportes?rango=${rango}&bp=${p.key}${sucQS}`}
                 role="tab"
                 aria-selected={activo}
                 className={`flex min-h-9 items-center rounded-full px-3.5 text-[13px] font-semibold transition-colors ${activo ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"}`}

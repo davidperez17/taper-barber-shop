@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { Preset } from "@/lib/rango";
 
-export function ReportesTabs({ activo, preset }: { activo: "ventas" | "clientes"; preset: Preset }) {
+export function ReportesTabs({ activo, preset, suc = "" }: { activo: "ventas" | "clientes"; preset: Preset; suc?: string }) {
+  const q = suc ? `&suc=${suc}` : "";
   const tabs = [
-    { key: "ventas", label: "Ventas", href: `/admin/reportes?rango=${preset}` },
-    { key: "clientes", label: "Clientes", href: `/admin/reportes/clientes?rango=${preset}` },
+    { key: "ventas", label: "Ventas", href: `/admin/reportes?rango=${preset}${q}` },
+    { key: "clientes", label: "Clientes", href: `/admin/reportes/clientes?rango=${preset}${q}` },
   ] as const;
   return (
     <div role="tablist" aria-label="Tipo de reporte" className="mb-4 inline-flex rounded-full border border-line bg-elevated p-1">

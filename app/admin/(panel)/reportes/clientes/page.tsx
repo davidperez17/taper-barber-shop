@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
-import { getSucursalActiva } from "@/lib/sucursal";
+import { getSucursalActiva, getSucursales } from "@/lib/sucursal";
 import { getReporteClientes } from "@/lib/queries/reportes";
+import { ReportesSucursalFiltro } from "@/components/admin/ReportesSucursalFiltro";
 import { fmtQ } from "@/lib/format";
 import { PRESETS, normalizarPreset, rango } from "@/lib/rango";
 import { ReportesTabs } from "@/components/admin/ReportesTabs";
@@ -10,7 +11,7 @@ import { ReportesTabs } from "@/components/admin/ReportesTabs";
 export default async function ReporteClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rango?: string }>;
+  searchParams: Promise<{ rango?: string; suc?: string }>;
 }) {
   const staff = await getStaff();
   if (staff?.rol !== "admin" && staff?.rol !== "dueno") redirect("/admin");
@@ -18,7 +19,14 @@ export default async function ReporteClientesPage({
   const sp = await searchParams;
   const preset = normalizarPreset(sp.rango);
   const { desde, hasta, label } = rango(preset);
-  const sucursalId = await getSucursalActiva(staff);
+
+  const sucursales = await getSucursales();
+  const sucSel = sp.suc ?? "";
+  const sucursalId = sucSel === "all" ? null
+    : sucSel && sucursales.some((s) => s.id === sucSel) ? sucSel
+    : await getSucursalActiva(staff);
+  const sucQS = sucSel ? `&suc=${sucSel}` : "";
+
   const data = await getReporteClientes(desde, hasta, sucursalId);
 
   const retencion = data.activos > 0 ? Math.round((data.recurrentes / data.activos) * 100) : 0;
@@ -28,7 +36,18 @@ export default async function ReporteClientesPage({
   return (
     <div className="animate-fade-up">
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Reportes</h1>
-      <div className="mt-4"><ReportesTabs activo="clientes" preset={preset} /></div>
+      <div className="mt-4"><ReportesTabs activo="clientes" preset={preset} suc={sucSel} /></div>
+
+      {sucursales.length > 1 && (
+        <div className="mb-3">
+          <ReportesSucursalFiltro
+            basePath="/admin/reportes/clientes"
+            rango={preset}
+            sucursales={sucursales.map((s) => ({ id: s.id, nombre: s.nombre }))}
+            activaId={sucursalId}
+          />
+        </div>
+      )}
 
       {/* Rango */}
       <div role="tablist" aria-label="Rango de fechas" className="inline-flex flex-wrap rounded-full border border-line bg-elevated p-1">
@@ -37,7 +56,7 @@ export default async function ReporteClientesPage({
           return (
             <Link
               key={p.key}
-              href={`/admin/reportes/clientes?rango=${p.key}`}
+              href={`/admin/reportes/clientes?rango=${p.key}${sucQS}`}
               role="tab"
               aria-selected={activo}
               className={`flex min-h-[42px] items-center rounded-full px-4 text-sm font-semibold transition-colors ${activo ? "bg-accent text-accent-ink shadow-[0_1px_6px_var(--accent-glow)]" : "text-muted hover:text-ink"}`}

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
-import { getSucursalActiva } from "@/lib/sucursal";
+import { getSucursalActiva, getSucursales } from "@/lib/sucursal";
 import { getReporte, getHeatmapHorario } from "@/lib/queries/reportes";
+import { ReportesSucursalFiltro } from "@/components/admin/ReportesSucursalFiltro";
 import { fmtQ } from "@/lib/format";
 import { PRESETS, normalizarPreset, rango, ymd, hoyGT } from "@/lib/rango";
 import { TendenciaChart, TopBars } from "@/components/admin/Charts";
@@ -15,7 +16,7 @@ const BP_DIAS: Record<PeriodoBP, number> = { semana: 7, mes: 30, anio: 365 };
 export default async function ReportesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rango?: string; bp?: string }>;
+  searchParams: Promise<{ rango?: string; bp?: string; suc?: string }>;
 }) {
   const staff = await getStaff();
   if (staff?.rol !== "admin" && staff?.rol !== "dueno") redirect("/admin");
@@ -28,7 +29,14 @@ export default async function ReportesPage({
   const bp = (["semana", "mes", "anio"].includes(sp.bp ?? "") ? sp.bp : "mes") as PeriodoBP;
   const bpInicio = hoyGT(); bpInicio.setUTCDate(bpInicio.getUTCDate() - BP_DIAS[bp]);
 
-  const sucursalId = await getSucursalActiva(staff);
+  // Alcance por sucursal: "all" = consolidado, id válido = esa sucursal, ausente = la activa.
+  const sucursales = await getSucursales();
+  const sucSel = sp.suc ?? "";
+  const sucursalId = sucSel === "all" ? null
+    : sucSel && sucursales.some((s) => s.id === sucSel) ? sucSel
+    : await getSucursalActiva(staff);
+  const sucQS = sucSel ? `&suc=${sucSel}` : "";
+
   const [data, heatCells] = await Promise.all([
     getReporte(desde, hasta, sucursalId),
     getHeatmapHorario(ymd(bpInicio), hasta, sucursalId),
@@ -41,7 +49,17 @@ export default async function ReportesPage({
         <ExportCSV reporte={data} rangoLabel={label} />
       </div>
 
-      <div className="mt-4"><ReportesTabs activo="ventas" preset={preset} /></div>
+      <div className="mt-4"><ReportesTabs activo="ventas" preset={preset} suc={sucSel} /></div>
+
+      {sucursales.length > 1 && (
+        <ReportesSucursalFiltro
+          basePath="/admin/reportes"
+          rango={preset}
+          extraQS={`&bp=${bp}`}
+          sucursales={sucursales.map((s) => ({ id: s.id, nombre: s.nombre }))}
+          activaId={sucursalId}
+        />
+      )}
 
       {/* Rango — control segmentado */}
       <div role="tablist" aria-label="Rango de fechas" className="mt-4 inline-flex flex-wrap rounded-full border border-line bg-elevated p-1">
@@ -50,7 +68,7 @@ export default async function ReportesPage({
           return (
             <Link
               key={p.key}
-              href={`/admin/reportes?rango=${p.key}&bp=${bp}`}
+              href={`/admin/reportes?rango=${p.key}&bp=${bp}${sucQS}`}
               role="tab"
               aria-selected={activo}
               className={`flex min-h-[42px] items-center rounded-full px-4 text-sm font-semibold transition-colors ${activo ? "bg-accent text-accent-ink shadow-[0_1px_6px_var(--accent-glow)]" : "text-muted hover:text-ink"}`}
@@ -72,7 +90,7 @@ export default async function ReportesPage({
       <section className="mt-6">
         <h2 className="mb-3 font-display text-lg font-bold text-ink">Horarios concurridos</h2>
         <div className="rounded-2xl border border-line bg-elevated p-4">
-          <BusyPeriods cells={heatCells} periodo={bp} rango={preset} />
+          <BusyPeriods cells={heatCells} periodo={bp} rango={preset} suc={sucSel} />
         </div>
       </section>
 
