@@ -7,6 +7,7 @@ import { LoyaltyCard } from "@/components/cliente/LoyaltyCard";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
 import { IconStats, IconHistory } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
+import { getBandeja } from "@/lib/queries/notificaciones";
 
 const BENEFICIO_CORTO: Record<Tier, string | null> = {
   silver: null,
@@ -17,6 +18,7 @@ const BENEFICIO_CORTO: Record<Tier, string | null> = {
 
 export default async function TarjetaPage() {
   const dash = await requireDashboard();
+  const bandeja = await getBandeja(dash.cliente.id);
   const loyalty = computeLoyalty(dash.loyalty);
   const motiv = copyMotivacional(loyalty, dash.loyalty.cortes_total);
   const firstName = dash.cliente.nombre.split(" ")[0];
@@ -39,7 +41,7 @@ export default async function TarjetaPage() {
           <p className="text-[13px] text-muted">Hola,</p>
           <h1 className="font-display text-[26px] font-bold leading-none text-ink">{firstName}</h1>
         </div>
-        <NotifyBell />
+        <NotifyBell notisInicial={bandeja.notis} noLeidasInicial={bandeja.noLeidas} />
       </header>
 
       <LoyaltyCard

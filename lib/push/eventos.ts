@@ -1,6 +1,7 @@
 import "server-only";
 import { enviarPush } from "./send";
 import { subsDeCliente, subsPorTipo } from "./targets";
+import { registrarNoti } from "./inbox";
 
 // Eventos transaccionales → notificación. Cada función se aísla: nunca lanza,
 // para que un fallo de push jamás rompa la operación principal (venta, cita…).
@@ -20,10 +21,13 @@ function cuandoGT(iso: string): string {
 
 /** El cliente ganó una nueva recompensa (corte gratis disponible). */
 export async function pushRecompensaLista(clienteId: string): Promise<void> {
+  const titulo = "¡Recompensa lista! 🎉";
+  const cuerpo = "Tu próximo corte va por la casa. Pásalo a canjear.";
+  await registrarNoti(clienteId, { tipo: "recompensa", titulo, cuerpo, url: "/tarjeta" });
   try {
     await enviarPush(await subsDeCliente(clienteId), {
-      title: "¡Recompensa lista! 🎉",
-      body: "Tu próximo corte va por la casa. Pásalo a canjear.",
+      title: titulo,
+      body: cuerpo,
       url: "/tarjeta",
       tag: "recompensa",
     });
@@ -40,11 +44,13 @@ const CITA_TEXTO: Record<CitaEvento, { title: string; body: (c: string) => strin
 
 /** Aviso al cliente registrado sobre su cita. */
 export async function pushCitaCliente(clienteId: string, evento: CitaEvento, iniciaIso: string): Promise<void> {
+  const t = CITA_TEXTO[evento];
+  const cuerpo = t.body(cuandoGT(iniciaIso));
+  await registrarNoti(clienteId, { tipo: "cita", titulo: t.title, cuerpo, url: "/perfil" });
   try {
-    const t = CITA_TEXTO[evento];
     await enviarPush(await subsDeCliente(clienteId), {
       title: t.title,
-      body: t.body(cuandoGT(iniciaIso)),
+      body: cuerpo,
       url: "/perfil",
       tag: `cita-${evento}`,
     });
@@ -53,10 +59,13 @@ export async function pushCitaCliente(clienteId: string, evento: CitaEvento, ini
 
 /** Recordatorio programado: la cita del cliente es hoy/próxima. */
 export async function pushRecordatorioCita(clienteId: string, iniciaIso: string): Promise<number> {
+  const titulo = "Recordatorio de tu cita ⏰";
+  const cuerpo = `Te esperamos el ${cuandoGT(iniciaIso)}.`;
+  await registrarNoti(clienteId, { tipo: "recordatorio", titulo, cuerpo, url: "/perfil" });
   try {
     const { enviadas } = await enviarPush(await subsDeCliente(clienteId), {
-      title: "Recordatorio de tu cita ⏰",
-      body: `Te esperamos el ${cuandoGT(iniciaIso)}.`,
+      title: titulo,
+      body: cuerpo,
       url: "/perfil",
       tag: "recordatorio-cita",
     });
@@ -68,11 +77,14 @@ export async function pushRecordatorioCita(clienteId: string, iniciaIso: string)
 
 /** Reactivación programada: cliente inactivo, invitarlo a volver. */
 export async function pushReactivacion(clienteId: string, nombre: string): Promise<number> {
+  const primer = nombre.trim().split(/\s+/)[0] || "";
+  const titulo = "Te extrañamos 💈";
+  const cuerpo = `${primer}, ¿listo para tu próximo corte? Pasa cuando quieras.`;
+  await registrarNoti(clienteId, { tipo: "reactivacion", titulo, cuerpo, url: "/tarjeta" });
   try {
-    const primer = nombre.trim().split(/\s+/)[0] || "";
     const { enviadas } = await enviarPush(await subsDeCliente(clienteId), {
-      title: "Te extrañamos 💈",
-      body: `${primer}, ¿listo para tu próximo corte? Pasa cuando quieras.`,
+      title: titulo,
+      body: cuerpo,
       url: "/tarjeta",
       tag: "reactivacion",
     });

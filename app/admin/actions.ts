@@ -10,6 +10,7 @@ import { computeLoyalty, type LoyaltyRaw } from "@/lib/loyalty";
 import { pushRecompensaLista, pushCitaCliente, pushStockBajoStaff } from "@/lib/push/eventos";
 import { enviarPush } from "@/lib/push/send";
 import { subsPorTipo } from "@/lib/push/targets";
+import { registrarNotiTodosClientes } from "@/lib/push/inbox";
 
 /** Recompensas disponibles de un cliente ahora mismo (0 si no tiene fila de lealtad). */
 async function recompensasDisponibles(
@@ -641,11 +642,18 @@ export async function enviarDifusion(input: {
   if (!titulo) return { ok: false, error: "Escribe un título." };
   if (!mensaje) return { ok: false, error: "Escribe el mensaje." };
 
+  const url = input.url.trim() || "/";
+
+  // A clientes: dejar registro en la bandeja de todos (promos), tengan push o no.
+  if (input.audiencia === "clientes") {
+    await registrarNotiTodosClientes({ tipo: "promo", titulo, cuerpo: mensaje, url });
+  }
+
   const subs = await subsPorTipo(input.audiencia === "clientes" ? "cliente" : "staff");
   const { enviadas, podadas } = await enviarPush(subs, {
     title: titulo,
     body: mensaje,
-    url: input.url.trim() || "/",
+    url,
     tag: "difusion",
   });
   return { ok: true, enviadas, podadas };

@@ -1,122 +1,142 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { guardarSuscripcion, enviarPrueba, type SubJSON } from "@/app/push/actions";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { IconBell } from "@/components/icons";
+import { cargarBandeja, marcarNotiLeida } from "@/app/notificaciones/actions";
+import type { Noti } from "@/lib/queries/notificaciones";
 
-// Defensivo: si en Vercel se pegó la clave con comillas, quítalas.
-const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
-
-const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches ||
-  (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-const isIOS = () =>
-  /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
-  !/crios|fxios/i.test(window.navigator.userAgent);
-
-/** VAPID public key (base64url) → Uint8Array para applicationServerKey. */
-function urlB64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
-  const pad = "=".repeat((4 - (base64.length % 4)) % 4);
-  const b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(b64);
-  const arr = new Uint8Array(new ArrayBuffer(raw.length));
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-  return arr;
+/** Tiempo relativo corto en español (hace 5 min, hace 2 h, hace 3 d). */
+function haceCuanto(iso: string): string {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "ahora";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h / 24);
+  return `hace ${d} d`;
 }
 
-// off = puede activar; on = suscrito; guardando = en curso;
-// no-disp = no soportado o iOS sin instalar / permiso denegado.
-type Estado = "off" | "on" | "guardando" | "no-disp";
-
 /**
- * Campana del header cliente. A diferencia del banner [[NotifyOptIn]], siempre
- * está visible: si no hay suscripción muestra un punto y al tocarla pide permiso
- * y se suscribe; si ya está activa, la toca envía una notificación de prueba.
+ * Campana del header cliente = bandeja de notificaciones (recordatorios,
+ * citas, promos…). Abre una hoja inferior con el historial; tocar una la
+ * marca leída y navega a su destino. El activar/desactivar push vive en
+ * Perfil ([[push-notificaciones]]), no aquí.
  */
-export function NotifyBell() {
-  const [estado, setEstado] = useState<Estado>("no-disp");
+export function NotifyBell({
+  notisInicial,
+  noLeidasInicial,
+}: {
+  notisInicial: Noti[];
+  noLeidasInicial: number;
+}) {
+  const router = useRouter();
+  const [abierto, setAbierto] = useState(false);
+  const [notis, setNotis] = useState<Noti[]>(notisInicial);
 
-  useEffect(() => {
-    if (!VAPID) return void console.warn("[push] falta NEXT_PUBLIC_VAPID_PUBLIC_KEY en el build");
-    const soporta =
-      "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-    if (!soporta) return void console.warn("[push] navegador sin soporte (SW/Push/Notification)");
-    if (isIOS() && !isStandalone())
-      return void console.warn("[push] iOS: instala la PWA para recibir push");
-    if (Notification.permission === "denied")
-      return void console.warn("[push] permiso denegado por el usuario");
-    if (Notification.permission !== "granted") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEstado("off");
-      return;
-    }
-    // Permiso concedido: confirmar que la suscripción sigue viva.
-    let vivo = true;
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => {
-        if (vivo) setEstado(sub ? "on" : "off");
-      })
-      .catch(() => vivo && setEstado("off"));
-    return () => {
-      vivo = false;
-    };
-  }, []);
+  // Badge: hay no leídas entre las cargadas, o el server contó más de las traídas.
+  const extraNoLeidas = noLeidasInicial - notisInicial.filter((x) => !x.leida).length;
+  const hayNoLeidas = notis.some((n) => !n.leida) || extraNoLeidas > 0;
 
-  const activar = async () => {
-    if (!VAPID) {
-      console.warn("[push] no se puede suscribir: falta la clave VAPID pública");
-      return;
-    }
-    try {
-      setEstado("guardando");
-      const permiso = await Notification.requestPermission();
-      if (permiso !== "granted") {
-        console.warn("[push] permiso no concedido:", permiso);
-        return setEstado("no-disp");
-      }
-
-      const reg = await navigator.serviceWorker.ready;
-      const sub =
-        (await reg.pushManager.getSubscription()) ??
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlB64ToUint8Array(VAPID),
-        }));
-
-      const { ok } = await guardarSuscripcion(sub.toJSON() as SubJSON);
-      console.log("[push] suscripción guardada:", ok);
-      setEstado(ok ? "on" : "off");
-    } catch (e) {
-      console.error("[push] fallo al suscribir:", e);
-      setEstado("off");
-    }
+  const abrir = async () => {
+    setAbierto(true);
+    const { notis: frescas } = await cargarBandeja();
+    setNotis(frescas);
   };
 
-  const onClick = () => {
-    if (estado === "guardando") return;
-    if (estado === "on") {
-      void enviarPrueba().then((r) => console.log("[push] prueba enviada:", r));
-      return;
+  const tocar = async (n: Noti) => {
+    if (!n.leida) {
+      setNotis((prev) => prev.map((x) => (x.id === n.id ? { ...x, leida: true } : x)));
+      void marcarNotiLeida(n.id);
     }
-    void activar();
+    if (n.url) {
+      setAbierto(false);
+      router.push(n.url);
+    }
   };
-
-  const puede = estado !== "no-disp";
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={estado === "guardando"}
-      aria-label={estado === "on" ? "Enviar notificación de prueba" : "Activar notificaciones"}
-      className="relative flex size-11 items-center justify-center rounded-full border border-line bg-elevated text-muted transition-transform active:scale-95 disabled:opacity-60"
-    >
-      <IconBell />
-      {puede && estado !== "on" && (
-        <span className="absolute right-2.5 top-2 size-[7px] rounded-full bg-accent ring-2 ring-bg" />
-      )}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={abrir}
+        aria-label="Notificaciones"
+        className="relative flex size-11 items-center justify-center rounded-full border border-line bg-elevated text-muted transition-transform active:scale-95"
+      >
+        <IconBell />
+        {hayNoLeidas && (
+          <span className="absolute right-2.5 top-2 size-[7px] rounded-full bg-accent ring-2 ring-bg" />
+        )}
+      </button>
+
+      {abierto &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[var(--z-modal)] flex items-end"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Notificaciones"
+          >
+            <button
+              aria-label="Cerrar"
+              tabIndex={-1}
+              className="absolute inset-0 bg-black/60"
+              onClick={() => setAbierto(false)}
+            />
+            <div className="animate-fade-up relative flex max-h-[80dvh] w-full flex-col rounded-t-2xl border border-line bg-bg pb-[calc(env(safe-area-inset-bottom)+12px)]">
+              <header className="flex items-center justify-between px-5 pb-3 pt-4">
+                <h2 className="font-display text-lg font-bold text-ink">Notificaciones</h2>
+                <button
+                  onClick={() => setAbierto(false)}
+                  aria-label="Cerrar"
+                  className="text-sm font-medium text-muted"
+                >
+                  Cerrar
+                </button>
+              </header>
+
+              {notis.length === 0 ? (
+                <div className="px-5 pb-8 pt-6 text-center">
+                  <p className="text-sm font-medium text-ink">Sin notificaciones</p>
+                  <p className="mt-1 text-xs text-muted">
+                    Aquí verás recordatorios, promos y novedades.
+                  </p>
+                </div>
+              ) : (
+                <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
+                  {notis.map((n) => (
+                    <li key={n.id}>
+                      <button
+                        onClick={() => tocar(n)}
+                        className="flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors active:bg-elevated"
+                      >
+                        <span
+                          aria-hidden
+                          className={`mt-1.5 size-2 shrink-0 rounded-full ${n.leida ? "bg-transparent" : "bg-accent"}`}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-baseline justify-between gap-2">
+                            <span className={`truncate text-sm ${n.leida ? "font-medium text-ink" : "font-semibold text-ink"}`}>
+                              {n.titulo}
+                            </span>
+                            <span className="shrink-0 text-[11px] tabular-nums text-subtle">
+                              {haceCuanto(n.created_at)}
+                            </span>
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-snug text-muted">{n.cuerpo}</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

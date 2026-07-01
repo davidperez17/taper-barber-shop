@@ -1,5 +1,6 @@
 import { requireDashboard } from "@/lib/queries/cliente";
 import { logout } from "@/app/(cliente)/actions";
+import { PushToggle } from "@/components/cliente/PushToggle";
 import {
   computeLoyalty,
   memberId,
@@ -71,6 +72,8 @@ export default async function PerfilPage() {
           </span>
         </>
       )}
+
+      <PushToggle />
 
       <form action={logout} className="mt-8">
         <button
