@@ -8,7 +8,7 @@ import { logoutStaff } from "@/app/admin/actions";
 import type { RolStaff } from "@/lib/queries/staff";
 import {
   IconScan, IconUsers, IconBox, IconChart, IconRefresh, IconCard,
-  IconTag, IconStack, IconCalendar, IconStats, IconGrid,
+  IconTag, IconStack, IconCalendar, IconStats, IconGrid, IconId,
 } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
 
@@ -57,6 +57,10 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/reportes", label: "Ventas", Icon: IconChart, roles: ADMIN },
       { href: "/admin/reportes/clientes", label: "Clientes", Icon: IconUsers, roles: ADMIN },
     ],
+  },
+  {
+    label: "Administración",
+    items: [{ href: "/admin/personal", label: "Personal", Icon: IconId, roles: ["dueno"] }],
   },
 ];
 

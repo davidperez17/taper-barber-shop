@@ -18,6 +18,14 @@ export const IconCard = ({ size = 22, ...p }: IconProps) => (
   </svg>
 );
 
+export const IconId = ({ size = 22, ...p }: IconProps) => (
+  <svg {...base(size, p)}>
+    <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="8.5" cy="11" r="2.1" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M5.5 16c.5-1.6 1.7-2.4 3-2.4s2.5.8 3 2.4M14 9.5h4M14 13h3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+
 export const IconGrid = ({ size = 22, ...p }: IconProps) => (
   <svg {...base(size, p)}>
     <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" stroke="currentColor" strokeWidth="1.7" />

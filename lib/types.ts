@@ -113,6 +113,20 @@ export interface ConfigLealtad {
   ventana_meses: number;
 }
 
+// ── Personal (staff con login) ──────────────────────────────────
+export type RolStaff = "cajero" | "barbero" | "admin" | "dueno";
+
+export interface StaffRow {
+  id: string;
+  user_id: string | null;
+  nombre: string;
+  rol: RolStaff;
+  email: string | null;
+  activo: boolean;
+  created_at: string;
+  last_sign_in_at: string | null;
+}
+
 // ── Agenda (citas) ──────────────────────────────────────────────
 export type CitaUbicacion = "barberia" | "domicilio";
 export type CitaEstado = "pendiente" | "confirmada" | "completada" | "cancelada";
