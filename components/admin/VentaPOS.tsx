@@ -281,7 +281,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
       {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
       {/* Barra total + confirmar: sticky dentro del contenido (respeta sidebar y bottom-nav) */}
-      <div className="sticky bottom-0 z-[var(--z-sticky)] mt-8 border-t border-line bg-elevated/95 px-5 py-3.5 backdrop-blur">
+      <div className="sticky bottom-0 z-[var(--z-sticky)] mt-8 border-t border-line bg-elevated px-5 py-3.5">
         <div className="mx-auto flex max-w-[640px] items-center gap-4">
           <div>
             {descuento > 0 && (
@@ -295,7 +295,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
           <button
             onClick={confirmar}
             disabled={submitting || items.length === 0}
-            className="flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] transition-all active:scale-[0.98] disabled:opacity-40"
+            className="flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] transition-transform active:scale-[0.98] disabled:opacity-40"
           >
             {submitting && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />}
             Confirmar venta

@@ -201,7 +201,7 @@ select:focus-visible {
    ════════════════════════════════════════════════════════════════ */
 
 @keyframes taperFadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes taperCardAppear {
@@ -225,7 +225,7 @@ select:focus-visible {
   to   { background-position: 200% 0; }
 }
 
-.animate-fade-up     { animation: taperFadeUp 300ms ease-out both; }
+.animate-fade-up     { animation: taperFadeUp 180ms ease-out both; }
 .animate-card-appear { animation: taperCardAppear 400ms var(--ease-spring) both; }
 
 /* Skeleton loading shimmer */
