@@ -113,6 +113,17 @@ export interface ConfigLealtad {
   ventana_meses: number;
 }
 
+// ── Sucursales ──────────────────────────────────────────────────
+export interface Sucursal {
+  id: string;
+  nombre: string;
+  direccion: string | null;
+  telefono: string | null;
+  activo: boolean;
+  orden: number;
+  created_at: string;
+}
+
 // ── Personal (staff con login) ──────────────────────────────────
 export type RolStaff = "cajero" | "barbero" | "admin" | "dueno";
 
