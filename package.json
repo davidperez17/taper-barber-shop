@@ -12,13 +12,15 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/postcss": "latest",
+    "@types/web-push": "^3.6.4",
     "jsqr": "^1.4.0",
     "lucide-react": "latest",
     "next": "latest",
     "qrcode": "^1.5.4",
     "react": "latest",
     "react-dom": "latest",
-    "tailwindcss": "latest"
+    "tailwindcss": "latest",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "latest",

@@ -6,6 +6,7 @@ import { PanelHeaderNav } from "@/components/admin/PanelHeaderNav";
 import { OfflineSync } from "@/components/admin/OfflineSync";
 import { AdminSidebar, AdminBottomNav, type SucursalNav } from "@/components/admin/AdminNav";
 import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
+import { NotifyOptIn } from "@/components/NotifyOptIn";
 
 const ROL_LABEL: Record<string, string> = {
   cajero: "Cajero",
@@ -55,7 +56,12 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-5 py-6 lg:px-8">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto px-5 py-6 lg:px-8">
+          <div className="mx-auto max-w-[420px] lg:mx-0">
+            <NotifyOptIn />
+          </div>
+          {children}
+        </main>
 
         <AdminBottomNav rol={staff.rol} />
       </div>

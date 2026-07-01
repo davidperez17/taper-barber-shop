@@ -1,6 +1,7 @@
 // Service Worker — Taper Barbershop PWA
 // Shell offline + cache-first para estáticos. No intercepta Supabase.
-const CACHE = "taper-v1";
+// Push: muestra notificaciones del sistema aunque la app esté cerrada.
+const CACHE = "taper-v2";
 const SHELL = ["/offline", "/manifest.json", "/icon.svg"];
 
 self.addEventListener("install", (e) => {
@@ -51,5 +52,43 @@ self.addEventListener("fetch", (e) => {
           })
           .catch(() => cached),
     ),
+  );
+});
+
+// ── Push: notificación del sistema (app abierta o cerrada) ──────
+self.addEventListener("push", (e) => {
+  let data = {};
+  try {
+    data = e.data ? e.data.json() : {};
+  } catch {
+    data = { body: e.data ? e.data.text() : "" };
+  }
+
+  const title = data.title || "Taper Barbershop";
+  const options = {
+    body: data.body || "",
+    icon: data.icon || "/icon.svg",
+    badge: "/icon.svg",
+    tag: data.tag,
+    data: { url: data.url || "/" },
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ── Click: enfoca una pestaña existente o abre la URL destino ───
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || "/";
+
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ("focus" in c) {
+          c.navigate(target).catch(() => {});
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
   );
 });
