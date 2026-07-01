@@ -33,6 +33,34 @@ export async function getHeatmapHorario(desde: string, hasta: string): Promise<H
   return (data as HeatCell[]) ?? [];
 }
 
+export interface TopCliente {
+  nombre: string;
+  numero: number;
+  visitas: number;
+  total: number;
+}
+
+export interface ReporteClientes {
+  nuevos: number;
+  activos: number;
+  recurrentes: number;
+  ticket_cliente: number;
+  gasto_nuevos: number;
+  gasto_recurrentes: number;
+  top_clientes: TopCliente[];
+}
+
+export async function getReporteClientes(desde: string, hasta: string): Promise<ReporteClientes> {
+  const sb = await createClient();
+  const { data } = await sb.rpc("reporte_clientes", { p_desde: desde, p_hasta: hasta });
+  return (
+    (data as ReporteClientes) ?? {
+      nuevos: 0, activos: 0, recurrentes: 0, ticket_cliente: 0,
+      gasto_nuevos: 0, gasto_recurrentes: 0, top_clientes: [],
+    }
+  );
+}
+
 export async function getReporte(desde: string, hasta: string): Promise<ReporteData> {
   const sb = await createClient();
   const { data } = await sb.rpc("reporte_ventas", { p_desde: desde, p_hasta: hasta });

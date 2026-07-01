@@ -3,46 +3,13 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { getReporte, getHeatmapHorario } from "@/lib/queries/reportes";
 import { fmtQ } from "@/lib/format";
+import { PRESETS, normalizarPreset, rango, ymd, hoyGT } from "@/lib/rango";
 import { TendenciaChart, TopBars } from "@/components/admin/Charts";
 import { BusyPeriods, type PeriodoBP } from "@/components/admin/BusyPeriods";
+import { ReportesTabs } from "@/components/admin/ReportesTabs";
 import { ExportCSV } from "@/components/admin/ExportCSV";
 
 const BP_DIAS: Record<PeriodoBP, number> = { semana: 7, mes: 30, anio: 365 };
-
-const PRESETS = [
-  { key: "hoy", label: "Hoy" },
-  { key: "7d", label: "7 días" },
-  { key: "30d", label: "30 días" },
-  { key: "mes", label: "Este mes" },
-] as const;
-type Preset = (typeof PRESETS)[number]["key"];
-
-// Fechas en calendario de Guatemala (la DB agrupa en America/Guatemala, ver 0006/0005).
-// Anclamos a medianoche UTC del día GT para que la aritmética por días no se desfase.
-const ymd = (d: Date) => d.toISOString().slice(0, 10);
-
-function hoyGT(): Date {
-  const s = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Guatemala", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
-  return new Date(`${s}T00:00:00Z`);
-}
-
-function rango(preset: Preset): { desde: string; hasta: string; label: string } {
-  const hoy = hoyGT();
-  const hasta = ymd(hoy);
-  if (preset === "hoy") return { desde: hasta, hasta, label: "Hoy" };
-  if (preset === "7d") {
-    const d = new Date(hoy); d.setUTCDate(d.getUTCDate() - 6);
-    return { desde: ymd(d), hasta, label: "Últimos 7 días" };
-  }
-  if (preset === "mes") {
-    const d = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1));
-    return { desde: ymd(d), hasta, label: "Este mes" };
-  }
-  const d = new Date(hoy); d.setUTCDate(d.getUTCDate() - 29);
-  return { desde: ymd(d), hasta, label: "Últimos 30 días" };
-}
 
 export default async function ReportesPage({
   searchParams,
@@ -53,7 +20,7 @@ export default async function ReportesPage({
   if (staff?.rol !== "admin" && staff?.rol !== "dueno") redirect("/admin");
 
   const sp = await searchParams;
-  const preset = (PRESETS.some((p) => p.key === sp.rango) ? sp.rango : "30d") as Preset;
+  const preset = normalizarPreset(sp.rango);
   const { desde, hasta, label } = rango(preset);
 
   // Busy Periods (día × hora) con su propio periodo: semana / mes / año.
@@ -71,6 +38,8 @@ export default async function ReportesPage({
         <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Reportes</h1>
         <ExportCSV reporte={data} rangoLabel={label} />
       </div>
+
+      <div className="mt-4"><ReportesTabs activo="ventas" preset={preset} /></div>
 
       {/* Rango — control segmentado */}
       <div role="tablist" aria-label="Rango de fechas" className="mt-4 inline-flex flex-wrap rounded-full border border-line bg-elevated p-1">
