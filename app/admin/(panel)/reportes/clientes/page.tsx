@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
+import { getSucursalActiva } from "@/lib/sucursal";
 import { getReporteClientes } from "@/lib/queries/reportes";
 import { fmtQ } from "@/lib/format";
 import { PRESETS, normalizarPreset, rango } from "@/lib/rango";
@@ -17,7 +18,8 @@ export default async function ReporteClientesPage({
   const sp = await searchParams;
   const preset = normalizarPreset(sp.rango);
   const { desde, hasta, label } = rango(preset);
-  const data = await getReporteClientes(desde, hasta);
+  const sucursalId = await getSucursalActiva(staff);
+  const data = await getReporteClientes(desde, hasta, sucursalId);
 
   const retencion = data.activos > 0 ? Math.round((data.recurrentes / data.activos) * 100) : 0;
   const gastoTotal = Number(data.gasto_nuevos) + Number(data.gasto_recurrentes);

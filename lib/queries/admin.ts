@@ -37,10 +37,26 @@ export interface DashboardMetrics {
   top_barbero: string | null;
 }
 
-export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+export async function getDashboardMetrics(sucursalId?: string | null): Promise<DashboardMetrics> {
   const sb = await createClient();
-  const { data } = await sb.rpc("dashboard_metrics");
+  const params: Record<string, unknown> = {};
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { data } = await sb.rpc("dashboard_metrics", params);
   return data as DashboardMetrics;
+}
+
+export interface VentaSucursal {
+  sucursal_id: string;
+  nombre: string;
+  total: number;
+  num: number;
+}
+
+/** Comparativa de ventas por sucursal en un rango (admin/dueño). */
+export async function getVentasPorSucursal(desde: string, hasta: string): Promise<VentaSucursal[]> {
+  const sb = await createClient();
+  const { data } = await sb.rpc("ventas_por_sucursal", { p_desde: desde, p_hasta: hasta });
+  return (data as VentaSucursal[]) ?? [];
 }
 
 export async function getCatalogo(sucursalId?: string | null): Promise<Catalogo> {

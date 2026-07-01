@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
+import { getSucursalActiva } from "@/lib/sucursal";
 import { getReporte, getHeatmapHorario } from "@/lib/queries/reportes";
 import { fmtQ } from "@/lib/format";
 import { PRESETS, normalizarPreset, rango, ymd, hoyGT } from "@/lib/rango";
@@ -27,9 +28,10 @@ export default async function ReportesPage({
   const bp = (["semana", "mes", "anio"].includes(sp.bp ?? "") ? sp.bp : "mes") as PeriodoBP;
   const bpInicio = hoyGT(); bpInicio.setUTCDate(bpInicio.getUTCDate() - BP_DIAS[bp]);
 
+  const sucursalId = await getSucursalActiva(staff);
   const [data, heatCells] = await Promise.all([
-    getReporte(desde, hasta),
-    getHeatmapHorario(ymd(bpInicio), hasta),
+    getReporte(desde, hasta, sucursalId),
+    getHeatmapHorario(ymd(bpInicio), hasta, sucursalId),
   ]);
 
   return (

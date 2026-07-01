@@ -27,9 +27,11 @@ export interface HeatCell {
   monto: number;
 }
 
-export async function getHeatmapHorario(desde: string, hasta: string): Promise<HeatCell[]> {
+export async function getHeatmapHorario(desde: string, hasta: string, sucursalId?: string | null): Promise<HeatCell[]> {
   const sb = await createClient();
-  const { data } = await sb.rpc("ventas_heatmap_horario", { p_desde: desde, p_hasta: hasta });
+  const params: Record<string, unknown> = { p_desde: desde, p_hasta: hasta };
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { data } = await sb.rpc("ventas_heatmap_horario", params);
   return (data as HeatCell[]) ?? [];
 }
 
@@ -50,9 +52,11 @@ export interface ReporteClientes {
   top_clientes: TopCliente[];
 }
 
-export async function getReporteClientes(desde: string, hasta: string): Promise<ReporteClientes> {
+export async function getReporteClientes(desde: string, hasta: string, sucursalId?: string | null): Promise<ReporteClientes> {
   const sb = await createClient();
-  const { data } = await sb.rpc("reporte_clientes", { p_desde: desde, p_hasta: hasta });
+  const params: Record<string, unknown> = { p_desde: desde, p_hasta: hasta };
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { data } = await sb.rpc("reporte_clientes", params);
   return (
     (data as ReporteClientes) ?? {
       nuevos: 0, activos: 0, recurrentes: 0, ticket_cliente: 0,
@@ -61,9 +65,11 @@ export async function getReporteClientes(desde: string, hasta: string): Promise<
   );
 }
 
-export async function getReporte(desde: string, hasta: string): Promise<ReporteData> {
+export async function getReporte(desde: string, hasta: string, sucursalId?: string | null): Promise<ReporteData> {
   const sb = await createClient();
-  const { data } = await sb.rpc("reporte_ventas", { p_desde: desde, p_hasta: hasta });
+  const params: Record<string, unknown> = { p_desde: desde, p_hasta: hasta };
+  if (sucursalId) params.p_sucursal_id = sucursalId;
+  const { data } = await sb.rpc("reporte_ventas", params);
   return (data as ReporteData) ?? {
     total: 0, num: 0, ticket: 0, por_dia: [], top_servicios: [], top_productos: [], top_barberos: [],
   };
