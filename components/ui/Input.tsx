@@ -20,7 +20,7 @@ export function Input({ label, hint, prefix, className, id, ...props }: Props) {
       </label>
       <div
         className={cn(
-          "flex items-center rounded-lg border border-line bg-elevated px-4 focus-within:border-line-strong",
+          "flex items-center rounded-lg border border-line bg-elevated px-4 transition-colors focus-within:border-accent",
           "min-h-[50px]",
         )}
       >

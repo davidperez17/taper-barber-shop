@@ -201,7 +201,7 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
             onChange={(e) => setNuevaEtiqueta(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregarEtiqueta(nuevaEtiqueta); } }}
             placeholder="Nueva etiqueta…"
-            className="min-h-10 rounded-lg border border-line bg-elevated px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-line-strong"
+            className="min-h-10 rounded-lg border border-line bg-elevated px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
           />
           {sugeridas.map((s) => (
             <button key={s} onClick={() => agregarEtiqueta(s)} disabled={pending} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-[13px] text-muted hover:border-line-strong hover:text-ink">
@@ -219,7 +219,7 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
           onChange={(e) => setNuevaNota(e.target.value)}
           placeholder="Preferencias, recordatorios, contexto del cliente…"
           rows={3}
-          className="w-full resize-none rounded-xl border border-line bg-elevated p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-line-strong"
+          className="w-full resize-none rounded-xl border border-line bg-elevated p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
         />
         <button onClick={guardarNota} disabled={pending || !nuevaNota.trim()} className="mt-2 inline-flex min-h-10 items-center rounded-full bg-accent px-5 text-sm font-semibold text-accent-ink disabled:opacity-40">
           Guardar nota
@@ -293,7 +293,7 @@ function Field({ label, value, onChange, inputMode, placeholder }: { label: stri
         onChange={(e) => onChange(e.target.value)}
         inputMode={inputMode}
         placeholder={placeholder}
-        className="min-h-[48px] w-full rounded-lg border border-line bg-elevated px-4 text-base text-ink outline-none placeholder:text-muted focus:border-line-strong"
+        className="min-h-[48px] w-full rounded-lg border border-line bg-elevated px-4 text-base text-ink outline-none placeholder:text-muted focus:border-accent"
       />
     </label>
   );

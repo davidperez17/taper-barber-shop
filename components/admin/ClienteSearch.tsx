@@ -44,7 +44,7 @@ export function ClienteSearch() {
 
   return (
     <div>
-      <div className="flex items-center rounded-xl border border-line bg-elevated px-4 focus-within:border-line-strong">
+      <div className="flex items-center rounded-xl border border-line bg-elevated px-4 focus-within:border-accent">
         <span className="mr-3 text-subtle"><IconSearch size={20} /></span>
         <input
           value={q}

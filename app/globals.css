@@ -155,6 +155,17 @@ textarea {
   outline-offset: 2px;
 }
 
+/* Campos de texto: foco limpio por borde (sin outline amarillo al clic/tap).
+   El foco por teclado sigue marcándose con el cambio de color de borde. */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background: var(--accent-glow);
   color: var(--ink);

@@ -46,7 +46,7 @@ export function ClientesList({ clientes }: { clientes: ClienteRow[] }) {
     <div>
       {/* Controles */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-center rounded-xl border border-line bg-elevated px-4 focus-within:border-line-strong">
+        <div className="flex flex-1 items-center rounded-xl border border-line bg-elevated px-4 focus-within:border-accent">
           <span className="mr-3 text-subtle"><IconSearch size={20} /></span>
           <input
             value={q}
@@ -61,7 +61,7 @@ export function ClientesList({ clientes }: { clientes: ClienteRow[] }) {
           <select
             value={orden}
             onChange={(e) => setOrden(e.target.value as Orden)}
-            className="min-h-[48px] rounded-xl border border-line bg-elevated px-3 text-sm text-ink outline-none focus:border-line-strong"
+            className="min-h-[48px] rounded-xl border border-line bg-elevated px-3 text-sm text-ink outline-none focus:border-accent"
           >
             <option value="nombre">Nombre (A-Z)</option>
             <option value="visitas">Más visitas</option>

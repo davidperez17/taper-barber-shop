@@ -106,7 +106,7 @@ function Campo({ label, children }: { label: string; children: ReactNode }) {
     </label>
   );
 }
-const inputCls = "min-h-[46px] w-full rounded-lg border border-line bg-elevated px-3.5 text-base text-ink outline-none placeholder:text-muted focus:border-line-strong";
+const inputCls = "min-h-[46px] w-full rounded-lg border border-line bg-elevated px-3.5 text-base text-ink outline-none placeholder:text-muted focus:border-accent";
 
 function Fila({ children }: { children: ReactNode }) {
   return <div className="flex items-center gap-3 rounded-xl border border-line bg-elevated px-4 py-3">{children}</div>;
