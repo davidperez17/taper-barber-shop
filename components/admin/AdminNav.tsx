@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
 import { logoutStaff } from "@/app/admin/actions";
 import type { RolStaff } from "@/lib/queries/staff";
@@ -214,13 +214,48 @@ export function AdminBottomNav({ rol }: { rol: RolStaff }) {
 
 function MasSheet({ rol, active, onClose }: { rol: RolStaff; active: string | null; onClose: () => void }) {
   const ref = useModalA11y(onClose);
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startY = useRef(0);
+
   if (typeof document === "undefined") return null;
+
+  // Arrastrar el handle hacia abajo cierra la hoja; poco recorrido regresa.
+  const onTouchStart = (e: React.TouchEvent) => {
+    setDragging(true);
+    startY.current = e.touches[0].clientY;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const dy = e.touches[0].clientY - startY.current;
+    if (dy > 0) setDragY(dy);
+  };
+  const onTouchEnd = () => {
+    setDragging(false);
+    if (dragY > 100) onClose();
+    else setDragY(0);
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end lg:hidden" role="dialog" aria-modal="true" aria-label="Menú del panel">
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div ref={ref} className="animate-fade-up relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-bg px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line-strong" />
+      <div
+        ref={ref}
+        className="animate-fade-up relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-bg px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-1"
+        style={{
+          transform: dragY ? `translateY(${dragY}px)` : undefined,
+          transition: dragging ? "none" : "transform 200ms ease-out",
+        }}
+      >
+        {/* Handle: tócalo y deslízalo hacia abajo para cerrar */}
+        <div
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          className="-mx-5 mb-2 flex touch-none cursor-grab justify-center px-5 pb-2 pt-2 active:cursor-grabbing"
+          aria-hidden
+        >
+          <div className="h-1.5 w-11 rounded-full bg-line-strong" />
+        </div>
         <div className="flex flex-col gap-4">
           {GROUPS.map((g) => {
             const items = g.items.filter((i) => puede(rol, i.roles));
