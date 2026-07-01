@@ -24,5 +24,20 @@
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Panel Admin",
+      "short_name": "Admin",
+      "description": "Acceso staff al panel de administración",
+      "url": "/admin/login",
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
   ]
 }
