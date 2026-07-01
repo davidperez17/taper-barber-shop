@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "Taper Admin",
   applicationName: "Taper Admin",
   manifest: "/staff-manifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Taper Admin" },
+  appleWebApp: { capable: true, statusBarStyle: "black", title: "Taper Admin" },
   icons: { icon: "/icon-admin.svg", shortcut: "/icon-admin.svg", apple: "/icon-admin.svg" },
 };
 
@@ -39,10 +39,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const mostrarSwitcher = sucursales.length > 1;
 
   return (
-    <div data-app-shell className="flex h-[var(--app-height,100dvh)] w-full overflow-hidden bg-bg">
+    <div data-app-shell className="flex h-full w-full overflow-hidden bg-bg">
       <AdminSidebar rol={staff.rol} nombre={staff.nombre} sucursal={sucursalNav} />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg pt-[env(safe-area-inset-top)]">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg">
         <OfflineSync />
 
         {/* Header solo en móvil/tablet; en desktop la sidebar lo cubre */}

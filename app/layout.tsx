@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { PWARegister } from "@/components/PWARegister";
-import { ViewportHeight } from "@/components/ViewportHeight";
 
 const barlow = Barlow({
   weight: ["300", "400", "500", "600"],
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
   description: "Tu tarjeta de lealtad digital.",
   manifest: "/cliente-manifest",
   applicationName: "Taper",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Taper" },
+  appleWebApp: { capable: true, statusBarStyle: "black", title: "Taper" },
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
@@ -34,7 +33,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#181818",
   colorScheme: "dark",
-  viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
 };
@@ -46,14 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         suppressHydrationWarning
         className={`${barlow.variable} ${barlowCondensed.variable} antialiased`}
       >
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){var h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;document.documentElement.style.setProperty('--app-height',h+'px');})();",
-          }}
-        />
         {children}
-        <ViewportHeight />
         <PWARegister />
       </body>
     </html>

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Taper Admin",
   applicationName: "Taper Admin",
   manifest: "/staff-manifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Taper Admin" },
+  appleWebApp: { capable: true, statusBarStyle: "black", title: "Taper Admin" },
   icons: { icon: "/icon-admin.svg", shortcut: "/icon-admin.svg", apple: "/icon-admin.svg" },
 };
 

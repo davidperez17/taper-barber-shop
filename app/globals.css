@@ -139,6 +139,7 @@ body {
    registro) siguen scrolleando el body normalmente. */
 html:has([data-app-shell]),
 body:has([data-app-shell]) {
+  height: 100%;
   overflow: hidden;
 }
 
