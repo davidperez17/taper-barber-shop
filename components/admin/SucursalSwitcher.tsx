@@ -47,7 +47,7 @@ export function SucursalSwitcher({
         disabled={pending}
         aria-haspopup="listbox"
         aria-expanded={abierto}
-        className="flex w-full min-h-10 items-center gap-2 rounded-lg border border-line bg-elevated px-3 text-sm text-ink transition-colors hover:border-line-strong disabled:opacity-60"
+        className="flex w-full min-h-11 items-center gap-2 rounded-lg border border-line bg-elevated px-3 text-sm text-ink transition-colors hover:border-line-strong disabled:opacity-60"
       >
         <IconStore size={16} />
         <span className="min-w-0 flex-1 truncate text-left font-medium">{actual.nombre}</span>
