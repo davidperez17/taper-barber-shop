@@ -5,7 +5,8 @@ import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL, type Tier } fro
 import { fmtDiaMes } from "@/lib/format";
 import { LoyaltyCard } from "@/components/cliente/LoyaltyCard";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
-import { IconBell, IconStats, IconHistory } from "@/components/icons";
+import { IconStats, IconHistory } from "@/components/icons";
+import { NotifyBell } from "@/components/cliente/NotifyBell";
 
 const BENEFICIO_CORTO: Record<Tier, string | null> = {
   silver: null,
@@ -38,14 +39,7 @@ export default async function TarjetaPage() {
           <p className="text-[13px] text-muted">Hola,</p>
           <h1 className="font-display text-[26px] font-bold leading-none text-ink">{firstName}</h1>
         </div>
-        <button
-          type="button"
-          aria-label="Notificaciones"
-          className="relative flex size-11 items-center justify-center rounded-full border border-line bg-elevated text-muted"
-        >
-          <IconBell />
-          <span className="absolute right-2.5 top-2 size-[7px] rounded-full bg-accent ring-2 ring-bg" />
-        </button>
+        <NotifyBell />
       </header>
 
       <LoyaltyCard
