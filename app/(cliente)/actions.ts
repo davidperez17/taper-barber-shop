@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { setQrToken, clearQrToken } from "@/lib/session";
+import { pushNuevoClienteStaff } from "@/lib/push/eventos";
 import type { ClienteInfo } from "@/lib/types";
 
 export interface FormState {
@@ -44,6 +45,7 @@ export async function registerCliente(
   }
 
   await setQrToken((data as ClienteInfo).qr_token);
+  await pushNuevoClienteStaff(nombre);
   redirect("/tarjeta");
 }
 

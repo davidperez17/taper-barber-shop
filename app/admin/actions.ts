@@ -6,6 +6,22 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getStaff } from "@/lib/queries/staff";
 import { getSucursalActiva, getSucursales, SUCURSAL_COOKIE } from "@/lib/sucursal";
+import { computeLoyalty, type LoyaltyRaw } from "@/lib/loyalty";
+import { pushRecompensaLista, pushCitaCliente, pushStockBajoStaff } from "@/lib/push/eventos";
+
+/** Recompensas disponibles de un cliente ahora mismo (0 si no tiene fila de lealtad). */
+async function recompensasDisponibles(
+  sb: Awaited<ReturnType<typeof createClient>>,
+  clienteId: string,
+): Promise<number> {
+  const { data } = await sb
+    .from("cliente_loyalty")
+    .select("cortes_total, visitas_12m, recompensas_canjeadas, cortes_objetivo")
+    .eq("cliente_id", clienteId)
+    .maybeSingle();
+  if (!data) return 0;
+  return computeLoyalty(data as LoyaltyRaw).recompensasDisponibles;
+}
 
 /** Sucursal activa del staff actual (o null). Se resuelve en el servidor. */
 async function sucursalActiva(): Promise<string | null> {
@@ -102,10 +118,35 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
     p_cupon_id: input.cuponId ?? null,
   };
   if (sucursalId) params.p_sucursal_id = sucursalId;
+
+  const recompensasAntes = await recompensasDisponibles(sb, input.clienteId);
   const { data, error } = await sb.rpc("record_venta", params);
 
   if (error) return { ok: false, error: "No se pudo registrar la venta. Intenta de nuevo." };
+
+  // Notificaciones (no bloquean el resultado si fallan).
+  const recompensasDespues = await recompensasDisponibles(sb, input.clienteId);
+  if (recompensasDespues > recompensasAntes) await pushRecompensaLista(input.clienteId);
+  await avisarStockBajo(sb, input.items);
+
   return { ok: true, total: Number((data as { total: number }).total) };
+}
+
+/** Tras una venta, avisa al staff de los productos que quedaron en/bajo su mínimo. */
+async function avisarStockBajo(
+  sb: Awaited<ReturnType<typeof createClient>>,
+  items: VentaItemInput[],
+): Promise<void> {
+  const ids = items.filter((i) => i.tipo === "producto" && i.producto_id).map((i) => i.producto_id!);
+  if (ids.length === 0) return;
+  const { data } = await sb
+    .from("productos")
+    .select("nombre, stock, stock_min, controla_stock")
+    .in("id", ids);
+  const bajos = (data ?? [])
+    .filter((p) => p.controla_stock && p.stock <= p.stock_min)
+    .map((p) => p.nombre as string);
+  await pushStockBajoStaff(bajos);
 }
 
 // ── Cupones: validación (preview en el POS) ─────────────────────
@@ -532,6 +573,10 @@ export async function saveCita(input: {
     ? await sb.from("citas").update(fila).eq("id", input.id)
     : await sb.from("citas").insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) });
   if (error) return { ok: false, error: catalogoError(error.message) };
+
+  // Aviso al cliente registrado cuando se agenda una cita nueva.
+  if (!input.id && input.clienteId) await pushCitaCliente(input.clienteId, "creada", inicia.toISOString());
+
   revalidatePath("/admin/agenda");
   return { ok: true };
 }
@@ -543,6 +588,13 @@ export async function updateEstadoCita(
   const sb = await createClient();
   const { error } = await sb.from("citas").update({ estado }).eq("id", id);
   if (error) return { ok: false, error: catalogoError(error.message) };
+
+  // Aviso al cliente registrado cuando su cita se confirma o cancela.
+  if (estado === "confirmada" || estado === "cancelada") {
+    const { data } = await sb.from("citas").select("cliente_id, inicia_en").eq("id", id).single();
+    if (data?.cliente_id) await pushCitaCliente(data.cliente_id, estado, data.inicia_en);
+  }
+
   revalidatePath("/admin/agenda");
   return { ok: true };
 }
