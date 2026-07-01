@@ -9,6 +9,7 @@ import {
   addEtiqueta,
   removeEtiqueta,
   updateCliente,
+  resetPinCliente,
 } from "@/app/admin/actions";
 import {
   computeLoyalty,
@@ -24,11 +25,22 @@ import { useModalA11y } from "@/components/admin/useModalA11y";
 type Tab = "resumen" | "historial" | "notas";
 const ETIQUETAS_SUGERIDAS = ["vip", "frecuente", "nuevo", "barba", "recuperar"];
 
-export function ClienteFicha({ ficha }: { ficha: Ficha }) {
+export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeResetPin?: boolean }) {
   const [tab, setTab] = useState<Tab>("resumen");
   const [editando, setEditando] = useState(false);
+  const [pinPend, startPin] = useTransition();
+  const [pinMsg, setPinMsg] = useState<string | null>(null);
   const loyalty = computeLoyalty(ficha.loyalty);
   const invertido = ficha.historial.reduce((s, v) => s + Number(v.total), 0);
+
+  const reiniciarPin = () => {
+    if (!confirm(`¿Reiniciar el PIN de ${ficha.cliente.nombre}? Creará uno nuevo en su próximo ingreso.`)) return;
+    setPinMsg(null);
+    startPin(async () => {
+      const r = await resetPinCliente(ficha.cliente.id);
+      setPinMsg(r.ok ? "PIN reiniciado. El cliente lo configura al ingresar." : r.error ?? "Error");
+    });
+  };
 
   return (
     <div className="animate-fade-up">
@@ -68,7 +80,13 @@ export function ClienteFicha({ ficha }: { ficha: Ficha }) {
         <button onClick={() => setEditando(true)} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-ink hover:border-line-strong">
           Editar datos
         </button>
+        {puedeResetPin && (
+          <button onClick={reiniciarPin} disabled={pinPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
+            {pinPend ? "Reiniciando…" : "Reiniciar PIN"}
+          </button>
+        )}
       </div>
+      {pinMsg && <p role="status" className="mt-2 text-sm text-muted">{pinMsg}</p>}
 
       {/* Tabs */}
       <div className="mt-6 flex gap-5 border-b border-line">

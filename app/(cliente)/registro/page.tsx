@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { registerCliente, type FormState } from "@/app/(cliente)/actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PinInput } from "@/components/ui/PinInput";
 import { IconChevronLeft } from "@/components/icons";
 
 const initial: FormState = {};
 
 export default function RegistroPage() {
   const [state, action, pending] = useActionState(registerCliente, initial);
+  const [pin, setPin] = useState("");
+  const [pin2, setPin2] = useState("");
 
   return (
     <main className="min-h-dvh animate-fade-up overflow-auto px-6 pb-8 pt-16">
@@ -26,11 +29,14 @@ export default function RegistroPage() {
         <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" required />
         <Input label="Correo" hint="· opcional" name="correo" placeholder="tu@correo.com" inputMode="email" autoComplete="email" />
 
+        <div className="mb-4"><PinInput value={pin} onChange={setPin} name="pin" label="Crea un PIN (6 dígitos)" /></div>
+        <div className="mb-5"><PinInput value={pin2} onChange={setPin2} name="pin2" label="Confirma tu PIN" /></div>
+
         {state.error && (
           <p role="alert" className="mb-4 text-sm text-danger">{state.error}</p>
         )}
 
-        <Button type="submit" loading={pending}>Crear mi cuenta</Button>
+        <Button type="submit" loading={pending} disabled={pin.length < 6 || pin2.length < 6}>Crear mi cuenta</Button>
       </form>
 
       <p className="mt-4 text-center text-xs leading-relaxed text-subtle">

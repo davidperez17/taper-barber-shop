@@ -120,6 +120,19 @@ export interface ActionResult {
   error?: string;
 }
 
+/** Reset del PIN del cliente (dueño/admin). El cliente crea uno nuevo al ingresar. */
+export async function resetPinCliente(clienteId: string): Promise<ActionResult> {
+  const staff = await getStaff();
+  if (staff?.rol !== "dueno" && staff?.rol !== "admin") {
+    return { ok: false, error: "No autorizado." };
+  }
+  const sb = await createClient();
+  const { error } = await sb.rpc("reset_cliente_pin", { p_cliente_id: clienteId });
+  if (error) return { ok: false, error: "No se pudo reiniciar el PIN." };
+  revalidatePath(`/admin/clientes/${clienteId}`);
+  return { ok: true };
+}
+
 export async function addNota(clienteId: string, texto: string): Promise<ActionResult> {
   const limpio = texto.trim();
   if (!limpio) return { ok: false, error: "Escribe la nota." };
