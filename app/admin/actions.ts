@@ -60,6 +60,7 @@ export interface VentaInput {
   metodo: "efectivo" | "tarjeta" | "transferencia";
   canjear: boolean;
   items: VentaItemInput[];
+  cuponId?: string | null;
 }
 
 export type VentaResult = { ok: true; total: number } | { ok: false; error: string };
@@ -74,10 +75,29 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
     p_metodo: input.metodo,
     p_canjear: input.canjear,
     p_items: input.items,
+    p_cupon_id: input.cuponId ?? null,
   });
 
   if (error) return { ok: false, error: "No se pudo registrar la venta. Intenta de nuevo." };
   return { ok: true, total: Number((data as { total: number }).total) };
+}
+
+// ── Cupones: validación (preview en el POS) ─────────────────────
+export type CuponResult =
+  | { ok: true; cuponId: string; codigo: string; descuento: number }
+  | { ok: false; error: string };
+
+export async function validarCupon(codigo: string, subtotal: number): Promise<CuponResult> {
+  const limpio = codigo.trim();
+  if (!limpio) return { ok: false, error: "Escribe un código." };
+
+  const sb = await createClient();
+  const { data, error } = await sb.rpc("cupon_validar", { p_codigo: limpio, p_subtotal: subtotal });
+  if (error) return { ok: false, error: "No se pudo validar el cupón." };
+
+  const r = data as { ok: boolean; error?: string; cupon_id?: string; codigo?: string; descuento?: number };
+  if (!r.ok) return { ok: false, error: r.error ?? "Cupón inválido." };
+  return { ok: true, cuponId: r.cupon_id!, codigo: r.codigo!, descuento: Number(r.descuento) };
 }
 
 // ── Alta rápida de cliente desde el panel ───────────────────────
@@ -319,6 +339,66 @@ export async function toggleActivo(
   const { error } = await sb.from(tabla).update({ activo }).eq("id", id);
   if (error) return { ok: false, error: catalogoError(error.message) };
   revalidatePath("/admin/catalogo");
+  return { ok: true };
+}
+
+// ── Cupones: gestión (escritura solo admin/dueño vía RLS) ───────
+export async function saveCupon(input: {
+  id?: string;
+  codigo: string;
+  tipo: "porcentaje" | "monto";
+  valor: number;
+  min_compra: number;
+  vigencia_desde: string | null;
+  vigencia_hasta: string | null;
+  usos_max: number | null;
+  activo: boolean;
+}): Promise<ActionResult> {
+  const codigo = input.codigo.trim().toUpperCase();
+  if (!codigo) return { ok: false, error: "El código es obligatorio." };
+  if (!(input.valor > 0)) return { ok: false, error: "El valor debe ser mayor que 0." };
+  if (input.tipo === "porcentaje" && input.valor > 100) return { ok: false, error: "El porcentaje no puede superar 100." };
+  if (input.min_compra < 0) return { ok: false, error: "Mínimo de compra inválido." };
+  if (input.usos_max != null && input.usos_max < 1) return { ok: false, error: "El límite de usos debe ser al menos 1." };
+  if (input.vigencia_desde && input.vigencia_hasta && input.vigencia_hasta < input.vigencia_desde) {
+    return { ok: false, error: "La vigencia final no puede ser antes de la inicial." };
+  }
+
+  const sb = await createClient();
+  const fila = {
+    codigo,
+    tipo: input.tipo,
+    valor: input.valor,
+    min_compra: input.min_compra,
+    vigencia_desde: input.vigencia_desde,
+    vigencia_hasta: input.vigencia_hasta,
+    usos_max: input.usos_max,
+    activo: input.activo,
+  };
+  const { error } = input.id
+    ? await sb.from("cupones").update(fila).eq("id", input.id)
+    : await sb.from("cupones").insert(fila);
+  if (error) {
+    if (error.message.includes("duplicate")) return { ok: false, error: "Ya existe un cupón con ese código." };
+    return { ok: false, error: catalogoError(error.message) };
+  }
+  revalidatePath("/admin/cupones");
+  return { ok: true };
+}
+
+export async function toggleCuponActivo(id: string, activo: boolean): Promise<ActionResult> {
+  const sb = await createClient();
+  const { error } = await sb.from("cupones").update({ activo }).eq("id", id);
+  if (error) return { ok: false, error: catalogoError(error.message) };
+  revalidatePath("/admin/cupones");
+  return { ok: true };
+}
+
+export async function deleteCupon(id: string): Promise<ActionResult> {
+  const sb = await createClient();
+  const { error } = await sb.from("cupones").delete().eq("id", id);
+  if (error) return { ok: false, error: catalogoError(error.message) };
+  revalidatePath("/admin/cupones");
   return { ok: true };
 }
 

@@ -109,3 +109,20 @@ export interface ConfigLealtad {
   cortes_objetivo: number;
   ventana_meses: number;
 }
+
+// ── Cupones (promociones) ───────────────────────────────────────
+export type CuponTipo = "porcentaje" | "monto";
+
+export interface Cupon {
+  id: string;
+  codigo: string;
+  tipo: CuponTipo;
+  valor: number;
+  min_compra: number;
+  vigencia_desde: string | null;
+  vigencia_hasta: string | null;
+  usos_max: number | null;
+  usos: number;
+  activo: boolean;
+  created_at: string;
+}

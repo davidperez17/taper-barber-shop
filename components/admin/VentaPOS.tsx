@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { recordVenta, type VentaItemInput, type VentaInput } from "@/app/admin/actions";
+import { recordVenta, validarCupon, type VentaItemInput, type VentaInput } from "@/app/admin/actions";
 import { enqueueVenta } from "@/lib/offline";
 import { computeLoyalty, memberId, TIER_LABEL, TIER_SURFACE, type LoyaltyRaw } from "@/lib/loyalty";
 import { fmtDiaMes, fmtQ } from "@/lib/format";
@@ -29,6 +29,10 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
   const [barbero, setBarbero] = useState<string>(barberos[0]?.id ?? "");
   const [metodo, setMetodo] = useState<MetodoPago>("efectivo");
   const [canjear, setCanjear] = useState(false);
+  const [cuponCodigo, setCuponCodigo] = useState("");
+  const [cupon, setCupon] = useState<{ cuponId: string; codigo: string; descuento: number; subtotal: number } | null>(null);
+  const [cuponError, setCuponError] = useState<string | null>(null);
+  const [cuponPending, setCuponPending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<number | null>(null);
@@ -68,6 +72,37 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
     return { items: it, total: tot };
   }, [serv, prod, canjear, hayCorteEnCarrito, servicios, productos]);
 
+  // El cupón se validó contra un subtotal concreto: si el carrito cambió, ya no aplica.
+  const cuponVigente = cupon && cupon.subtotal === total ? cupon : null;
+  const descuento = cuponVigente?.descuento ?? 0;
+  const totalFinal = Math.max(0, total - descuento);
+
+  async function aplicarCupon() {
+    const codigo = cuponCodigo.trim();
+    if (!codigo) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setCuponError("Necesitas conexión para validar el cupón.");
+      return;
+    }
+    setCuponPending(true);
+    setCuponError(null);
+    const res = await validarCupon(codigo, total);
+    setCuponPending(false);
+    if (!res.ok) {
+      setCupon(null);
+      setCuponError(res.error);
+      return;
+    }
+    setCupon({ cuponId: res.cuponId, codigo: res.codigo, descuento: res.descuento, subtotal: total });
+    setCuponCodigo(res.codigo);
+  }
+
+  function quitarCupon() {
+    setCupon(null);
+    setCuponCodigo("");
+    setCuponError(null);
+  }
+
   async function confirmar() {
     setSubmitting(true);
     setError(null);
@@ -77,6 +112,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
       metodo,
       canjear: canjear && hayCorteEnCarrito,
       items,
+      cuponId: cuponVigente?.cuponId ?? null,
     };
 
     // Offline-first: sin red, encolar y sincronizar al reconectar.
@@ -84,7 +120,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
       enqueueVenta(payload);
       setSubmitting(false);
       setPendiente(true);
-      setDone(total);
+      setDone(totalFinal);
       return;
     }
 
@@ -95,7 +131,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         enqueueVenta(payload);
         setPendiente(true);
-        setDone(total);
+        setDone(totalFinal);
         return;
       }
       setError(res.error);
@@ -209,14 +245,52 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
         ))}
       </div>
 
+      {/* Cupón de descuento */}
+      <h2 className="mb-2.5 mt-6 font-display text-lg font-bold text-ink">Cupón</h2>
+      {cuponVigente ? (
+        <div className="flex items-center gap-3 rounded-xl border border-success/40 bg-success-dim p-3.5">
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-sm font-bold tracking-wide text-ink">{cuponVigente.codigo}</p>
+            <p className="text-[13px] font-medium text-success">−{fmtQ(cuponVigente.descuento)} aplicado</p>
+          </div>
+          <button onClick={quitarCupon} className="min-h-9 rounded-full border border-line px-3 text-[13px] text-muted hover:text-ink">
+            Quitar
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            value={cuponCodigo}
+            onChange={(e) => { setCuponCodigo(e.target.value.toUpperCase()); setCuponError(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); aplicarCupon(); } }}
+            placeholder="Código del cupón"
+            autoCapitalize="characters"
+            className="min-h-[46px] flex-1 rounded-lg border border-line bg-elevated px-3.5 font-mono text-base tracking-wide text-ink outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-muted focus:border-accent"
+          />
+          <button
+            onClick={aplicarCupon}
+            disabled={cuponPending || !cuponCodigo.trim() || items.length === 0}
+            className="min-h-[46px] shrink-0 rounded-lg border border-accent px-4 text-sm font-semibold text-accent disabled:opacity-40"
+          >
+            {cuponPending ? "…" : "Aplicar"}
+          </button>
+        </div>
+      )}
+      {cuponError && <p role="alert" className="mt-2 text-sm text-danger">{cuponError}</p>}
+
       {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
       {/* Barra total + confirmar: sticky dentro del contenido (respeta sidebar y bottom-nav) */}
       <div className="sticky bottom-0 z-[var(--z-sticky)] mt-8 border-t border-line bg-elevated/95 px-5 py-3.5 backdrop-blur">
         <div className="mx-auto flex max-w-[640px] items-center gap-4">
           <div>
+            {descuento > 0 && (
+              <p className="text-[13px] font-medium tabular-nums text-success">
+                −{fmtQ(descuento)} <span className="text-muted">({fmtQ(total)})</span>
+              </p>
+            )}
             <p className="text-[13px] font-medium text-muted">Total</p>
-            <p className="font-display text-2xl font-bold text-ink">{fmtQ(total)}</p>
+            <p className="font-display text-2xl font-bold tabular-nums text-ink">{fmtQ(totalFinal)}</p>
           </div>
           <button
             onClick={confirmar}
