@@ -23,7 +23,3 @@ export function setQueue(q: VentaInput[]): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY, JSON.stringify(q));
 }
-
-export function queueLength(): number {
-  return getQueue().length;
-}

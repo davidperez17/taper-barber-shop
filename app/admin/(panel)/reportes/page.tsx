@@ -10,6 +10,7 @@ import { TendenciaChart, TopBars } from "@/components/admin/Charts";
 import { BusyPeriods, type PeriodoBP } from "@/components/admin/BusyPeriods";
 import { ReportesTabs } from "@/components/admin/ReportesTabs";
 import { ExportCSV } from "@/components/admin/ExportCSV";
+import { Metric } from "@/components/admin/Metric";
 
 const BP_DIAS: Record<PeriodoBP, number> = { semana: 7, mes: 30, anio: 365 };
 
@@ -108,15 +109,6 @@ export default async function ReportesPage({
         <TopCard titulo="Top productos" rows={data.top_productos} />
         <TopCard titulo="Top barberos" rows={data.top_barberos} />
       </div>
-    </div>
-  );
-}
-
-function Metric({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
-  return (
-    <div className="rounded-xl border border-line bg-elevated p-4">
-      <p className={`font-display text-[24px] font-extrabold leading-none tabular-nums ${accent ? "text-accent" : "text-ink"}`}>{value}</p>
-      <p className="mt-1.5 text-[13px] font-medium text-muted">{label}</p>
     </div>
   );
 }

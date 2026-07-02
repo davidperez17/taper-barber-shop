@@ -1,22 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { recordVenta } from "@/app/admin/actions";
 import { getQueue, setQueue } from "@/lib/offline";
 
+function subscribeOnline(cb: () => void) {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
+}
+
 /** Banner offline + sincronización de la cola de ventas al reconectar. */
 export function OfflineSync() {
-  const [online, setOnline] = useState(true);
+  // Estado del navegador como external store (sin setState en effect; SSR asume online).
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const [synced, setSynced] = useState(0);
   const router = useRouter();
 
+  // Vacía la cola al montar y en cada reconexión.
   useEffect(() => {
-    setOnline(navigator.onLine);
+    if (!online) return;
+    let cancelado = false;
+    let t: ReturnType<typeof setTimeout> | undefined;
 
-    async function flush() {
+    (async () => {
       const q = getQueue();
-      if (q.length === 0 || !navigator.onLine) return;
+      if (q.length === 0) return;
       const pendientes = [];
       let ok = 0;
       for (const v of q) {
@@ -25,28 +38,18 @@ export function OfflineSync() {
         else pendientes.push(v);
       }
       setQueue(pendientes);
-      if (ok > 0) {
+      if (ok > 0 && !cancelado) {
         setSynced(ok);
         router.refresh();
-        setTimeout(() => setSynced(0), 4000);
+        t = setTimeout(() => setSynced(0), 4000);
       }
-    }
-
-    const onOnline = () => {
-      setOnline(true);
-      flush();
-    };
-    const onOffline = () => setOnline(false);
-
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    flush(); // por si quedaron pendientes de una sesión previa
+    })();
 
     return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
+      cancelado = true;
+      if (t) clearTimeout(t);
     };
-  }, [router]);
+  }, [online, router]);
 
   return (
     <>

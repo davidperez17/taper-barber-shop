@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -16,11 +16,15 @@ const isIOS = () =>
   /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
   !/crios|fxios/i.test(window.navigator.userAgent);
 
+const noSubscribe = () => () => {};
+
 /** Banner discreto para instalar la PWA. Se auto-oculta si ya está instalada. */
 export function InstallPWA() {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
-  const [iosHint, setIosHint] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  // iOS no dispara beforeinstallprompt: instrucciones manuales. Valor estable
+  // del entorno → useSyncExternalStore (false en SSR, sin setState en effect).
+  const iosHint = useSyncExternalStore(noSubscribe, () => isIOS() && !isStandalone(), () => false);
 
   useEffect(() => {
     if (isStandalone()) return; // ya instalada → nada
@@ -30,9 +34,6 @@ export function InstallPWA() {
       setDeferred(e as BIPEvent);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
-
-    // iOS no dispara el evento: mostramos instrucciones manuales
-    if (isIOS()) setIosHint(true);
 
     const onInstalled = () => setDeferred(null);
     window.addEventListener("appinstalled", onInstalled);

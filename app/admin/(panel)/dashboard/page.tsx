@@ -5,6 +5,7 @@ import { getSucursalActiva, getSucursales } from "@/lib/sucursal";
 import { getDashboardMetrics, getVentasPorSucursal, type VentaSucursal } from "@/lib/queries/admin";
 import { hoyGT } from "@/lib/queries/caja";
 import { fmtQ } from "@/lib/format";
+import { Metric } from "@/components/admin/Metric";
 
 export default async function DashboardPage() {
   const staff = await getStaff();
@@ -92,16 +93,6 @@ function PorSucursal({ filas }: { filas: VentaSucursal[] }) {
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function Metric({ value, label, sub, accent, warn }: { value: string; label: string; sub?: string; accent?: boolean; warn?: boolean }) {
-  return (
-    <div className="rounded-xl border border-line bg-elevated p-4">
-      <p className={`font-display text-[28px] font-extrabold leading-none tabular-nums ${accent ? "text-accent" : warn ? "text-warning" : "text-ink"}`}>{value}</p>
-      <p className="mt-1.5 text-[13px] font-medium text-muted">{label}</p>
-      {sub && <p className="mt-0.5 text-[11px] text-muted">{sub}</p>}
     </div>
   );
 }

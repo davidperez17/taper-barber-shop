@@ -19,13 +19,11 @@ export function ClienteSearch() {
   const router = useRouter();
   const sb = useRef(createClient());
 
+  // loading/hits se resetean en el onChange (no setState síncrono en el effect);
+  // aquí solo vive el fetch debounced.
   useEffect(() => {
     const term = q.trim();
-    if (term.length < 2) {
-      setHits([]);
-      return;
-    }
-    setLoading(true);
+    if (term.length < 2) return;
     const t = setTimeout(async () => {
       const digits = term.replace(/\D/g, "");
       const filter = digits.length >= 3
@@ -48,7 +46,13 @@ export function ClienteSearch() {
         <span className="mr-3 text-subtle"><IconSearch size={20} /></span>
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setQ(v);
+            const activo = v.trim().length >= 2;
+            setLoading(activo);
+            if (!activo) setHits([]);
+          }}
           placeholder="Nombre o teléfono…"
           aria-label="Buscar cliente"
           className="min-h-[52px] w-full bg-transparent text-base text-ink outline-none placeholder:text-muted"

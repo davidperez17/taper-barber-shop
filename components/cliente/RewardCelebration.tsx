@@ -20,7 +20,10 @@ export function RewardCelebration({ nombre }: { nombre: string }) {
     const key = "taper_reward_seen";
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
-    setOpen(true);
+    // Tras el primer paint: la tarjeta entra primero y la celebración encima
+    // (además evita el setState síncrono en el effect).
+    const t = setTimeout(() => setOpen(true), 250);
+    return () => clearTimeout(t);
   }, []);
 
   if (!open) return null;

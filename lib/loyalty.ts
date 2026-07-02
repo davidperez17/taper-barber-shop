@@ -42,7 +42,7 @@ export const TIER_MIN_VISITAS: Record<Tier, number> = {
   black: 51,
 };
 
-export function tierFromVisitas(visitas12m: number): Tier {
+function tierFromVisitas(visitas12m: number): Tier {
   if (visitas12m >= TIER_MIN_VISITAS.black) return "black";
   if (visitas12m >= TIER_MIN_VISITAS.platinum) return "platinum";
   if (visitas12m >= TIER_MIN_VISITAS.gold) return "gold";

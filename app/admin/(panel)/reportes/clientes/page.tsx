@@ -7,6 +7,7 @@ import { ReportesSucursalFiltro } from "@/components/admin/ReportesSucursalFiltr
 import { fmtQ } from "@/lib/format";
 import { PRESETS, normalizarPreset, rango } from "@/lib/rango";
 import { ReportesTabs } from "@/components/admin/ReportesTabs";
+import { Metric } from "@/components/admin/Metric";
 
 export default async function ReporteClientesPage({
   searchParams,
@@ -119,15 +120,6 @@ export default async function ReporteClientesPage({
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function Metric({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
-  return (
-    <div className="rounded-xl border border-line bg-elevated p-4">
-      <p className={`font-display text-[24px] font-extrabold leading-none tabular-nums ${accent ? "text-accent" : "text-ink"}`}>{value}</p>
-      <p className="mt-1.5 text-[13px] font-medium text-muted">{label}</p>
     </div>
   );
 }
