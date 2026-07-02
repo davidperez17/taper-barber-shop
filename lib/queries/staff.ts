@@ -17,9 +17,14 @@ export interface StaffSession {
  */
 export const getStaff = cache(async (): Promise<StaffSession | null> => {
   const sb = await createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
+  // Sesión rota (refresh token revocado) = sin sesión, nunca un 500.
+  let user = null;
+  try {
+    const { data, error } = await sb.auth.getUser();
+    if (!error) user = data.user;
+  } catch {
+    user = null;
+  }
   if (!user) return null;
 
   const { data } = await sb
