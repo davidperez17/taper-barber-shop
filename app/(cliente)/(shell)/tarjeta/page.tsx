@@ -16,13 +16,17 @@ export default async function TarjetaPage() {
   const motiv = copyMotivacional(loyalty, dash.loyalty.cortes_total);
   const firstName = dash.cliente.nombre.split(" ")[0];
 
-  const qrSvg = await QRCode.toString(dash.cliente.qr_token, {
-    type: "svg",
-    margin: 1,
-    width: 146,
-    color: { dark: "#000000", light: "#ffffff" },
-    errorCorrectionLevel: "M",
-  });
+  // Sin width/height fijos en el <svg> → escala al contenedor (tile responsive en la card).
+  const qrSvg = (
+    await QRCode.toString(dash.cliente.qr_token, {
+      type: "svg",
+      margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
+      errorCorrectionLevel: "M",
+    })
+  )
+    .replace(/(<svg[^>]*?)\s+width="[^"]*"/, "$1")
+    .replace(/(<svg[^>]*?)\s+height="[^"]*"/, "$1");
 
   return (
     <div className="animate-fade-up px-5 pb-6 pt-14">

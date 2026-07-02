@@ -211,27 +211,46 @@ export function LoyaltyCard({
             </div>
           </div>
 
-          {/* ── REVERSO (QR amarillo) ── */}
+          {/* ── REVERSO — QR sobre superficie oscura premium (cohesivo con el frente) ── */}
           <div
             style={{
               ...faceBase,
-              background: "var(--accent)",
-              boxShadow: "0 12px 42px rgba(245,200,0,0.4),0 4px 18px rgba(0,0,0,0.5)",
+              background: "var(--card-sheen), linear-gradient(150deg,#26262b 0%,#141416 100%)",
+              boxShadow: cardShadow,
               transform: "rotateY(180deg)",
               alignItems: "center",
-              color: "var(--accent-ink)",
+              color: "#f0f0f2",
             }}
           >
-            <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.28em" }}>TAPER</span>
+            {/* Barra superior idéntica al frente (misma marca + tier) */}
+            <div className="flex w-full items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: "#f0f0f2", transform: "rotate(45deg)", opacity: 0.9 }} />
+                <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.28em", opacity: 0.85 }}>TAPER</span>
+              </div>
+              <span
+                className="inline-flex items-center font-semibold uppercase"
+                style={{ padding: "5px 11px", borderRadius: 9999, background: badge.bg, color: badge.ink, border: `1px solid ${badge.border}`, fontSize: 11, letterSpacing: "0.08em" }}
+              >
+                {badge.star && <span className="mr-1">★</span>}
+                {tierLabel}
+              </span>
+            </div>
+
+            {/* QR — héroe del reverso: escala con la ALTURA de la card (66%), sin cap de ancho.
+                El aro dorado lo define sobre el fondo oscuro; padding chico porque el svg ya trae quiet zone. */}
             <div
-              style={{ background: "#fff", borderRadius: 14, padding: 11, boxShadow: "0 6px 18px rgba(0,0,0,0.25)", width: 168, height: 168 }}
-              // QR generado en servidor (alto contraste, negro/blanco).
+              className="qr-tile"
+              style={{ boxSizing: "border-box", background: "#fff", borderRadius: 14, padding: 8, height: "72%", aspectRatio: "1", boxShadow: "0 0 0 1.5px rgba(245,200,0,0.5),0 10px 26px rgba(0,0,0,0.5)" }}
+              // QR generado en servidor (alto contraste, negro sobre blanco).
               dangerouslySetInnerHTML={{ __html: qrSvg }}
             />
+
             <div className="text-center">
-              <p className="font-display" style={{ fontWeight: 700, fontSize: 19, lineHeight: 1, margin: 0 }}>{name}</p>
-              <p style={{ fontSize: 12, color: "rgba(15,15,15,0.6)", margin: "4px 0 0" }}>Miembro {tierLabel} · {memberId}</p>
-              <p style={{ fontSize: 11, color: "rgba(15,15,15,0.5)", margin: "6px 0 0", letterSpacing: "0.04em" }}>Muéstraselo al cajero</p>
+              <p className="font-display" style={{ fontWeight: 700, fontSize: 18, lineHeight: 1, margin: 0 }}>{name}</p>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", letterSpacing: "0.04em", margin: "5px 0 0" }}>
+                Miembro {tierLabel} · <span style={{ color: "var(--accent)" }}>{memberId}</span>
+              </p>
             </div>
           </div>
         </div>
@@ -240,7 +259,7 @@ export function LoyaltyCard({
 
       {(flipped || !flippedOnce) && (
         <p className="mt-3.5 text-center" style={{ fontSize: 12, color: "var(--subtle)" }}>
-          {flipped ? "Toca para regresar" : "Toca la tarjeta para ver tu QR"}
+          {flipped ? "Muéstrale el código al cajero · toca para volver" : "Toca la tarjeta para ver tu QR"}
         </p>
       )}
     </div>
