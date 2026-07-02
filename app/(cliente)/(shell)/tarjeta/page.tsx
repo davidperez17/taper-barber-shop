@@ -7,6 +7,7 @@ import { LoyaltyCard } from "@/components/cliente/LoyaltyCard";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
 import { IconStats, IconHistory } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
+import { VentaLive } from "@/components/cliente/VentaLive";
 import { getBandeja } from "@/lib/queries/notificaciones";
 
 export default async function TarjetaPage() {
@@ -30,6 +31,7 @@ export default async function TarjetaPage() {
 
   return (
     <div className="px-5 pb-6 pt-14">
+      <VentaLive clienteId={dash.cliente.id} />
       {loyalty.recompensaDisponible && <RewardCelebration nombre={dash.cliente.nombre} />}
 
       {/* Header */}

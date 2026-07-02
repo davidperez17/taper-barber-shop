@@ -11,6 +11,7 @@ import { pushRecompensaLista, pushCitaCliente, pushStockBajoStaff } from "@/lib/
 import { enviarPush } from "@/lib/push/send";
 import { subsPorTipo } from "@/lib/push/targets";
 import { registrarNotiTodosClientes } from "@/lib/push/inbox";
+import { broadcastVenta } from "@/lib/realtime";
 
 /** Recompensas disponibles de un cliente ahora mismo (0 si no tiene fila de lealtad). */
 async function recompensasDisponibles(
@@ -126,6 +127,10 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
   const { data, error } = await sb.rpc("record_venta", params);
 
   if (error) return { ok: false, error: "No se pudo registrar la venta. Intenta de nuevo." };
+
+  // Aviso realtime a la PWA del cliente: refresca su tarjeta al instante
+  // (sello nuevo + sonido) si la tiene abierta. No bloquea si falla.
+  await broadcastVenta(input.clienteId);
 
   // Notificaciones (no bloquean el resultado si fallan).
   const recompensasDespues = await recompensasDisponibles(sb, input.clienteId);
