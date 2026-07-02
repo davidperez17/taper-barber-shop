@@ -25,10 +25,14 @@ function urlB64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
 
 type Estado = "oculto" | "ofrecer" | "guardando" | "listo";
 
+// El descarte vive por sesión: "Ahora no" silencia el banner hasta que se
+// vuelva a abrir la app, sin quemar el permiso del navegador.
+const DESCARTE_KEY = "taper_notif_luego";
+
 /**
  * Banner discreto para activar notificaciones push. Se auto-oculta si ya
- * están concedidas, denegadas, o si el navegador/plataforma no las soporta
- * (iOS solo funciona con la PWA instalada).
+ * están concedidas, denegadas, descartadas en esta sesión, o si el
+ * navegador/plataforma no las soporta (iOS solo con la PWA instalada).
  */
 export function NotifyOptIn() {
   const [estado, setEstado] = useState<Estado>("oculto");
@@ -40,10 +44,16 @@ export function NotifyOptIn() {
     // iOS: push solo en PWA instalada. Sin instalar, no ofrecer.
     if (isIOS() && !isStandalone()) return;
     if (Notification.permission === "denied") return;
+    if (sessionStorage.getItem(DESCARTE_KEY)) return;
     // Depende de APIs del navegador: solo se puede decidir tras montar.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEstado(Notification.permission === "granted" ? "oculto" : "ofrecer");
   }, []);
+
+  const descartar = () => {
+    sessionStorage.setItem(DESCARTE_KEY, "1");
+    setEstado("oculto");
+  };
 
   const activar = async () => {
     try {
@@ -69,7 +79,7 @@ export function NotifyOptIn() {
   if (estado === "oculto") return null;
 
   return (
-    <div className="mt-6 flex items-center gap-3 rounded-2xl border border-line bg-elevated/80 p-3.5 text-left">
+    <div className="my-6 flex items-center gap-3 rounded-2xl border border-line bg-elevated p-3.5 text-left">
       <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
         <svg viewBox="0 0 24 24" fill="none" className="size-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
@@ -94,13 +104,22 @@ export function NotifyOptIn() {
       </div>
 
       {estado !== "listo" && (
-        <button
-          onClick={activar}
-          disabled={estado === "guardando"}
-          className="shrink-0 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition-transform active:scale-95 disabled:opacity-60"
-        >
-          {estado === "guardando" ? "…" : "Activar"}
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={activar}
+            disabled={estado === "guardando"}
+            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition-transform active:scale-95 disabled:opacity-60"
+          >
+            {estado === "guardando" ? "…" : "Activar"}
+          </button>
+          <button
+            onClick={descartar}
+            aria-label="Ahora no"
+            className="flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:text-ink"
+          >
+            ✕
+          </button>
+        </div>
       )}
     </div>
   );
