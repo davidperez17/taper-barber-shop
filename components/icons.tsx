@@ -106,6 +106,14 @@ export const IconFlip = ({ size = 14, ...p }: IconProps) => (
   </svg>
 );
 
+export const IconScissors = ({ size = 20, ...p }: IconProps) => (
+  <svg {...base(size, p)}>
+    <circle cx="6" cy="6" r="3" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M8.12 8.12 12 12M20 4 8.12 15.88M14.8 14.8 20 20" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const IconScan = ({ size = 22, ...p }: IconProps) => (
   <svg {...base(size, p)}>
     <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />

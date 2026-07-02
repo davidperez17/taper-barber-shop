@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { Tier } from "@/lib/loyalty";
 import { TIER_SURFACE } from "@/lib/loyalty";
-import { IconFlip } from "@/components/icons";
+import { IconFlip, IconScissors } from "@/components/icons";
+import { useCardTilt } from "./useCardTilt";
 
 const TIER_BADGE: Record<Tier, { bg: string; ink: string; border: string; star: boolean }> = {
   silver: { bg: "rgba(113,113,122,0.5)", ink: "#e4e4e7", border: "rgba(161,161,170,0.55)", star: false },
@@ -22,7 +23,6 @@ interface Props {
   objetivo: number;
   motiv: string;
   recompensaDisponible: boolean;
-  beneficio: string | null;
   /** SVG del QR ya renderizado en el servidor. */
   qrSvg: string;
 }
@@ -36,18 +36,31 @@ export function LoyaltyCard({
   objetivo,
   motiv,
   recompensaDisponible,
-  beneficio,
   qrSvg,
 }: Props) {
   const [flipped, setFlipped] = useState(false);
   const [flippedOnce, setFlippedOnce] = useState(false);
+  const { tiltRef, glareRef, requestGyro, setFlipped: setTiltFlipped } = useCardTilt(8);
   const badge = TIER_BADGE[tier];
-  const pct = Math.round((cortesCiclo / objetivo) * 100);
   const ink = recompensaDisponible ? "#ecfdf5" : "var(--tier-ink)";
+  // Sellos en 1 fila hasta 7; a partir de 8 se reparten en 2 filas.
+  const cols = objetivo <= 7 ? objetivo : Math.ceil(objetivo / 2);
+
+  // Resalta número (bold) y "corte gratis". El dorado no contrasta sobre la
+  // tarjeta Gold (naranja) → ahí usa crema; en el resto va el accent.
+  const hlColor = recompensaDisponible ? "inherit" : tier === "gold" ? "#fff6dd" : "var(--accent)";
+  // Riel conector (tira perforada): oro sobre tiers oscuros; blanco en Gold por contraste.
+  const railFill = recompensaDisponible ? "var(--success)" : tier === "gold" ? "rgba(255,255,255,0.72)" : "var(--accent)";
+  const renderMotiv = (text: string) =>
+    text.split(/(\d+|corte gratis)/g).map((part, i) => {
+      if (/^\d+$/.test(part)) return <b key={i} style={{ fontWeight: 700 }}>{part}</b>;
+      if (part === "corte gratis") return <span key={i} style={{ fontWeight: 600, color: hlColor }}>{part}</span>;
+      return <span key={i}>{part}</span>;
+    });
 
   const surface = recompensaDisponible ? "" : TIER_SURFACE[tier];
   const cardBg: CSSProperties = recompensaDisponible
-    ? { background: "linear-gradient(150deg,#166534 0%,#0d3d22 100%)" }
+    ? { background: "var(--card-sheen), linear-gradient(150deg,#166534 0%,#0d3d22 100%)" }
     : {};
   const cardShadow = recompensaDisponible
     ? "0 10px 40px rgba(34,197,94,0.35),0 4px 18px rgba(0,0,0,0.5)"
@@ -68,7 +81,10 @@ export function LoyaltyCard({
   };
 
   const handleFlip = () => {
-    setFlipped((f) => !f);
+    const next = !flipped;
+    setFlipped(next);
+    setTiltFlipped(next);
+    if (!flippedOnce) void requestGyro(); // iOS: activar giroscopio en el primer gesto
     setFlippedOnce(true);
   };
 
@@ -82,6 +98,11 @@ export function LoyaltyCard({
         className="block w-full cursor-pointer border-0 bg-transparent p-0"
         style={{ perspective: "1400px", aspectRatio: "3 / 2" }}
       >
+        {/* Wrapper de TILT (giroscopio/mouse): inclina toda la card en espacio de pantalla */}
+        <div
+          ref={tiltRef}
+          style={{ position: "relative", width: "100%", height: "100%", transformStyle: "preserve-3d", willChange: "transform" }}
+        >
         <div
           style={{
             position: "relative",
@@ -103,6 +124,21 @@ export function LoyaltyCard({
               color: ink,
             }}
           >
+            {/* Glare holográfico: la luz se desplaza con --gx/--gy (giroscopio/mouse) */}
+            <div
+              ref={glareRef}
+              aria-hidden
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "inherit",
+                pointerEvents: "none",
+                zIndex: 0,
+                background: "radial-gradient(circle at var(--gx,50%) var(--gy,28%), rgba(255,255,255,0.16), transparent 45%)",
+                mixBlendMode: "soft-light",
+              }}
+            />
+            <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <span style={{ width: 8, height: 8, borderRadius: 2, background: ink, transform: "rotate(45deg)", opacity: 0.9 }} />
@@ -117,59 +153,61 @@ export function LoyaltyCard({
               </span>
             </div>
 
-            <h2 className="font-display" style={{ fontWeight: 800, fontSize: 34, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
-              {name}
-            </h2>
-
-            <div>
-              <div className="mb-2 flex items-end justify-between">
-                <div>
-                  <p style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.7, margin: "0 0 3px" }}>Cortes</p>
-                  <p style={{ fontWeight: 600, fontSize: 28, lineHeight: 1, letterSpacing: "0.03em", margin: 0 }}>
-                    {cortesCiclo}
-                    <span style={{ opacity: 0.55 }}>/{objetivo}</span>
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.7, margin: "0 0 4px" }}>
-                    {recompensaDisponible ? "¡Gratis listo!" : "Beneficio"}
-                  </p>
+            {/* Sellos como héroe — riel conector estilo tarjeta perforada */}
+            <div style={{ flex: 1, display: "grid", placeItems: "center", width: "100%" }}>
+              <div style={{ position: "relative", width: "100%" }}>
+                {/* Riel solo en el tramo ganado (oro conectando los sellos logrados); adelante no hay línea */}
+                {objetivo <= 7 && cortesCiclo >= 2 && (
                   <span
-                    className="inline-block font-semibold"
-                    style={{ padding: "4px 10px", borderRadius: 9999, background: recompensaDisponible ? "var(--success)" : "rgba(0,0,0,0.22)", color: recompensaDisponible ? "#06250f" : ink, fontSize: 12 }}
-                  >
-                    {recompensaDisponible ? "Reclamar" : (beneficio ?? "Lealtad")}
-                  </span>
+                    aria-hidden
+                    style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", left: `${50 / cols}%`, width: `${((cortesCiclo - 1) / cols) * 100}%`, height: 3, borderRadius: 9999, background: railFill, opacity: 0.85, transition: "width 700ms ease-out" }}
+                  />
+                )}
+                <div
+                  role="progressbar"
+                  aria-valuenow={cortesCiclo}
+                  aria-valuemin={0}
+                  aria-valuemax={objetivo}
+                  aria-label={`${cortesCiclo} de ${objetivo} cortes`}
+                  style={{ position: "relative", display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 12, width: "100%" }}
+                >
+                  {Array.from({ length: objetivo }, (_, i) => {
+                    const filled = i < cortesCiclo;
+                    return (
+                      <span
+                        key={i}
+                        aria-hidden
+                        className={filled ? "stamp-pop" : undefined}
+                        style={{
+                          aspectRatio: "1",
+                          width: "100%",
+                          maxWidth: 48,
+                          margin: "0 auto",
+                          display: "grid",
+                          placeItems: "center",
+                          borderRadius: 9999,
+                          ...(filled
+                            ? recompensaDisponible
+                              ? { background: "linear-gradient(160deg,#34d36b,#16a34a)", color: "#06250f", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45), 0 3px 10px rgba(34,197,94,0.5)" }
+                              : { background: "linear-gradient(160deg,#ffffff,#e7e7ea)", color: "rgba(20,20,22,0.9)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(0,0,0,0.05), 0 3px 9px rgba(0,0,0,0.32)" }
+                            : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.30)", border: "1.5px dashed rgba(255,255,255,0.26)" }),
+                          ...({ "--i": i } as CSSProperties),
+                        }}
+                      >
+                        <IconScissors size={26} />
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
+            </div>
 
-              <div
-                role="progressbar"
-                aria-valuenow={cortesCiclo}
-                aria-valuemin={0}
-                aria-valuemax={objetivo}
-                aria-label={`${cortesCiclo} de ${objetivo} cortes`}
-                style={{ height: 8, borderRadius: 9999, background: "rgba(0,0,0,0.22)", overflow: "hidden" }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: "100%",
-                    transformOrigin: "left",
-                    transform: `scaleX(${pct / 100})`,
-                    background: recompensaDisponible ? "var(--success)" : "rgba(255,255,255,0.92)",
-                    transition: "transform 700ms ease-out",
-                    boxShadow: recompensaDisponible ? "0 0 12px rgba(34,197,94,0.7)" : "none",
-                  }}
-                />
-              </div>
-
-              <div className="mt-2.5 flex items-center justify-between">
-                <p style={{ fontSize: 12, opacity: 0.8, margin: 0 }}>{motiv}</p>
-                <span className="flex items-center gap-1" style={{ fontSize: 11, opacity: 0.6 }}>
-                  <IconFlip /> ver QR
-                </span>
-              </div>
+            <div className="flex items-center justify-between">
+              <p style={{ fontSize: 13, opacity: 0.9, margin: 0 }}>{renderMotiv(motiv)}</p>
+              <span className="flex items-center gap-1" style={{ fontSize: 11, opacity: 0.6 }}>
+                <IconFlip /> ver QR
+              </span>
+            </div>
             </div>
           </div>
 
@@ -196,6 +234,7 @@ export function LoyaltyCard({
               <p style={{ fontSize: 11, color: "rgba(15,15,15,0.5)", margin: "6px 0 0", letterSpacing: "0.04em" }}>Muéstraselo al cajero</p>
             </div>
           </div>
+        </div>
         </div>
       </button>
 

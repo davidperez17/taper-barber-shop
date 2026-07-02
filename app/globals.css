@@ -185,23 +185,31 @@ select:focus-visible {
    VIP tier surfaces — la tarjeta se ve físicamente distinta por tier
    ════════════════════════════════════════════════════════════════ */
 
+/* Sheen de material: luz arriba-izquierda + sombra abajo-derecha.
+   Se compone ANTES del gradiente de tier para dar profundidad de tarjeta física. */
+:root {
+  --card-sheen:
+    radial-gradient(120% 85% at 18% 0%, rgba(255, 255, 255, 0.11), transparent 55%),
+    radial-gradient(90% 60% at 100% 100%, rgba(0, 0, 0, 0.2), transparent 60%);
+}
+
 .tier-silver {
-  background: linear-gradient(150deg, var(--tier-silver-from) 0%, var(--tier-silver-to) 100%);
+  background: var(--card-sheen), linear-gradient(150deg, var(--tier-silver-from) 0%, var(--tier-silver-to) 100%);
   --tier-glow: var(--tier-silver-glow);
   --tier-ink:  var(--tier-silver-ink);
 }
 .tier-gold {
-  background: linear-gradient(150deg, var(--tier-gold-from) 0%, var(--tier-gold-to) 100%);
+  background: var(--card-sheen), linear-gradient(150deg, var(--tier-gold-from) 0%, var(--tier-gold-to) 100%);
   --tier-glow: var(--tier-gold-glow);
   --tier-ink:  var(--tier-gold-ink);
 }
 .tier-platinum {
-  background: linear-gradient(150deg, var(--tier-plat-from) 0%, var(--tier-plat-to) 100%);
+  background: var(--card-sheen), linear-gradient(150deg, var(--tier-plat-from) 0%, var(--tier-plat-to) 100%);
   --tier-glow: var(--tier-plat-glow);
   --tier-ink:  var(--tier-plat-ink);
 }
 .tier-black {
-  background: linear-gradient(150deg, var(--tier-black-from) 0%, var(--tier-black-to) 100%);
+  background: var(--card-sheen), linear-gradient(150deg, var(--tier-black-from) 0%, var(--tier-black-to) 100%);
   --tier-glow: var(--tier-black-glow);
   --tier-ink:  var(--tier-black-ink);
 }
@@ -234,6 +242,16 @@ select:focus-visible {
   from { background-position: -200% 0; }
   to   { background-position: 200% 0; }
 }
+@keyframes taperStamp {
+  from { opacity: 0; transform: scale(0.4) rotate(-14deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* Sello de lealtad — pop escalonado al montar (delay via --i) */
+.stamp-pop {
+  animation: taperStamp 320ms var(--ease-spring) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
 
 .animate-fade-up     { animation: taperFadeUp 180ms ease-out both; }
 .animate-card-appear { animation: taperCardAppear 400ms var(--ease-spring) both; }
@@ -263,5 +281,9 @@ select:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* El stagger usa animation-delay; sin esto los sellos quedarían ocultos. */
+  .stamp-pop {
+    animation: none !important;
   }
 }

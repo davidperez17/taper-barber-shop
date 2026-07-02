@@ -1,20 +1,13 @@
 import Link from "next/link";
 import QRCode from "qrcode";
 import { requireDashboard } from "@/lib/queries/cliente";
-import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL, type Tier } from "@/lib/loyalty";
+import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL } from "@/lib/loyalty";
 import { fmtDiaMes } from "@/lib/format";
 import { LoyaltyCard } from "@/components/cliente/LoyaltyCard";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
 import { IconStats, IconHistory } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
 import { getBandeja } from "@/lib/queries/notificaciones";
-
-const BENEFICIO_CORTO: Record<Tier, string | null> = {
-  silver: null,
-  gold: "Desc. 10%",
-  platinum: "Desc. 15%",
-  black: "VIP",
-};
 
 export default async function TarjetaPage() {
   const dash = await requireDashboard();
@@ -53,7 +46,6 @@ export default async function TarjetaPage() {
         objetivo={loyalty.objetivo}
         motiv={motiv}
         recompensaDisponible={loyalty.recompensaDisponible}
-        beneficio={BENEFICIO_CORTO[loyalty.tier]}
         qrSvg={qrSvg}
       />
 

@@ -132,7 +132,7 @@ export function copyMotivacional(s: LoyaltyState, cortesTotal: number): string {
   if (cortesTotal === 0) return "Tu journey empieza hoy";
   if (s.recompensaDisponible) return "¡Reclama tu corte gratis!";
   const n = s.faltanParaRecompensa;
-  return `Te falta${n === 1 ? "" : "n"} ${n} corte${n === 1 ? "" : "s"}`;
+  return `Falta${n === 1 ? "" : "n"} ${n} para tu corte gratis`;
 }
 
 /** Id corto de miembro para mostrar (#00847). */
