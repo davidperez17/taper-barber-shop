@@ -25,7 +25,7 @@ export function CatalogoManager({ catalogo }: { catalogo: CatalogoAdmin }) {
   const [tab, setTab] = useState<Tab>("servicios");
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <h1 className="mb-5 font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Catálogo</h1>
 
       <div className="mb-5 flex gap-5 overflow-x-auto border-b border-line">

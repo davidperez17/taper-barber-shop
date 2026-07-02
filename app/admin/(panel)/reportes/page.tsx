@@ -44,7 +44,7 @@ export default async function ReportesPage({
   ]);
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Reportes</h1>
         <ExportCSV reporte={data} rangoLabel={label} />

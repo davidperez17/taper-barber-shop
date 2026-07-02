@@ -27,7 +27,7 @@ export default async function RecuperacionPage({
   const inactivos = await getInactivos(dias);
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Recuperar clientes</h1>
       <p className="mt-1 text-sm text-muted">Clientes que no vienen hace tiempo. Mándales un mensaje y reactívalos.</p>
 

@@ -13,7 +13,7 @@ export function CuponesManager({ cupones }: { cupones: Cupon[] }) {
   const [edit, setEdit] = useState<Cupon | "nuevo" | null>(null);
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Cupones</h1>
         <BtnNuevo onClick={() => setEdit("nuevo")} label="Nuevo cupón" />

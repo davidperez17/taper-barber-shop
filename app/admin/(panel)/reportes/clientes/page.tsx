@@ -35,7 +35,7 @@ export default async function ReporteClientesPage({
   const pctRecurrentes = gastoTotal > 0 ? Math.round((Number(data.gasto_recurrentes) / gastoTotal) * 100) : 0;
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Reportes</h1>
       <div className="mt-4"><ReportesTabs activo="clientes" preset={preset} suc={sucSel} /></div>
 

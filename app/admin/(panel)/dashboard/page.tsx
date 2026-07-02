@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Dashboard</h1>
       <p className="mb-5 mt-1 text-sm text-muted">
         {multi && nombreSucursal ? <>Sucursal <span className="font-semibold text-ink">{nombreSucursal}</span> · estado en tiempo real.</> : "Estado del negocio en tiempo real."}

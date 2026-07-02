@@ -11,7 +11,7 @@ export default function RegistrarClientePage() {
   const [state, action, pending] = useActionState(registrarClienteAdmin, initial);
 
   return (
-    <div className="animate-fade-up max-w-[440px]">
+    <div className="max-w-[440px]">
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Cliente nuevo</h1>
       <p className="mb-6 mt-1 text-sm text-muted">Alta rápida — luego registras su venta.</p>
 

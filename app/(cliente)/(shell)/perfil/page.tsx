@@ -22,7 +22,7 @@ export default async function PerfilPage() {
   const pct = next ? Math.min(100, Math.round(((visitas - prevMin) / (min - prevMin)) * 100)) : 100;
 
   return (
-    <div className="animate-fade-up px-5 pb-6 pt-14">
+    <div className="px-5 pb-6 pt-14">
       <h1 className="mb-5 font-display text-[30px] font-bold tracking-[-0.01em] text-ink">Mi Perfil</h1>
 
       {/* Mini tarjeta del tier */}

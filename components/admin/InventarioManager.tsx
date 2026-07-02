@@ -23,7 +23,7 @@ export function InventarioManager({ productos }: { productos: Producto[] }) {
   const bajos = useMemo(() => productos.filter((p) => estadoStock(p) !== "ok").length, [productos]);
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <h1 className="mb-1 font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Inventario</h1>
       <p className="mb-5 text-sm text-muted">
         Controla el stock de tus productos. Las ventas descuentan stock automáticamente.

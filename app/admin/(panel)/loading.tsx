@@ -2,7 +2,7 @@
 // mientras el server renderiza la página real). Da respuesta inmediata al toque.
 export default function PanelLoading() {
   return (
-    <div className="animate-fade-up" aria-busy="true" aria-label="Cargando…">
+    <div aria-busy="true" aria-label="Cargando…">
       <div className="skeleton mb-5 h-7 w-40" />
       <div className="flex flex-col gap-2">
         {Array.from({ length: 6 }).map((_, i) => (

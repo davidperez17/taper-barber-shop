@@ -175,7 +175,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }
   }
 
   return (
-    <div className="mx-auto max-w-[720px] animate-fade-up">
+    <div className="mx-auto max-w-[720px]">
       {/* Ficha del cliente */}
       <div className={`${TIER_SURFACE[loyalty.tier]} rounded-2xl border border-white/15 p-4`} style={{ boxShadow: "0 8px 30px var(--tier-glow)" }}>
         <div className="flex items-start justify-between" style={{ color: "var(--tier-ink)" }}>

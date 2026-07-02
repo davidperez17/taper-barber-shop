@@ -56,7 +56,7 @@ export function AgendaManager({ fecha, hoy, citas, barberos, servicios }: Props)
   const irA = (f: string) => router.push(`/admin/agenda?d=${f}`);
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Agenda</h1>
         <button onClick={() => setEdit("nueva")} className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-semibold text-accent-ink">

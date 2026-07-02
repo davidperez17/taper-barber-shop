@@ -16,7 +16,7 @@ export default async function StatsPage() {
   const visitas = dash.loyalty.visitas_12m;
 
   return (
-    <div className="animate-fade-up px-5 pb-6 pt-14">
+    <div className="px-5 pb-6 pt-14">
       <h1 className="mb-5 font-display text-[30px] font-bold tracking-[-0.01em] text-ink">Mis Stats</h1>
 
       <div className="grid grid-cols-2 gap-3.5">

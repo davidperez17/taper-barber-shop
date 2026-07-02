@@ -7,7 +7,7 @@ export default async function ClientesPage() {
   const clientes = await getClientesConLealtad();
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <div className="mb-5 flex items-center justify-between gap-4">
         <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Clientes</h1>
         <Link

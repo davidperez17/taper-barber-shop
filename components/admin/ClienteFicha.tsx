@@ -43,7 +43,7 @@ export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeRese
   };
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <Link href="/admin/clientes" className="mb-4 inline-flex min-h-9 items-center gap-1 text-sm text-muted hover:text-ink">
         ← Clientes
       </Link>

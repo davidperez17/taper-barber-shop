@@ -44,7 +44,7 @@ export function PersonalManager({ personal, yoId, sucursales }: { personal: Staf
   const [modal, setModal] = useState<StaffRow | "nuevo" | null>(null);
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <div className="mb-1 flex items-center justify-between gap-3">
         <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Personal</h1>
         <button onClick={() => setModal("nuevo")} className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-semibold text-accent-ink">

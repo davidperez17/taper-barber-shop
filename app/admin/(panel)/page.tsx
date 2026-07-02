@@ -8,7 +8,7 @@ export default async function AdminHomePage() {
   const esDueno = staff?.rol === "dueno" || staff?.rol === "admin";
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Registrar venta</h1>
       <p className="mt-1 text-sm text-muted">Escanea el QR del cliente o búscalo por nombre/teléfono.</p>
 

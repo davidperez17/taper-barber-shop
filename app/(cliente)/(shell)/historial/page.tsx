@@ -15,7 +15,7 @@ export default async function HistorialPage() {
   }
 
   return (
-    <div className="animate-fade-up px-5 pb-6 pt-14">
+    <div className="px-5 pb-6 pt-14">
       <h1 className="mb-5 font-display text-[30px] font-bold tracking-[-0.01em] text-ink">Historial</h1>
 
       {dash.historial.length === 0 ? (

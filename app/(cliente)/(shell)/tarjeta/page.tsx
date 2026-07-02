@@ -29,7 +29,7 @@ export default async function TarjetaPage() {
     .replace(/(<svg[^>]*?)\s+height="[^"]*"/, "$1");
 
   return (
-    <div className="animate-fade-up px-5 pb-6 pt-14">
+    <div className="px-5 pb-6 pt-14">
       {loyalty.recompensaDisponible && <RewardCelebration nombre={dash.cliente.nombre} />}
 
       {/* Header */}

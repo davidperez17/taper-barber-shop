@@ -16,7 +16,7 @@ export function SucursalesManager({ sucursales, max }: { sucursales: Sucursal[];
   const puedeCrear = activas < max;
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <div className="mb-1 flex items-center justify-between gap-3">
         <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Sucursales</h1>
         {puedeCrear && (
