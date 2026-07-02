@@ -23,7 +23,7 @@ export function Input({ label, hint, prefix, className, id, type, ...props }: Pr
         className="mb-2 block text-xs font-medium uppercase tracking-[0.04em] text-subtle"
       >
         {label}
-        {hint && <span className="ml-1 normal-case tracking-normal text-[#4a4a4a]">{hint}</span>}
+        {hint && <span className="ml-1 normal-case tracking-normal text-subtle">{hint}</span>}
       </label>
       <div
         className={cn(

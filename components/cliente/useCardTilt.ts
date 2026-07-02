@@ -28,6 +28,9 @@ export function useCardTilt(maxTilt = 8) {
   const base = useRef<{ beta: number; gamma: number } | null>(null);
   const rafId = useRef<number | null>(null);
   const orientBound = useRef(false);
+  // Arranca el loop rAF; no-op si ya corre. Se asigna dentro del effect y lo
+  // invocan los handlers para despertar la animación tras reposar.
+  const wake = useRef<() => void>(() => {});
 
   const onOrient = useCallback(
     (e: DeviceOrientationEvent) => {
@@ -40,6 +43,7 @@ export function useCardTilt(maxTilt = 8) {
       target.current.rx = -dB * maxTilt;
       target.current.gx = 50 + dG * 46;
       target.current.gy = 28 + dB * 34;
+      wake.current();
     },
     [maxTilt],
   );
@@ -68,6 +72,7 @@ export function useCardTilt(maxTilt = 8) {
 
   const setFlipped = useCallback((v: boolean) => {
     flippedRef.current = v;
+    wake.current(); // el damp cambia → re-aplicar transform aunque estuviera en reposo
   }, []);
 
   useEffect(() => {
@@ -86,10 +91,12 @@ export function useCardTilt(maxTilt = 8) {
       target.current.rx = -py * 2 * maxTilt;
       target.current.gx = 50 + px * 92;
       target.current.gy = 28 + py * 60;
+      wake.current();
     };
     const resetTarget = () => {
       if (orientBound.current) return;
       target.current = { rx: 0, ry: 0, gx: 50, gy: 28 };
+      wake.current();
     };
     card?.addEventListener("pointermove", onPointerMove);
     card?.addEventListener("pointerleave", resetTarget);
@@ -113,11 +120,25 @@ export function useCardTilt(maxTilt = 8) {
         glareRef.current.style.setProperty("--gx", `${c.gx.toFixed(1)}%`);
         glareRef.current.style.setProperty("--gy", `${c.gy.toFixed(1)}%`);
       }
+      // En reposo (cur≈target) detén el loop para no drenar batería; los
+      // handlers lo despiertan con wake.current() ante nuevo input.
+      const rested =
+        Math.abs(t.rx - c.rx) < 0.02 && Math.abs(t.ry - c.ry) < 0.02 &&
+        Math.abs(t.gx - c.gx) < 0.05 && Math.abs(t.gy - c.gy) < 0.05;
+      if (rested) {
+        rafId.current = null;
+        return;
+      }
       rafId.current = requestAnimationFrame(loop);
     };
-    rafId.current = requestAnimationFrame(loop);
+    const start = () => {
+      if (rafId.current == null) rafId.current = requestAnimationFrame(loop);
+    };
+    wake.current = start;
+    start();
 
     return () => {
+      wake.current = () => {};
       card?.removeEventListener("pointermove", onPointerMove);
       card?.removeEventListener("pointerleave", resetTarget);
       if (orientBound.current) {

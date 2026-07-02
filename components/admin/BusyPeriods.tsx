@@ -89,7 +89,7 @@ export function BusyPeriods({ cells, periodo, rango, suc = "" }: { cells: HeatCe
               {/* fila de etiquetas de hora */}
               <div />
               {horas.map((h) => (
-                <div key={h} className="pt-1 text-center text-[9px] tabular-nums text-subtle">{horaLabel(h)}</div>
+                <div key={h} className="pt-1 text-center text-[11px] tabular-nums text-subtle">{horaLabel(h)}</div>
               ))}
             </div>
           </div>

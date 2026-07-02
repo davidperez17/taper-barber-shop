@@ -17,7 +17,7 @@ export function TendenciaChart({ data }: { data: DiaRow[] }) {
             className="w-full rounded-t bg-accent transition-[height]"
             style={{ height: `${Math.max(3, (d.total / max) * 100)}%` }}
           />
-          <span className="text-[9px] tabular-nums text-subtle">{i % paso === 0 ? d.dia.slice(8, 10) : ""}</span>
+          <span className="text-[11px] tabular-nums text-subtle">{i % paso === 0 ? d.dia.slice(8, 10) : ""}</span>
         </div>
       ))}
     </div>
@@ -25,18 +25,18 @@ export function TendenciaChart({ data }: { data: DiaRow[] }) {
 }
 
 /** Top horizontal: nombre + barra proporcional + valor. */
-export function TopBars({ rows }: { rows: TopRow[] }) {
+export function TopBars({ rows, label }: { rows: TopRow[]; label?: string }) {
   if (rows.length === 0) return <p className="text-sm text-muted">Sin datos en el rango.</p>;
   const max = Math.max(...rows.map((r) => r.n), 1);
   return (
-    <div className="flex flex-col gap-2.5">
+    <div role="list" aria-label={label} className="flex flex-col gap-2.5">
       {rows.map((r) => (
-        <div key={r.nombre}>
+        <div role="listitem" key={r.nombre}>
           <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
             <span className="truncate text-ink">{r.nombre}</span>
             <span className="shrink-0 tabular-nums text-muted">{r.n} · {fmtQ(r.monto)}</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-line">
+          <div aria-hidden className="h-2 overflow-hidden rounded-full bg-line">
             <div className="h-full rounded-full bg-accent" style={{ width: `${(r.n / max) * 100}%` }} />
           </div>
         </div>

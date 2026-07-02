@@ -125,7 +125,7 @@ function TopCard({ titulo, rows }: { titulo: string; rows: { nombre: string; n: 
   return (
     <div className="rounded-2xl border border-line bg-elevated p-4">
       <h3 className="mb-3 text-sm font-semibold text-ink">{titulo}</h3>
-      <TopBars rows={rows} />
+      <TopBars rows={rows} label={titulo} />
     </div>
   );
 }
