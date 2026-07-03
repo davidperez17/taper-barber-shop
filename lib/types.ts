@@ -57,6 +57,7 @@ export interface ClienteNota {
   id: string;
   texto: string;
   created_at: string;
+  autor_nombre: string | null;
 }
 
 export interface ClienteFicha {
@@ -138,6 +139,7 @@ export interface StaffRow {
   last_sign_in_at: string | null;
   sucursal_id: string | null;
   sucursal_nombre: string | null;
+  barbero_id: string | null; // ficha de barberos vinculada
 }
 
 // ── Agenda (citas) ──────────────────────────────────────────────

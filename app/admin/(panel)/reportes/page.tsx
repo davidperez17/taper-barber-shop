@@ -5,10 +5,11 @@ import { getSucursalActiva, getSucursales } from "@/lib/sucursal";
 import { getReporte, getHeatmapHorario } from "@/lib/queries/reportes";
 import { ReportesSucursalFiltro } from "@/components/admin/ReportesSucursalFiltro";
 import { fmtQ } from "@/lib/format";
-import { PRESETS, normalizarPreset, rango, ymd, hoyGT } from "@/lib/rango";
+import { PRESETS, resolverRango, ymd, hoyGT } from "@/lib/rango";
 import { TendenciaChart, TopBars } from "@/components/admin/Charts";
 import { BusyPeriods, type PeriodoBP } from "@/components/admin/BusyPeriods";
 import { ReportesTabs } from "@/components/admin/ReportesTabs";
+import { RangoPersonalizado } from "@/components/admin/RangoPersonalizado";
 import { ExportCSV } from "@/components/admin/ExportCSV";
 import { Metric } from "@/components/admin/Metric";
 
@@ -17,14 +18,13 @@ const BP_DIAS: Record<PeriodoBP, number> = { semana: 7, mes: 30, anio: 365 };
 export default async function ReportesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rango?: string; bp?: string; suc?: string }>;
+  searchParams: Promise<{ rango?: string; desde?: string; hasta?: string; bp?: string; suc?: string }>;
 }) {
   const staff = await getStaff();
   if (staff?.rol !== "admin" && staff?.rol !== "dueno") redirect("/admin");
 
   const sp = await searchParams;
-  const preset = normalizarPreset(sp.rango);
-  const { desde, hasta, label } = rango(preset);
+  const { desde, hasta, label, preset, esCustom, qs: rangoQS } = resolverRango(sp);
 
   // Busy Periods (día × hora) con su propio periodo: semana / mes / año.
   const bp = (["semana", "mes", "anio"].includes(sp.bp ?? "") ? sp.bp : "mes") as PeriodoBP;
@@ -50,34 +50,37 @@ export default async function ReportesPage({
         <ExportCSV reporte={data} rangoLabel={label} />
       </div>
 
-      <div className="mt-4"><ReportesTabs activo="ventas" preset={preset} suc={sucSel} /></div>
+      <div className="mt-4"><ReportesTabs activo="ventas" rangoQS={rangoQS} suc={sucSel} /></div>
 
       {sucursales.length > 1 && (
         <ReportesSucursalFiltro
           basePath="/admin/reportes"
-          rango={preset}
+          rangoQS={rangoQS}
           extraQS={`&bp=${bp}`}
           sucursales={sucursales.map((s) => ({ id: s.id, nombre: s.nombre }))}
           activaId={sucursalId}
         />
       )}
 
-      {/* Rango — control segmentado */}
-      <div role="tablist" aria-label="Rango de fechas" className="mt-4 inline-flex flex-wrap rounded-full border border-line bg-elevated p-1">
-        {PRESETS.map((p) => {
-          const activo = preset === p.key;
-          return (
-            <Link
-              key={p.key}
-              href={`/admin/reportes?rango=${p.key}&bp=${bp}${sucQS}`}
-              role="tab"
-              aria-selected={activo}
-              className={`flex min-h-[42px] items-center rounded-full px-4 text-sm font-semibold transition-colors ${activo ? "bg-accent text-accent-ink shadow-[0_1px_6px_var(--accent-glow)]" : "text-muted hover:text-ink"}`}
-            >
-              {p.label}
-            </Link>
-          );
-        })}
+      {/* Rango — control segmentado + personalizado */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div role="tablist" aria-label="Rango de fechas" className="inline-flex flex-wrap rounded-full border border-line bg-elevated p-1">
+          {PRESETS.map((p) => {
+            const activo = preset === p.key;
+            return (
+              <Link
+                key={p.key}
+                href={`/admin/reportes?rango=${p.key}&bp=${bp}${sucQS}`}
+                role="tab"
+                aria-selected={activo}
+                className={`flex min-h-[42px] items-center rounded-full px-4 text-sm font-semibold transition-colors ${activo ? "bg-accent text-accent-ink shadow-[0_1px_6px_var(--accent-glow)]" : "text-muted hover:text-ink"}`}
+              >
+                {p.label}
+              </Link>
+            );
+          })}
+        </div>
+        <RangoPersonalizado basePath="/admin/reportes" desde={desde} hasta={hasta} extraQS={`&bp=${bp}${sucQS}`} activo={esCustom} />
       </div>
 
       {/* Métricas */}
@@ -91,7 +94,7 @@ export default async function ReportesPage({
       <section className="mt-6">
         <h2 className="mb-3 font-display text-lg font-bold text-ink">Horarios concurridos</h2>
         <div className="rounded-2xl border border-line bg-elevated p-4">
-          <BusyPeriods cells={heatCells} periodo={bp} rango={preset} suc={sucSel} />
+          <BusyPeriods cells={heatCells} periodo={bp} rangoQS={rangoQS} suc={sucSel} />
         </div>
       </section>
 

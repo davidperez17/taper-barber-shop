@@ -36,7 +36,7 @@ export async function getClienteFicha(id: string): Promise<ClienteFicha | null> 
 
   const [dash, notas, etiquetas] = await Promise.all([
     sb.rpc("get_cliente_by_qr", { p_qr_token: cliente.qr_token }),
-    sb.from("cliente_notas").select("id, texto, created_at").eq("cliente_id", id).order("created_at", { ascending: false }),
+    sb.from("cliente_notas").select("id, texto, created_at, autor_nombre").eq("cliente_id", id).order("created_at", { ascending: false }),
     sb.from("cliente_etiquetas").select("etiqueta").eq("cliente_id", id).order("created_at"),
   ]);
 

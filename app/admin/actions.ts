@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdmin } from "@/lib/supabase/admin";
 import { getStaff } from "@/lib/queries/staff";
 import { getSucursalActiva, getSucursales, SUCURSAL_COOKIE } from "@/lib/sucursal";
 import { computeLoyalty, type LoyaltyRaw } from "@/lib/loyalty";
@@ -237,6 +238,7 @@ export async function addNota(clienteId: string, texto: string): Promise<ActionR
   const { error } = await sb.from("cliente_notas").insert({
     cliente_id: clienteId,
     autor_id: staff?.id ?? null,
+    autor_nombre: staff?.nombre ?? null,
     texto: limpio,
   });
   if (error) return { ok: false, error: "No se pudo guardar la nota." };
@@ -250,6 +252,60 @@ export async function deleteNota(notaId: string, clienteId: string): Promise<Act
   if (error) return { ok: false, error: "No se pudo borrar." };
   revalidatePath(`/admin/clientes/${clienteId}`);
   return { ok: true };
+}
+
+// ── Mantenimiento: imágenes huérfanas del bucket `catalogo` ──────────
+export type LimpiezaResult =
+  | { ok: true; borradas: number; revisadas: number }
+  | { ok: false; error: string };
+
+/**
+ * Borra del bucket `catalogo` las imágenes que ya no referencia ningún
+ * servicio ni producto. Solo dueño (destructiva). Ignora archivos con menos
+ * de 24 h para no borrar una subida cuya fila aún no se guardó.
+ */
+export async function limpiarImagenesHuerfanas(): Promise<LimpiezaResult> {
+  const staff = await getStaff();
+  if (staff?.rol !== "dueno") return { ok: false, error: "Solo el dueño puede limpiar imágenes." };
+
+  const admin = createAdmin();
+
+  // 1. Todos los archivos del bucket (paginado).
+  const archivos: { name: string; created_at?: string | null }[] = [];
+  const PAGE = 100;
+  for (let offset = 0; ; offset += PAGE) {
+    const { data, error } = await admin.storage.from("catalogo").list("", {
+      limit: PAGE, offset, sortBy: { column: "name", order: "asc" },
+    });
+    if (error) return { ok: false, error: "No se pudo leer el almacenamiento." };
+    if (!data || data.length === 0) break;
+    for (const o of data) if (o.name && !o.name.endsWith("/")) archivos.push({ name: o.name, created_at: o.created_at });
+    if (data.length < PAGE) break;
+  }
+
+  // 2. Nombres de archivo que el catálogo aún referencia.
+  const [serv, prod] = await Promise.all([
+    admin.from("servicios").select("imagen_url"),
+    admin.from("productos").select("imagen_url"),
+  ]);
+  const referenciados = new Set<string>();
+  for (const row of [...(serv.data ?? []), ...(prod.data ?? [])]) {
+    const url = (row as { imagen_url: string | null }).imagen_url;
+    if (url) referenciados.add(url.split("/").pop()!.split("?")[0]);
+  }
+
+  // 3. Huérfanos: sin referencia y con más de 24 h de antigüedad.
+  const limite = Date.now() - 24 * 60 * 60 * 1000;
+  const huerfanos = archivos
+    .filter((a) => !referenciados.has(a.name))
+    .filter((a) => !a.created_at || new Date(a.created_at).getTime() < limite)
+    .map((a) => a.name);
+
+  if (huerfanos.length === 0) return { ok: true, borradas: 0, revisadas: archivos.length };
+
+  const { error } = await admin.storage.from("catalogo").remove(huerfanos);
+  if (error) return { ok: false, error: "No se pudieron borrar los archivos." };
+  return { ok: true, borradas: huerfanos.length, revisadas: archivos.length };
 }
 
 export async function addEtiqueta(clienteId: string, etiqueta: string): Promise<ActionResult> {

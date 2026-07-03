@@ -2,10 +2,10 @@ import Link from "next/link";
 
 /** Filtro de sucursal para reportes: "Todas" + cada sucursal activa. */
 export function ReportesSucursalFiltro({
-  basePath, rango, extraQS = "", sucursales, activaId,
+  basePath, rangoQS, extraQS = "", sucursales, activaId,
 }: {
   basePath: string;
-  rango: string;
+  rangoQS: string; // fragmento canónico del rango: "rango=30d" o "rango=custom&desde=..&hasta=.."
   extraQS?: string;
   sucursales: { id: string; nombre: string }[];
   activaId: string | null; // resuelta; null = todas
@@ -19,7 +19,7 @@ export function ReportesSucursalFiltro({
         return (
           <Link
             key={o.id}
-            href={`${basePath}?rango=${rango}${extraQS}&suc=${o.id}`}
+            href={`${basePath}?${rangoQS}${extraQS}&suc=${o.id}`}
             role="tab"
             aria-selected={activo}
             className={`flex min-h-[38px] items-center rounded-full px-3.5 text-[13px] font-semibold transition-colors ${activo ? "bg-accent text-accent-ink shadow-[0_1px_6px_var(--accent-glow)]" : "text-muted hover:text-ink"}`}

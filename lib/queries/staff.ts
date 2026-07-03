@@ -8,6 +8,7 @@ export interface StaffSession {
   nombre: string;
   rol: RolStaff;
   sucursal_id: string | null;
+  barbero_id: string | null; // ficha de barberos vinculada (auto-atribución en POS)
 }
 
 /**
@@ -29,10 +30,10 @@ export const getStaff = cache(async (): Promise<StaffSession | null> => {
 
   const { data } = await sb
     .from("staff")
-    .select("id, nombre, rol, activo, sucursal_id")
+    .select("id, nombre, rol, activo, sucursal_id, barbero_id")
     .eq("user_id", user.id)
     .single();
 
   if (!data || !data.activo) return null;
-  return { id: data.id, nombre: data.nombre, rol: data.rol as RolStaff, sucursal_id: data.sucursal_id ?? null };
+  return { id: data.id, nombre: data.nombre, rol: data.rol as RolStaff, sucursal_id: data.sucursal_id ?? null, barbero_id: data.barbero_id ?? null };
 });

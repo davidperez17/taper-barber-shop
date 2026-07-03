@@ -32,7 +32,12 @@ export interface LoyaltyState {
 }
 
 // ── Umbrales de tier por visitas en los últimos 12 meses ────────
-const TIER_ORDER: Tier[] = ["silver", "gold", "platinum", "black"];
+export const TIER_ORDER: Tier[] = ["silver", "gold", "platinum", "black"];
+
+/** Posición del tier en la escalera (0 = silver). Para comparar subidas. */
+export function tierRank(tier: Tier): number {
+  return TIER_ORDER.indexOf(tier);
+}
 
 /** Mínimo de visitas (12m) para alcanzar cada tier. */
 export const TIER_MIN_VISITAS: Record<Tier, number> = {

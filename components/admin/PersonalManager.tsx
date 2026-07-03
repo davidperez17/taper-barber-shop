@@ -8,6 +8,7 @@ import {
   type PersonalResult,
 } from "@/app/admin/(panel)/personal/actions";
 import type { StaffRow, RolStaff } from "@/lib/types";
+import type { BarberoVinculo } from "@/lib/queries/personal";
 import { IconPlus, IconPencil, IconEye, IconEyeOff } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
 
@@ -40,7 +41,7 @@ function generarPassword(): string {
 
 interface SucursalMini { id: string; nombre: string }
 
-export function PersonalManager({ personal, yoId, sucursales }: { personal: StaffRow[]; yoId: string; sucursales: SucursalMini[] }) {
+export function PersonalManager({ personal, yoId, sucursales, barberos }: { personal: StaffRow[]; yoId: string; sucursales: SucursalMini[]; barberos: BarberoVinculo[] }) {
   const [modal, setModal] = useState<StaffRow | "nuevo" | null>(null);
 
   return (
@@ -64,6 +65,7 @@ export function PersonalManager({ personal, yoId, sucursales }: { personal: Staf
           staff={modal === "nuevo" ? null : modal}
           esYo={modal !== "nuevo" && modal.id === yoId}
           sucursales={sucursales}
+          barberos={barberos}
           onClose={() => setModal(null)}
         />
       )}
@@ -188,7 +190,7 @@ function RolSelector({ value, onChange, disabled }: { value: RolStaff; onChange:
   );
 }
 
-function PersonalSheet({ staff, esYo, sucursales, onClose }: { staff: StaffRow | null; esYo: boolean; sucursales: SucursalMini[]; onClose: () => void }) {
+function PersonalSheet({ staff, esYo, sucursales, barberos, onClose }: { staff: StaffRow | null; esYo: boolean; sucursales: SucursalMini[]; barberos: BarberoVinculo[]; onClose: () => void }) {
   const { pending, error, run } = useAction();
   const ref = useModalA11y(onClose);
   const [nombre, setNombre] = useState(staff?.nombre ?? "");
@@ -196,15 +198,21 @@ function PersonalSheet({ staff, esYo, sucursales, onClose }: { staff: StaffRow |
   const [password, setPassword] = useState("");
   const [rol, setRol] = useState<RolStaff>(staff?.rol ?? "cajero");
   const [sucursalId, setSucursalId] = useState<string>(staff?.sucursal_id ?? sucursales[0]?.id ?? "");
+  const [barberoId, setBarberoId] = useState<string>(staff?.barbero_id ?? "");
 
   const esNuevo = staff === null;
   // La sucursal solo aplica a trabajadores (dueño/admin ven todas).
   const asignaSucursal = rol === "cajero" || rol === "barbero";
+  // El vínculo a barbero solo tiene sentido para el rol barbero.
+  const vinculaBarbero = rol === "barbero";
+  // Barberos disponibles: los de la sucursal elegida, más el ya vinculado (por si quedó de otra sucursal).
+  const barberosSucursal = barberos.filter((b) => b.sucursal_id === sucursalId || b.id === staff?.barbero_id);
+  const barberoElegido = vinculaBarbero ? (barberosSucursal.some((b) => b.id === barberoId) ? barberoId : "") : "";
 
   const guardar = () =>
     esNuevo
-      ? run(() => crearStaff({ nombre, email, password, rol, sucursalId: asignaSucursal ? sucursalId : null }), onClose)
-      : run(() => actualizarStaff(staff.id, { nombre, rol, sucursalId: asignaSucursal ? sucursalId : null }), onClose);
+      ? run(() => crearStaff({ nombre, email, password, rol, sucursalId: asignaSucursal ? sucursalId : null, barberoId: barberoElegido || null }), onClose)
+      : run(() => actualizarStaff(staff.id, { nombre, rol, sucursalId: asignaSucursal ? sucursalId : null, barberoId: barberoElegido || null }), onClose);
 
   if (typeof document === "undefined") return null;
 
@@ -245,6 +253,21 @@ function PersonalSheet({ staff, esYo, sucursales, onClose }: { staff: StaffRow |
               <select value={sucursalId} onChange={(e) => setSucursalId(e.target.value)} className={inputCls}>
                 {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
               </select>
+            </Campo>
+          )}
+
+          {vinculaBarbero && (
+            <Campo label="Barbero vinculado (para atribuir sus ventas)">
+              {barberosSucursal.length > 0 ? (
+                <select value={barberoElegido} onChange={(e) => setBarberoId(e.target.value)} className={inputCls}>
+                  <option value="">Sin vincular</option>
+                  {barberosSucursal.map((b) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+                </select>
+              ) : (
+                <p className="rounded-lg border border-line bg-elevated px-3.5 py-2.5 text-[13px] text-muted">
+                  No hay barberos en esta sucursal. Créalos en Catálogo para poder vincular.
+                </p>
+              )}
             </Campo>
           )}
 

@@ -250,7 +250,7 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
                 <p className="whitespace-pre-wrap text-sm text-ink">{n.texto}</p>
                 <button onClick={() => borrarNota(n.id)} aria-label="Borrar nota" className="-mr-1 -mt-1 flex size-9 shrink-0 items-center justify-center text-base text-subtle hover:text-danger">×</button>
               </div>
-              <p className="mt-1.5 text-[11px] text-subtle">{fmtDiaMes(n.created_at)}</p>
+              <p className="mt-1.5 text-[11px] text-subtle">{fmtDiaMes(n.created_at)}{n.autor_nombre ? ` · ${n.autor_nombre}` : ""}</p>
             </div>
           ))}
           {notas.length === 0 && <p className="text-[13px] text-subtle">Sin notas todavía.</p>}

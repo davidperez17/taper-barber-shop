@@ -5,21 +5,21 @@ import { getSucursalActiva, getSucursales } from "@/lib/sucursal";
 import { getReporteClientes } from "@/lib/queries/reportes";
 import { ReportesSucursalFiltro } from "@/components/admin/ReportesSucursalFiltro";
 import { fmtQ } from "@/lib/format";
-import { PRESETS, normalizarPreset, rango } from "@/lib/rango";
+import { PRESETS, resolverRango } from "@/lib/rango";
 import { ReportesTabs } from "@/components/admin/ReportesTabs";
+import { RangoPersonalizado } from "@/components/admin/RangoPersonalizado";
 import { Metric } from "@/components/admin/Metric";
 
 export default async function ReporteClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rango?: string; suc?: string }>;
+  searchParams: Promise<{ rango?: string; desde?: string; hasta?: string; suc?: string }>;
 }) {
   const staff = await getStaff();
   if (staff?.rol !== "admin" && staff?.rol !== "dueno") redirect("/admin");
 
   const sp = await searchParams;
-  const preset = normalizarPreset(sp.rango);
-  const { desde, hasta, label } = rango(preset);
+  const { desde, hasta, label, preset, esCustom, qs: rangoQS } = resolverRango(sp);
 
   const sucursales = await getSucursales();
   const sucSel = sp.suc ?? "";
@@ -37,35 +37,38 @@ export default async function ReporteClientesPage({
   return (
     <div>
       <h1 className="font-display text-[26px] font-bold tracking-[-0.01em] text-ink">Reportes</h1>
-      <div className="mt-4"><ReportesTabs activo="clientes" preset={preset} suc={sucSel} /></div>
+      <div className="mt-4"><ReportesTabs activo="clientes" rangoQS={rangoQS} suc={sucSel} /></div>
 
       {sucursales.length > 1 && (
         <div className="mb-3">
           <ReportesSucursalFiltro
             basePath="/admin/reportes/clientes"
-            rango={preset}
+            rangoQS={rangoQS}
             sucursales={sucursales.map((s) => ({ id: s.id, nombre: s.nombre }))}
             activaId={sucursalId}
           />
         </div>
       )}
 
-      {/* Rango */}
-      <div role="tablist" aria-label="Rango de fechas" className="inline-flex flex-wrap rounded-full border border-line bg-elevated p-1">
-        {PRESETS.map((p) => {
-          const activo = preset === p.key;
-          return (
-            <Link
-              key={p.key}
-              href={`/admin/reportes/clientes?rango=${p.key}${sucQS}`}
-              role="tab"
-              aria-selected={activo}
-              className={`flex min-h-[42px] items-center rounded-full px-4 text-sm font-semibold transition-colors ${activo ? "bg-accent text-accent-ink shadow-[0_1px_6px_var(--accent-glow)]" : "text-muted hover:text-ink"}`}
-            >
-              {p.label}
-            </Link>
-          );
-        })}
+      {/* Rango — control segmentado + personalizado */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="tablist" aria-label="Rango de fechas" className="inline-flex flex-wrap rounded-full border border-line bg-elevated p-1">
+          {PRESETS.map((p) => {
+            const activo = preset === p.key;
+            return (
+              <Link
+                key={p.key}
+                href={`/admin/reportes/clientes?rango=${p.key}${sucQS}`}
+                role="tab"
+                aria-selected={activo}
+                className={`flex min-h-[42px] items-center rounded-full px-4 text-sm font-semibold transition-colors ${activo ? "bg-accent text-accent-ink shadow-[0_1px_6px_var(--accent-glow)]" : "text-muted hover:text-ink"}`}
+              >
+                {p.label}
+              </Link>
+            );
+          })}
+        </div>
+        <RangoPersonalizado basePath="/admin/reportes/clientes" desde={desde} hasta={hasta} extraQS={sucQS} activo={esCustom} />
       </div>
 
       {/* Métricas */}

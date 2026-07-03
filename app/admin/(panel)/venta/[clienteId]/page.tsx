@@ -23,6 +23,7 @@ export default async function VentaPage({
       servicios={catalogo.servicios}
       productos={catalogo.productos}
       barberos={catalogo.barberos}
+      defaultBarberoId={staff.barbero_id}
     />
   );
 }

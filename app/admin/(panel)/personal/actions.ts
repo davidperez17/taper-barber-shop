@@ -31,6 +31,7 @@ export async function crearStaff(input: {
   password: string;
   rol: RolStaff;
   sucursalId?: string | null;
+  barberoId?: string | null;
 }): Promise<PersonalResult> {
   if (!(await soloDueno())) return { ok: false, error: "Solo el dueño puede gestionar el personal." };
 
@@ -53,6 +54,7 @@ export async function crearStaff(input: {
     return { ok: false, error: "No se pudo crear el usuario." };
   }
 
+  const vincula = input.rol === "barbero" && input.barberoId ? input.barberoId : null;
   const { error: insErr } = await admin.from("staff").insert({
     user_id: created.user.id,
     nombre,
@@ -60,10 +62,12 @@ export async function crearStaff(input: {
     rol: input.rol,
     activo: true,
     ...(input.sucursalId ? { sucursal_id: input.sucursalId } : {}),
+    ...(vincula ? { barbero_id: vincula } : {}),
   });
   if (insErr) {
     // Rollback: no dejar un usuario Auth huérfano sin fila de staff.
     await admin.auth.admin.deleteUser(created.user.id);
+    if (insErr.message.includes("staff_barbero_unico")) return { ok: false, error: "Ese barbero ya está vinculado a otro integrante." };
     return { ok: false, error: "No se pudo registrar al integrante." };
   }
 
@@ -73,7 +77,7 @@ export async function crearStaff(input: {
 
 export async function actualizarStaff(
   id: string,
-  input: { nombre: string; rol: RolStaff; sucursalId?: string | null },
+  input: { nombre: string; rol: RolStaff; sucursalId?: string | null; barberoId?: string | null },
 ): Promise<PersonalResult> {
   const yo = await soloDueno();
   if (!yo) return { ok: false, error: "Solo el dueño puede gestionar el personal." };
@@ -88,9 +92,12 @@ export async function actualizarStaff(
   const admin = createAdmin();
   const fila: Record<string, unknown> = { nombre, rol: input.rol };
   if (input.sucursalId) fila.sucursal_id = input.sucursalId;
+  // El vínculo a barbero solo aplica al rol barbero; cualquier otro rol lo limpia.
+  fila.barbero_id = input.rol === "barbero" ? (input.barberoId ?? null) : null;
   const { error } = await admin.from("staff").update(fila).eq("id", id);
   if (error) {
     if (error.message.includes("dueño")) return { ok: false, error: "Debe quedar al menos un dueño activo." };
+    if (error.message.includes("staff_barbero_unico")) return { ok: false, error: "Ese barbero ya está vinculado a otro integrante." };
     return { ok: false, error: "No se pudo guardar." };
   }
   revalidatePath("/admin/personal");

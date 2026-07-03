@@ -18,7 +18,7 @@ function horaLabel(h: number): string {
   return `${h12} ${ampm}`;
 }
 
-export function BusyPeriods({ cells, periodo, rango, suc = "" }: { cells: HeatCell[]; periodo: PeriodoBP; rango: string; suc?: string }) {
+export function BusyPeriods({ cells, periodo, rangoQS, suc = "" }: { cells: HeatCell[]; periodo: PeriodoBP; rangoQS: string; suc?: string }) {
   const sucQS = suc ? `&suc=${suc}` : "";
   const tieneData = cells.length > 0;
   const horas = tieneData
@@ -51,7 +51,7 @@ export function BusyPeriods({ cells, periodo, rango, suc = "" }: { cells: HeatCe
             return (
               <Link
                 key={p.key}
-                href={`/admin/reportes?rango=${rango}&bp=${p.key}${sucQS}`}
+                href={`/admin/reportes?${rangoQS}&bp=${p.key}${sucQS}`}
                 role="tab"
                 aria-selected={activo}
                 className={`flex min-h-9 items-center rounded-full px-3.5 text-[13px] font-semibold transition-colors ${activo ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"}`}

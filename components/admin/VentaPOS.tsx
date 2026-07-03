@@ -16,17 +16,23 @@ interface Props {
   servicios: Servicio[];
   productos: Producto[];
   barberos: Barbero[];
+  defaultBarberoId?: string | null; // barbero del staff logueado (auto-atribución)
 }
 
 type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
 
-export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos }: Props) {
+export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, defaultBarberoId }: Props) {
   const router = useRouter();
   const loyalty = computeLoyalty(loyaltyRaw);
 
+  // Pre-selecciona al barbero del staff logueado si está en la lista; si no, el primero.
+  const barberoInicial = defaultBarberoId && barberos.some((b) => b.id === defaultBarberoId)
+    ? defaultBarberoId
+    : barberos[0]?.id ?? "";
+
   const [serv, setServ] = useState<Record<string, number>>({});
   const [prod, setProd] = useState<Record<string, number>>({});
-  const [barbero, setBarbero] = useState<string>(barberos[0]?.id ?? "");
+  const [barbero, setBarbero] = useState<string>(barberoInicial);
   const [metodo, setMetodo] = useState<MetodoPago>("efectivo");
   const [canjear, setCanjear] = useState(false);
   const [cuponCodigo, setCuponCodigo] = useState("");

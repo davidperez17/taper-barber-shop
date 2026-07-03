@@ -5,6 +5,7 @@ import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL } from "@/lib/lo
 import { fmtDiaMes } from "@/lib/format";
 import { LoyaltyCard } from "@/components/cliente/LoyaltyCard";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
+import { TierUpCelebration } from "@/components/cliente/TierUpCelebration";
 import { IconStats, IconHistory } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
 import { VentaLive } from "@/components/cliente/VentaLive";
@@ -33,6 +34,7 @@ export default async function TarjetaPage() {
     <div className="px-5 pb-6 pt-14">
       <VentaLive clienteId={dash.cliente.id} />
       {loyalty.recompensaDisponible && <RewardCelebration nombre={dash.cliente.nombre} />}
+      <TierUpCelebration tier={loyalty.tier} tierLabel={TIER_LABEL[loyalty.tier]} />
 
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
