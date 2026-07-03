@@ -2,9 +2,9 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { requireDashboard } from "@/lib/queries/cliente";
 import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL } from "@/lib/loyalty";
-import { LoyaltyCard } from "@/components/cliente/LoyaltyCard";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
 import { TierUpCelebration } from "@/components/cliente/TierUpCelebration";
+import { TarjetaCards, type TarjetaVM } from "@/components/cliente/TarjetaCards";
 import { IconStats } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
 import { VentaLive } from "@/components/cliente/VentaLive";
@@ -13,9 +13,25 @@ import { getBandeja } from "@/lib/queries/notificaciones";
 export default async function TarjetaPage() {
   const dash = await requireDashboard();
   const bandeja = await getBandeja(dash.cliente.id);
+  // La lealtad es por sucursal: una tarjeta por sucursal (el cliente elige).
+  // Las celebraciones se disparan según la sucursal primaria (dash.loyalty).
   const loyalty = computeLoyalty(dash.loyalty);
-  const motiv = copyMotivacional(loyalty, dash.loyalty.cortes_total);
   const firstName = dash.cliente.nombre.split(" ")[0];
+
+  const cards: TarjetaVM[] = dash.loyalty_sucursales.map((s) => {
+    const st = computeLoyalty(s);
+    return {
+      sucursalId: s.sucursal_id,
+      sucursalNombre: s.sucursal_nombre,
+      tier: st.tier,
+      tierLabel: TIER_LABEL[st.tier],
+      cortesCiclo: st.cortesCiclo,
+      objetivo: st.objetivo,
+      motiv: copyMotivacional(st, s.cortes_total),
+      recompensaDisponible: st.recompensaDisponible,
+    };
+  });
+  const cortesGlobal = dash.loyalty_sucursales.reduce((sum, s) => sum + s.cortes_total, 0);
 
   // Sin width/height fijos en el <svg> → escala al contenedor (tile responsive en la card).
   const qrSvg = (
@@ -44,15 +60,11 @@ export default async function TarjetaPage() {
         <NotifyBell notisInicial={bandeja.notis} noLeidasInicial={bandeja.noLeidas} />
       </header>
 
-      <LoyaltyCard
+      <TarjetaCards
+        cards={cards}
+        defaultSucursalId={dash.loyalty.sucursal_id}
         name={dash.cliente.nombre}
         memberId={memberId(dash.cliente.numero)}
-        tier={loyalty.tier}
-        tierLabel={TIER_LABEL[loyalty.tier]}
-        cortesCiclo={loyalty.cortesCiclo}
-        objetivo={loyalty.objetivo}
-        motiv={motiv}
-        recompensaDisponible={loyalty.recompensaDisponible}
         qrSvg={qrSvg}
       />
 
@@ -61,7 +73,7 @@ export default async function TarjetaPage() {
         <Link href="/stats" className="flex flex-col rounded-xl border border-line bg-elevated p-4">
           <span className="mb-3.5 text-accent"><IconStats /></span>
           <span className="font-display text-[17px] font-semibold text-ink">Mis Stats</span>
-          <span className="mt-0.5 text-xs text-muted">{dash.loyalty.cortes_total} cortes totales</span>
+          <span className="mt-0.5 text-xs text-muted">{cortesGlobal} cortes totales</span>
         </Link>
       </div>
     </div>

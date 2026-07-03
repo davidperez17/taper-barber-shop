@@ -1,10 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getClientesConLealtad } from "@/lib/queries/clientes";
+import { getStaff } from "@/lib/queries/staff";
+import { getSucursalActiva } from "@/lib/sucursal";
 import { ClientesList } from "@/components/admin/ClientesList";
 import { IconPlus } from "@/components/icons";
 
 export default async function ClientesPage() {
-  const clientes = await getClientesConLealtad();
+  const staff = await getStaff();
+  if (!staff) redirect("/admin/login");
+  const sucursalId = await getSucursalActiva(staff);
+  const clientes = await getClientesConLealtad(sucursalId);
 
   return (
     <div>

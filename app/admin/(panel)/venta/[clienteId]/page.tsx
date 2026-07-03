@@ -13,7 +13,7 @@ export default async function VentaPage({
   const staff = await getStaff();
   if (!staff) redirect("/admin/login");
   const sucursalId = await getSucursalActiva(staff);
-  const [dash, catalogo] = await Promise.all([getClienteParaVenta(clienteId), getCatalogo(sucursalId)]);
+  const [dash, catalogo] = await Promise.all([getClienteParaVenta(clienteId, sucursalId), getCatalogo(sucursalId)]);
   if (!dash) redirect("/admin");
 
   return (

@@ -14,15 +14,21 @@ import { subsPorTipo } from "@/lib/push/targets";
 import { registrarNotiTodosClientes } from "@/lib/push/inbox";
 import { broadcastVenta } from "@/lib/realtime";
 
-/** Recompensas disponibles de un cliente ahora mismo (0 si no tiene fila de lealtad). */
+/**
+ * Recompensas disponibles de un cliente EN UNA SUCURSAL (0 si no tiene fila).
+ * La lealtad es por sucursal, así que el canje/aviso se evalúa por sucursal.
+ */
 async function recompensasDisponibles(
   sb: Awaited<ReturnType<typeof createClient>>,
   clienteId: string,
+  sucursalId: string | null,
 ): Promise<number> {
+  if (!sucursalId) return 0;
   const { data } = await sb
     .from("cliente_loyalty")
     .select("cortes_total, visitas_12m, recompensas_canjeadas, cortes_objetivo")
     .eq("cliente_id", clienteId)
+    .eq("sucursal_id", sucursalId)
     .maybeSingle();
   if (!data) return 0;
   return computeLoyalty(data as LoyaltyRaw).recompensasDisponibles;
@@ -124,17 +130,23 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
   };
   if (sucursalId) params.p_sucursal_id = sucursalId;
 
-  const recompensasAntes = await recompensasDisponibles(sb, input.clienteId);
+  const recompensasAntes = await recompensasDisponibles(sb, input.clienteId, sucursalId);
   const { data, error } = await sb.rpc("record_venta", params);
 
-  if (error) return { ok: false, error: "No se pudo registrar la venta. Intenta de nuevo." };
+  if (error) {
+    // El candado de canje por sucursal (record_venta) rebota con P0001.
+    if (input.canjear && /recompensa disponible/i.test(error.message)) {
+      return { ok: false, error: "Este cliente no tiene un corte gratis disponible en esta sucursal." };
+    }
+    return { ok: false, error: "No se pudo registrar la venta. Intenta de nuevo." };
+  }
 
   // Aviso realtime a la PWA del cliente: refresca su tarjeta al instante
   // (sello nuevo + sonido) si la tiene abierta. No bloquea si falla.
   await broadcastVenta(input.clienteId);
 
   // Notificaciones (no bloquean el resultado si fallan).
-  const recompensasDespues = await recompensasDisponibles(sb, input.clienteId);
+  const recompensasDespues = await recompensasDisponibles(sb, input.clienteId, sucursalId);
   if (recompensasDespues > recompensasAntes) await pushRecompensaLista(input.clienteId);
   await avisarStockBajo(sb, input.items);
 

@@ -36,9 +36,18 @@ export interface LoyaltyRawData {
   ultima_visita: string | null;
 }
 
+/** Tarjeta de lealtad de UNA sucursal (la lealtad es por sucursal). */
+export interface LoyaltySucursal extends LoyaltyRawData {
+  sucursal_id: string;
+  sucursal_nombre: string;
+}
+
 export interface ClienteDashboard {
   cliente: ClienteInfo;
-  loyalty: LoyaltyRawData;
+  /** Tarjeta de la sucursal primaria/activa (compat: objeto único). */
+  loyalty: LoyaltySucursal;
+  /** Una tarjeta por sucursal activa (la app cliente deja elegir). */
+  loyalty_sucursales: LoyaltySucursal[];
   historial: HistorialVenta[];
 }
 

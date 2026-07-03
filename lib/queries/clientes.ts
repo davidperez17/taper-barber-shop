@@ -9,12 +9,16 @@ const LOYALTY_VACIO: LoyaltyRawData = {
   ultima_visita: null,
 };
 
-/** Lista de clientes activos con su lealtad (merge clientes + view). */
-export async function getClientesConLealtad(): Promise<ClienteRow[]> {
+/**
+ * Lista de clientes activos con su lealtad (merge clientes + view).
+ * La lealtad es POR SUCURSAL: se muestra la tarjeta de la sucursal activa.
+ */
+export async function getClientesConLealtad(sucursalId: string | null): Promise<ClienteRow[]> {
   const sb = await createClient();
+  const loyaltyQuery = sb.from("cliente_loyalty").select("*");
   const [clientes, loyalty] = await Promise.all([
     sb.from("clientes").select("id, numero, nombre, telefono, correo, created_at").eq("activo", true).order("nombre"),
-    sb.from("cliente_loyalty").select("*"),
+    sucursalId ? loyaltyQuery.eq("sucursal_id", sucursalId) : loyaltyQuery,
   ]);
 
   const lmap = new Map((loyalty.data ?? []).map((l) => [l.cliente_id, l as LoyaltyRawData & { cliente_id: string }]));
@@ -24,8 +28,11 @@ export async function getClientesConLealtad(): Promise<ClienteRow[]> {
   })) as ClienteRow[];
 }
 
-/** Ficha 360 de un cliente: datos + lealtad + historial + notas + etiquetas. */
-export async function getClienteFicha(id: string): Promise<ClienteFicha | null> {
+/**
+ * Ficha 360 de un cliente: datos + lealtad + historial + notas + etiquetas.
+ * La lealtad mostrada es la de la sucursal activa (tarjeta por sucursal).
+ */
+export async function getClienteFicha(id: string, sucursalId: string | null): Promise<ClienteFicha | null> {
   const sb = await createClient();
   const { data: cliente } = await sb
     .from("clientes")
@@ -35,7 +42,7 @@ export async function getClienteFicha(id: string): Promise<ClienteFicha | null> 
   if (!cliente) return null;
 
   const [dash, notas, etiquetas] = await Promise.all([
-    sb.rpc("get_cliente_by_qr", { p_qr_token: cliente.qr_token }),
+    sb.rpc("get_cliente_by_qr", { p_qr_token: cliente.qr_token, p_sucursal_id: sucursalId }),
     sb.from("cliente_notas").select("id, texto, created_at, autor_nombre").eq("cliente_id", id).order("created_at", { ascending: false }),
     sb.from("cliente_etiquetas").select("etiqueta").eq("cliente_id", id).order("created_at"),
   ]);

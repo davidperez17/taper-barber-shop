@@ -1,9 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ClienteDashboard, Servicio, Producto, Barbero } from "@/lib/types";
 
-/** Ficha del cliente para el POS (reusa el RPC definer para lealtad+historial). */
+/**
+ * Ficha del cliente para el POS (reusa el RPC definer para lealtad+historial).
+ * `loyalty` es la tarjeta de la SUCURSAL ACTIVA: el canje solo aplica ahí.
+ */
 export async function getClienteParaVenta(
   clienteId: string,
+  sucursalId: string | null,
 ): Promise<ClienteDashboard | null> {
   const sb = await createClient();
   const { data: cliente } = await sb
@@ -13,7 +17,10 @@ export async function getClienteParaVenta(
     .single();
   if (!cliente) return null;
 
-  const { data } = await sb.rpc("get_cliente_by_qr", { p_qr_token: cliente.qr_token });
+  const { data } = await sb.rpc("get_cliente_by_qr", {
+    p_qr_token: cliente.qr_token,
+    p_sucursal_id: sucursalId,
+  });
   return (data as ClienteDashboard | null) ?? null;
 }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getClienteFicha } from "@/lib/queries/clientes";
 import { getStaff } from "@/lib/queries/staff";
+import { getSucursalActiva } from "@/lib/sucursal";
 import { ClienteFicha } from "@/components/admin/ClienteFicha";
 
 export default async function ClienteFichaPage({
@@ -9,7 +10,10 @@ export default async function ClienteFichaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [ficha, staff] = await Promise.all([getClienteFicha(id), getStaff()]);
+  const staff = await getStaff();
+  if (!staff) redirect("/admin/login");
+  const sucursalId = await getSucursalActiva(staff);
+  const ficha = await getClienteFicha(id, sucursalId);
   if (!ficha) redirect("/admin/clientes");
 
   const puedeResetPin = staff?.rol === "dueno" || staff?.rol === "admin";
