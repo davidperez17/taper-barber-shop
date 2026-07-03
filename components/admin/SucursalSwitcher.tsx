@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { setSucursalActiva } from "@/app/admin/actions";
 import { IconStore, IconCheck } from "@/components/icons";
 
@@ -14,7 +13,6 @@ export function SucursalSwitcher({
   activeId: string | null;
   canSwitch: boolean;
 }) {
-  const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [pending, start] = useTransition();
   const actual = sucursales.find((s) => s.id === activeId) ?? sucursales[0];
@@ -35,7 +33,10 @@ export function SucursalSwitcher({
     if (id === actual.id) return;
     start(async () => {
       await setSucursalActiva(id);
-      router.refresh();
+      // Cambiar de sucursal reescribe los datos de TODO el panel y la cookie es
+      // httpOnly + global; router.refresh() no busta el Router Cache con
+      // staleTimes.dynamic activo. Recarga dura = re-render limpio y fiable.
+      window.location.reload();
     });
   };
 
