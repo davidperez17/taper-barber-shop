@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
-import { IconCard, IconStats, IconHistory, IconUser } from "@/components/icons";
+import { IconCard, IconStats, IconUser } from "@/components/icons";
 
 const ITEMS: { href: string; label: string; Icon: ComponentType<{ size?: number }> }[] = [
   { href: "/tarjeta", label: "Tarjeta", Icon: IconCard },
   { href: "/stats", label: "Stats", Icon: IconStats },
-  { href: "/historial", label: "Historial", Icon: IconHistory },
   { href: "/perfil", label: "Perfil", Icon: IconUser },
 ];
 

@@ -2,11 +2,10 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { requireDashboard } from "@/lib/queries/cliente";
 import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL } from "@/lib/loyalty";
-import { fmtDiaMes } from "@/lib/format";
 import { LoyaltyCard } from "@/components/cliente/LoyaltyCard";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
 import { TierUpCelebration } from "@/components/cliente/TierUpCelebration";
-import { IconStats, IconHistory } from "@/components/icons";
+import { IconStats } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
 import { VentaLive } from "@/components/cliente/VentaLive";
 import { getBandeja } from "@/lib/queries/notificaciones";
@@ -58,16 +57,11 @@ export default async function TarjetaPage() {
       />
 
       {/* Quick actions */}
-      <div className="mt-6 grid grid-cols-2 gap-3.5">
+      <div className="mt-6">
         <Link href="/stats" className="flex flex-col rounded-xl border border-line bg-elevated p-4">
           <span className="mb-3.5 text-accent"><IconStats /></span>
           <span className="font-display text-[17px] font-semibold text-ink">Mis Stats</span>
           <span className="mt-0.5 text-xs text-muted">{dash.loyalty.cortes_total} cortes totales</span>
-        </Link>
-        <Link href="/historial" className="flex flex-col rounded-xl border border-line bg-elevated p-4">
-          <span className="mb-3.5 text-accent"><IconHistory /></span>
-          <span className="font-display text-[17px] font-semibold text-ink">Historial</span>
-          <span className="mt-0.5 text-xs text-muted">Último: {fmtDiaMes(dash.loyalty.ultima_visita)}</span>
         </Link>
       </div>
     </div>
