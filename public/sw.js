@@ -1,7 +1,7 @@
 // Service Worker — Taper Barbershop PWA
 // Shell offline + cache-first para estáticos. No intercepta Supabase.
 // Push: muestra notificaciones del sistema aunque la app esté cerrada.
-const CACHE = "taper-v3";
+const CACHE = "taper-v4";
 const SHELL = ["/offline", "/icon.svg"];
 
 self.addEventListener("install", (e) => {
@@ -30,29 +30,34 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // dejar pasar Supabase/externos
 
-  // Navegaciones: network-first → caché → /offline
+  // Navegaciones: network-first → caché → /offline. respondWith SIEMPRE debe
+  // resolver a un Response; si /offline no está cacheado, Response.error() evita
+  // el "Failed to convert value to 'Response'".
   if (request.mode === "navigate") {
     e.respondWith(
       fetch(request).catch(() =>
-        caches.match(request).then((r) => r || caches.match("/offline")),
+        caches
+          .match(request)
+          .then((r) => r || caches.match("/offline"))
+          .then((r) => r || Response.error()),
       ),
     );
     return;
   }
 
-  // Estáticos: cache-first con relleno
+  // Estáticos: cache-first con relleno. Si no hay caché y la red falla, hay que
+  // devolver un Response (nunca undefined) o respondWith rechaza.
   e.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request)
-          .then((resp) => {
-            const copy = resp.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
-            return resp;
-          })
-          .catch(() => cached),
-    ),
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request)
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE).then((c) => c.put(request, copy));
+          return resp;
+        })
+        .catch(() => Response.error());
+    }),
   );
 });
 
