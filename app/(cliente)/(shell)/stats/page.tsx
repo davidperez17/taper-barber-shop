@@ -1,6 +1,6 @@
 import { requireDashboard } from "@/lib/queries/cliente";
 import { computeLoyalty, TIER_LABEL, TIER_MIN_VISITAS, type Tier } from "@/lib/loyalty";
-import { fmtMesCorto, fmtQ } from "@/lib/format";
+import { fmtMesCorto } from "@/lib/format";
 
 const STRIP: { tier: Tier; color: string }[] = [
   { tier: "silver", color: "#a1a1aa" },
@@ -12,7 +12,6 @@ const STRIP: { tier: Tier; color: string }[] = [
 export default async function StatsPage() {
   const dash = await requireDashboard();
   const loyalty = computeLoyalty(dash.loyalty);
-  const invertido = dash.historial.reduce((sum, v) => sum + Number(v.total), 0);
   const visitas = dash.loyalty.visitas_12m;
 
   return (
@@ -21,7 +20,6 @@ export default async function StatsPage() {
 
       <div className="grid grid-cols-2 gap-3.5">
         <Stat value={String(dash.loyalty.cortes_total)} label="Cortes totales" accent />
-        <Stat value={fmtQ(invertido)} label="Invertido" />
         <Stat value={TIER_LABEL[loyalty.tier]} label="Nivel actual" />
         <Stat value={fmtMesCorto(dash.cliente.created_at)} label="1ra visita" />
       </div>
