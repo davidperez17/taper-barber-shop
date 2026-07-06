@@ -162,7 +162,7 @@ begin
   select cortes_objetivo into v_objetivo from config_lealtad where id = 1;
 
   -- Tarjeta por cada sucursal activa (0/6 si el cliente aún no la tiene).
-  select coalesce(json_agg(t order by t.orden), '[]'::json) into v_loyalty_sucursales
+  select coalesce(json_agg(s.t order by s.orden), '[]'::json) into v_loyalty_sucursales
   from (
     select
       su.orden,
