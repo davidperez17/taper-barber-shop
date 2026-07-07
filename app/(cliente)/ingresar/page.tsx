@@ -67,9 +67,14 @@ export default function IngresarPage() {
         </>
       ) : paso === "pin" ? (
         <>
-          <button onClick={volver} className="mb-7 inline-flex min-h-11 items-center gap-1.5 text-[15px] text-muted hover:text-ink">
-            <IconChevronLeft /> Cambiar número
-          </button>
+          <div className="mb-7 flex items-center justify-between">
+            <Link href="/" className="inline-flex min-h-11 items-center gap-1.5 text-[15px] text-muted hover:text-ink">
+              <IconChevronLeft /> Atrás
+            </Link>
+            <button onClick={volver} className="inline-flex min-h-11 items-center text-[15px] text-muted hover:text-ink">
+              Cambiar número
+            </button>
+          </div>
           <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-0.01em] text-ink">Ingresa tu PIN</h1>
           <p className="mb-7 mt-1.5 text-sm text-muted">6 dígitos de tu cuenta</p>
 
@@ -86,9 +91,14 @@ export default function IngresarPage() {
         </>
       ) : (
         <>
-          <button onClick={volver} className="mb-7 inline-flex min-h-11 items-center gap-1.5 text-[15px] text-muted hover:text-ink">
-            <IconChevronLeft /> Cambiar número
-          </button>
+          <div className="mb-7 flex items-center justify-between">
+            <Link href="/" className="inline-flex min-h-11 items-center gap-1.5 text-[15px] text-muted hover:text-ink">
+              <IconChevronLeft /> Atrás
+            </Link>
+            <button onClick={volver} className="inline-flex min-h-11 items-center text-[15px] text-muted hover:text-ink">
+              Cambiar número
+            </button>
+          </div>
           <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-0.01em] text-ink">Protege tu cuenta</h1>
           <p className="mb-7 mt-1.5 text-sm text-muted">Crea un PIN de 6 dígitos para tu próximo ingreso</p>
 
