@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { LoginForm } from "@/components/admin/LoginForm";
 import { InstallPWA } from "@/components/InstallPWA";
+import { Isotipo } from "@/components/Isotipo";
 
 // Enlaza el manifest del app admin (instalable aparte del app cliente) + identidad iOS.
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ export default async function AdminLoginPage({
         />
         <div className="absolute inset-x-0 bottom-0 p-10">
           <div className="mb-3 flex items-center gap-2.5">
-            <span className="size-2.5 rotate-45 rounded-[2px] bg-accent" />
+            <Isotipo className="h-[9px] w-[18px] text-accent" />
             <span className="font-display text-[15px] font-bold tracking-[0.34em] text-ink">TAPER</span>
           </div>
           <p className="max-w-[340px] font-display text-2xl font-bold leading-tight text-ink">
@@ -63,7 +64,7 @@ export default async function AdminLoginPage({
         <div className="relative z-[1] w-full max-w-[380px]">
           <div className="mb-8">
             <div className="mb-5 flex items-center gap-2.5">
-              <span className="size-2.5 rotate-45 rounded-[2px] bg-accent" />
+              <Isotipo className="h-[9px] w-[18px] text-accent" />
               <span className="font-display text-[15px] font-bold tracking-[0.34em] text-ink">TAPER</span>
               <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Panel</span>
             </div>

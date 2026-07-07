@@ -6,6 +6,7 @@ import type { Tier } from "@/lib/loyalty";
 import { TIER_SURFACE } from "@/lib/loyalty";
 import { IconFlip, IconScissors } from "@/components/icons";
 import { useCardTilt } from "./useCardTilt";
+import { Isotipo } from "@/components/Isotipo";
 
 const TIER_BADGE: Record<Tier, { bg: string; ink: string; border: string; star: boolean }> = {
   silver: { bg: "rgba(113,113,122,0.5)", ink: "#e4e4e7", border: "rgba(161,161,170,0.55)", star: false },
@@ -141,7 +142,7 @@ export function LoyaltyCard({
             <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: ink, transform: "rotate(45deg)", opacity: 0.9 }} />
+                <Isotipo style={{ width: 18, height: 9, color: ink, opacity: 0.9 }} />
                 <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.28em", opacity: 0.85 }}>TAPER</span>
               </div>
               <span
@@ -225,7 +226,7 @@ export function LoyaltyCard({
             {/* Barra superior idéntica al frente (misma marca + tier) */}
             <div className="flex w-full items-start justify-between">
               <div className="flex items-center gap-2">
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: "#f0f0f2", transform: "rotate(45deg)", opacity: 0.9 }} />
+                <Isotipo style={{ width: 18, height: 9, color: "#f0f0f2", opacity: 0.9 }} />
                 <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.28em", opacity: 0.85 }}>TAPER</span>
               </div>
               <span
