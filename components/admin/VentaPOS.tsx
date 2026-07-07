@@ -81,11 +81,14 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
     for (const s of servicios) {
       const q = serv[s.id] ?? 0;
       if (q <= 0) continue;
-      let precio = Number(s.precio);
-      // Aplicar el corte gratis al primer servicio de lealtad.
+      const precio = Number(s.precio);
+      // El corte gratis cubre UNA sola unidad del primer servicio de lealtad.
+      // Si hay más de una, el resto se cobra normal (una recompensa ≠ línea entera).
       if (canjear && hayCorteEnCarrito && s.cuenta_lealtad && !usadoGratis) {
-        precio = 0;
         usadoGratis = true;
+        it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio: 0, cantidad: 1 });
+        if (q > 1) it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio, cantidad: q - 1 });
+        continue;
       }
       it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio, cantidad: q });
     }
