@@ -143,7 +143,7 @@ export function LoyaltyCard({
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <Isotipo style={{ width: 18, height: 9, color: ink, opacity: 0.9 }} />
-                <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.28em", opacity: 0.85 }}>TAPER</span>
+                <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.16em", opacity: 0.85 }}>TAPER BARBER</span>
               </div>
               <span
                 className="inline-flex items-center font-semibold uppercase"
@@ -227,7 +227,7 @@ export function LoyaltyCard({
             <div className="flex w-full items-start justify-between">
               <div className="flex items-center gap-2">
                 <Isotipo style={{ width: 18, height: 9, color: "#f0f0f2", opacity: 0.9 }} />
-                <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.28em", opacity: 0.85 }}>TAPER</span>
+                <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.16em", opacity: 0.85 }}>TAPER BARBER</span>
               </div>
               <span
                 className="inline-flex items-center font-semibold uppercase"

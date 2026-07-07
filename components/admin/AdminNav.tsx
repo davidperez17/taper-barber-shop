@@ -114,7 +114,7 @@ export function AdminSidebar({ rol, nombre, sucursal }: { rol: RolStaff; nombre:
     <aside className="hidden w-[224px] shrink-0 flex-col border-r border-line bg-bg lg:flex">
       <div className="flex items-center gap-2.5 px-5 py-5">
         <Isotipo className="h-[9px] w-[18px] text-accent" />
-        <span className="font-display text-[15px] font-bold tracking-[0.3em] text-ink">TAPER</span>
+        <span className="font-display text-[15px] font-bold tracking-[0.24em] text-ink">TAPER BARBER</span>
         <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Panel</span>
       </div>
 

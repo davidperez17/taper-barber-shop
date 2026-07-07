@@ -10,7 +10,7 @@ const SEGMENTOS = [30, 60, 90];
 function waLink(r: InactivoRow): string {
   const tel = r.telefono.replace(/\D/g, "");
   const nombre = r.nombre.split(" ")[0];
-  const msg = `Hola ${nombre}, te extrañamos en Taper Barbershop. Tienes un beneficio esperándote en tu próximo corte — ¡pasa cuando quieras y te lo aplicamos!`;
+  const msg = `Hola ${nombre}, te extrañamos en Taper Barber. Tienes un beneficio esperándote en tu próximo corte — ¡pasa cuando quieras y te lo aplicamos!`;
   return `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
 }
 

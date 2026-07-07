@@ -9,7 +9,7 @@ const D =
 export function Isotipo({
   className,
   style,
-  title = "Taper",
+  title = "Taper Barber",
 }: {
   className?: string;
   style?: CSSProperties;

@@ -72,7 +72,7 @@ export async function enviarPrueba(): Promise<{ ok: boolean; enviadas: number }>
 
   const subs = owner.type === "staff" ? await subsDeStaff(owner.id) : await subsDeCliente(owner.id);
   const { enviadas } = await enviarPush(subs, {
-    title: "Taper Barbershop",
+    title: "Taper Barber",
     body: "🔔 Notificaciones activadas. ¡Listo!",
     url: owner.type === "staff" ? "/admin" : "/",
   });

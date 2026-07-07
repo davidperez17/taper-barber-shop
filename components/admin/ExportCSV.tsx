@@ -6,7 +6,7 @@ export function ExportCSV({ reporte, rangoLabel }: { reporte: ReporteData; rango
   function descargar() {
     const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
     const L: string[] = [];
-    L.push(`Reporte Taper Barbershop,${esc(rangoLabel)}`);
+    L.push(`Reporte Taper Barber,${esc(rangoLabel)}`);
     L.push("");
     L.push("Resumen");
     L.push(`Ventas totales,${reporte.total}`);

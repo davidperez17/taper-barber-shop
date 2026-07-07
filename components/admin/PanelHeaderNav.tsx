@@ -22,7 +22,7 @@ export function PanelHeaderNav() {
       )}
       <Link href="/admin" className="flex items-center gap-2.5" aria-label="Inicio del panel">
         <Isotipo className="h-[9px] w-[18px] text-accent" />
-        <span className="font-display text-[14px] font-bold tracking-[0.3em] text-ink">TAPER</span>
+        <span className="font-display text-[14px] font-bold tracking-[0.24em] text-ink">TAPER BARBER</span>
         <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Panel</span>
       </Link>
     </div>

@@ -31,7 +31,7 @@ export default async function OnboardingPage() {
       <div className="relative z-[2] mx-auto mt-auto w-full max-w-[440px] px-6 pb-10">
         <div className="mb-6 flex items-center gap-2.5">
           <Isotipo className="h-[9px] w-[18px] text-accent" />
-          <span className="font-display text-[15px] font-bold tracking-[0.34em] text-ink">TAPER</span>
+          <span className="font-display text-[15px] font-bold tracking-[0.28em] text-ink">TAPER BARBER</span>
         </div>
         <h1 className="font-display text-[46px] font-extrabold leading-[0.96] tracking-[-0.02em] text-ink">
           Tu corte.<br />Tu nivel.<br />

@@ -39,7 +39,7 @@ export default async function AdminLoginPage({
         <div className="absolute inset-x-0 bottom-0 p-10">
           <div className="mb-3 flex items-center gap-2.5">
             <Isotipo className="h-[9px] w-[18px] text-accent" />
-            <span className="font-display text-[15px] font-bold tracking-[0.34em] text-ink">TAPER</span>
+            <span className="font-display text-[15px] font-bold tracking-[0.28em] text-ink">TAPER BARBER</span>
           </div>
           <p className="max-w-[340px] font-display text-2xl font-bold leading-tight text-ink">
             Cada corte cuenta. Cada cliente vuelve.
@@ -65,7 +65,7 @@ export default async function AdminLoginPage({
           <div className="mb-8">
             <div className="mb-5 flex items-center gap-2.5">
               <Isotipo className="h-[9px] w-[18px] text-accent" />
-              <span className="font-display text-[15px] font-bold tracking-[0.34em] text-ink">TAPER</span>
+              <span className="font-display text-[15px] font-bold tracking-[0.28em] text-ink">TAPER BARBER</span>
               <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Panel</span>
             </div>
             <h1 className="font-display text-[30px] font-bold tracking-[-0.01em] text-ink">Acceso staff</h1>

@@ -18,7 +18,7 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Taper Barbershop",
+  title: "Taper Barber",
   description: "Tu tarjeta de lealtad digital.",
   manifest: "/cliente-manifest",
   applicationName: "Taper",

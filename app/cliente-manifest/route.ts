@@ -4,7 +4,7 @@ export const dynamic = "force-static";
 export function GET() {
   const manifest = {
     id: "/",
-    name: "Taper Barbershop",
+    name: "Taper Barber",
     short_name: "Taper",
     description: "Tu tarjeta de lealtad digital.",
     lang: "es",
