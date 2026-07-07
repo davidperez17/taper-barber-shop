@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { TIER_BENEFITS, TIER_SURFACE, tierRank, type Tier } from "@/lib/loyalty";
 import { useModalA11y } from "@/components/admin/useModalA11y";
+import { Confetti, type ConfettiPiece } from "./Confetti";
 
 const KEY = "taper_tier_seen";
 
-const CONFETTI = [
+const CONFETTI: ConfettiPiece[] = [
   { l: 12, col: "#f5c800", d: 0, dur: 1600, w: 8 },
   { l: 30, col: "#e5e7eb", d: 220, dur: 1900, w: 6 },
   { l: 52, col: "#ffffff", d: 120, dur: 1700, w: 7 },
@@ -59,15 +60,7 @@ function TierUpDialog({ tier, tierLabel, onClose }: { tier: Tier; tierLabel: str
       className="animate-fade-up fixed inset-0 z-[var(--z-modal)] flex flex-col items-center justify-center px-8"
       style={{ background: "rgba(8,7,5,0.92)" }}
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden">
-        {CONFETTI.map((b, i) => (
-          <span
-            key={i}
-            className="absolute top-0 rounded-[1px]"
-            style={{ left: `${b.l}%`, width: b.w, height: b.w * 1.6, background: b.col, animation: `taperConfetti ${b.dur}ms ease-in ${b.d}ms infinite` }}
-          />
-        ))}
-      </div>
+      <Confetti pieces={CONFETTI} />
 
       {/* Medallón con la superficie del nuevo tier */}
       <div

@@ -9,10 +9,11 @@
   color-scheme: dark;
 
   /* Backgrounds — near-black neutro cálido */
-  --bg-void:     #0f0f0f;
-  --bg:          #181818;
-  --bg-elevated: #222222;
-  --bg-surface:  #2c2c2c;
+  --bg-void:         #0f0f0f;
+  --bg:              #181818;
+  --bg-elevated:     #222222;
+  --bg-elevated-dim: #1c1c1c; /* elevated atenuado: ítems inactivos/bloqueados */
+  --bg-surface:      #2c2c2c;
 
   /* Foregrounds */
   --ink:    #ffffff;
@@ -84,6 +85,7 @@
   --color-void:         var(--bg-void);
   --color-bg:           var(--bg);
   --color-elevated:     var(--bg-elevated);
+  --color-elevated-dim: var(--bg-elevated-dim);
   --color-surface:      var(--bg-surface);
   --color-ink:          var(--ink);
   --color-muted:        var(--muted);

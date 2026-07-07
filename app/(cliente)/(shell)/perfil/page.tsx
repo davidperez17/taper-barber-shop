@@ -61,7 +61,7 @@ export default async function PerfilPage() {
             {TIER_BENEFITS[next]
               .filter((b) => !b.startsWith("Todo lo de"))
               .map((b) => (
-                <li key={b} className="flex items-center gap-3 rounded-xl border border-white/5 bg-[#1c1c1c] p-3.5">
+                <li key={b} className="flex items-center gap-3 rounded-xl border border-white/5 bg-elevated-dim p-3.5">
                   <span className="text-[15px] text-subtle">○</span>
                   <span className="text-sm text-subtle">{b}</span>
                 </li>

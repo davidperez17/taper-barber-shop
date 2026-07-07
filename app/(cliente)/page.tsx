@@ -1,10 +1,17 @@
 import Link from "next/link";
+import { preload } from "react-dom";
 import { redirect } from "next/navigation";
 import { getQrToken } from "@/lib/session";
 import { Isotipo } from "@/components/Isotipo";
 
+const HERO = "/fondos/onboarding.webp";
+
 export default async function OnboardingPage() {
   if (await getQrToken()) redirect("/tarjeta");
+
+  // El hero es el LCP y carga por CSS (background-image); en móvil lento eso
+  // retrasa la primera impresión. Precargarlo con prioridad alta lo adelanta.
+  preload(HERO, { as: "image", fetchPriority: "high" });
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden">
@@ -12,7 +19,7 @@ export default async function OnboardingPage() {
       <div
         aria-hidden
         className="absolute inset-0 z-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/fondos/onboarding.webp')" }}
+        style={{ backgroundImage: `url('${HERO}')` }}
       />
       <div
         aria-hidden

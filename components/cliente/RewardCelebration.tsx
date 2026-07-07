@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { IconCheck } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
+import { Confetti, type ConfettiPiece } from "./Confetti";
 
-const CONFETTI = [
+const CONFETTI: ConfettiPiece[] = [
   { l: 12, col: "#f5c800", d: 0, dur: 1600, w: 8 },
   { l: 30, col: "#22c55e", d: 220, dur: 1900, w: 6 },
   { l: 52, col: "#ffffff", d: 120, dur: 1700, w: 7 },
@@ -45,16 +46,7 @@ function RewardDialog({ nombre, onClose }: { nombre: string; onClose: () => void
       className="animate-fade-up fixed inset-0 z-[var(--z-modal)] flex flex-col items-center justify-center px-8"
       style={{ background: "rgba(8,7,5,0.9)" }}
     >
-      {/* Confetti (oculto con reduced-motion vía duración mínima) */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden">
-        {CONFETTI.map((b, i) => (
-          <span
-            key={i}
-            className="absolute top-0 rounded-[1px]"
-            style={{ left: `${b.l}%`, width: b.w, height: b.w * 1.6, background: b.col, animation: `taperConfetti ${b.dur}ms ease-in ${b.d}ms infinite` }}
-          />
-        ))}
-      </div>
+      <Confetti pieces={CONFETTI} />
 
       <div className="mb-6 flex size-[88px] items-center justify-center rounded-full bg-success-dim text-success" style={{ animation: "taperPop 400ms var(--ease-spring) both" }}>
         <IconCheck size={44} />
