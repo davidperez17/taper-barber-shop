@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import {
   estadoTelefono,
   loginCliente,
@@ -28,21 +28,6 @@ export default function IngresarPage() {
   const [loginState, loginAction, loginPending] = useActionState(loginCliente, initial);
   const [setupState, setupAction, setupPending] = useActionState(crearPin, initial);
 
-  // El wizard vive en estado, pero el gesto "atrás" del móvil opera sobre el
-  // historial del navegador. Sin esto, estando en el paso PIN/setup el gesto
-  // saldría de /ingresar (a onboarding) en vez de volver al paso del teléfono.
-  // Al avanzar empujamos una entrada de historial; el popstate retrocede el paso.
-  const irASubpaso = (p: "pin" | "setup") => {
-    window.history.pushState({ paso: p }, "");
-    setPaso(p);
-  };
-
-  useEffect(() => {
-    const onPop = () => { setPaso("telefono"); setPin(""); setPin2(""); };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
-
   const continuar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrTel(null);
@@ -50,16 +35,14 @@ export default function IngresarPage() {
     if (tel.replace(/\D/g, "").length < 8) { setErrTel("Escribe un teléfono válido."); return; }
     startCheck(async () => {
       const estado = await estadoTelefono(tel);
-      if (estado === "con_pin") { setTelefono(tel); setPin(""); irASubpaso("pin"); }
-      else if (estado === "necesita_pin") { setTelefono(tel); setPin(""); setPin2(""); irASubpaso("setup"); }
+      if (estado === "con_pin") { setTelefono(tel); setPin(""); setPaso("pin"); }
+      else if (estado === "necesita_pin") { setTelefono(tel); setPin(""); setPin2(""); setPaso("setup"); }
       else if (estado === "no_existe") setErrTel("No encontramos una cuenta con ese teléfono.");
       else setErrTel("No pudimos verificar. Intenta de nuevo.");
     });
   };
 
-  // El botón "Cambiar número" consume la entrada de historial que empujamos, así
-  // el estado del wizard y el historial quedan sincronizados (el popstate resetea).
-  const volver = () => { window.history.back(); };
+  const volver = () => { setPaso("telefono"); setPin(""); setPin2(""); };
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-[440px] animate-fade-up overflow-auto px-6 pb-8 pt-16 sm:pt-24">
