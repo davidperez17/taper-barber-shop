@@ -50,6 +50,26 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
     set(next);
   };
 
+  // Vender sin stock se permite (no perder la venta), pero se avisa una vez por
+  // producto. El stock puede quedar negativo = faltante por reponer (ledger real).
+  const [okSinStock, setOkSinStock] = useState<Record<string, true>>({});
+  const addProducto = (p: Producto) => {
+    const q = prod[p.id] ?? 0;
+    if (p.controla_stock && q + 1 > p.stock && !okSinStock[p.id]) {
+      const restante = Math.max(0, p.stock);
+      const ok = window.confirm(`No hay stock suficiente de ${p.nombre} (quedan ${restante}). ¿Vender de todos modos?`);
+      if (!ok) return;
+      setOkSinStock((s) => ({ ...s, [p.id]: true }));
+    }
+    inc(prod, setProd, p.id, 1);
+  };
+  const subProducto = (p: Producto) => {
+    if ((prod[p.id] ?? 0) - 1 <= 0) {
+      setOkSinStock((s) => { const n = { ...s }; delete n[p.id]; return n; });
+    }
+    inc(prod, setProd, p.id, -1);
+  };
+
   const hayCorteEnCarrito = useMemo(
     () => servicios.some((s) => s.cuenta_lealtad && (serv[s.id] ?? 0) > 0),
     [serv, servicios],
@@ -231,7 +251,8 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
           const q = prod[p.id] ?? 0;
           return (
             <CatItem key={p.id} nombre={p.nombre} precio={Number(p.precio)} imagen={p.imagen_url} qty={q}
-              onAdd={() => inc(prod, setProd, p.id, 1)} onSub={() => inc(prod, setProd, p.id, -1)} />
+              stock={p.controla_stock ? p.stock : null} stockMin={p.stock_min}
+              onAdd={() => addProducto(p)} onSub={() => subProducto(p)} />
           );
         })}
       </div>
@@ -312,15 +333,24 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
   );
 }
 
-function CatItem({ nombre, precio, imagen, qty, onAdd, onSub }: { nombre: string; precio: number; imagen: string | null; qty: number; onAdd: () => void; onSub: () => void }) {
+function CatItem({ nombre, precio, imagen, qty, stock, stockMin = 0, onAdd, onSub }: { nombre: string; precio: number; imagen: string | null; qty: number; stock?: number | null; stockMin?: number; onAdd: () => void; onSub: () => void }) {
   const active = qty > 0;
+  // Solo productos con control de stock reciben `stock` (número, puede ser ≤0).
+  const stockLabel =
+    stock == null ? null
+    : stock <= 0 ? { txt: "Agotado", cls: "text-danger" }
+    : stock <= stockMin ? { txt: `${stock} en stock`, cls: "text-warning" }
+    : { txt: `${stock} en stock`, cls: "text-muted" };
   return (
     <div className={`rounded-xl border p-3 transition-colors ${active ? "border-accent/50 bg-accent-dim" : "border-line bg-elevated"}`}>
       <button type="button" onClick={onAdd} className="flex w-full items-center gap-2.5 text-left">
         <Thumb src={imagen} nombre={nombre} size={36} />
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold text-ink">{nombre}</span>
-          <span className="block text-[13px] text-muted">{fmtQ(precio)}</span>
+          <span className="block text-[13px] text-muted">
+            {fmtQ(precio)}
+            {stockLabel && <span className={`ml-1.5 ${stockLabel.cls}`}>· {stockLabel.txt}</span>}
+          </span>
         </span>
       </button>
       {active && (
