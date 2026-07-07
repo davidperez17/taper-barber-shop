@@ -35,8 +35,6 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
-  // Sin cover, env(safe-area-inset-*) = 0 y el bottom nav choca con la barra gestual.
-  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
