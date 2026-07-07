@@ -17,7 +17,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="flex shrink-0 items-center justify-around gap-1 border-t border-line bg-elevated px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2.5"
+      className="mx-3 mb-[max(env(safe-area-inset-bottom),0.875rem)] flex shrink-0 items-center justify-around gap-1 rounded-2xl border border-line bg-elevated px-3 py-2.5 shadow-lg shadow-black/40"
     >
       {ITEMS.map(({ href, label, Icon }) => {
         const active = pathname === href || pathname.startsWith(href + "/");
