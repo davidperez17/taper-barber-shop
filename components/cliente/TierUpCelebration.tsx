@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { TIER_BENEFITS, TIER_SURFACE, tierRank, type Tier } from "@/lib/loyalty";
+import { useModalA11y } from "@/components/admin/useModalA11y";
 
 const KEY = "taper_tier_seen";
 
@@ -39,12 +40,19 @@ export function TierUpCelebration({ tier, tierLabel }: { tier: Tier; tierLabel: 
     if (tierRank(tier) < tierRank(previo)) localStorage.setItem(KEY, tier);
   }, [tier]);
 
-  if (!open) return null;
+  const close = useCallback(() => setOpen(false), []);
 
+  if (!open) return null;
+  return <TierUpDialog tier={tier} tierLabel={tierLabel} onClose={close} />;
+}
+
+function TierUpDialog({ tier, tierLabel, onClose }: { tier: Tier; tierLabel: string; onClose: () => void }) {
+  const ref = useModalA11y(onClose);
   const beneficios = TIER_BENEFITS[tier];
 
   return (
     <div
+      ref={ref}
       role="dialog"
       aria-modal="true"
       aria-label={`Subiste a ${tierLabel}`}
@@ -84,7 +92,7 @@ export function TierUpCelebration({ tier, tierLabel }: { tier: Tier; tierLabel: 
       </ul>
 
       <button
-        onClick={() => setOpen(false)}
+        onClick={onClose}
         className="mt-7 min-h-[54px] w-full max-w-[300px] rounded-full bg-accent text-base font-semibold text-accent-ink"
       >
         Genial

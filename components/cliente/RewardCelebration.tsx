@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { IconCheck } from "@/components/icons";
+import { useModalA11y } from "@/components/admin/useModalA11y";
 
 const CONFETTI = [
   { l: 12, col: "#f5c800", d: 0, dur: 1600, w: 8 },
@@ -26,10 +27,18 @@ export function RewardCelebration({ nombre }: { nombre: string }) {
     return () => clearTimeout(t);
   }, []);
 
+  const close = useCallback(() => setOpen(false), []);
+
   if (!open) return null;
+  return <RewardDialog nombre={nombre} onClose={close} />;
+}
+
+function RewardDialog({ nombre, onClose }: { nombre: string; onClose: () => void }) {
+  const ref = useModalA11y(onClose);
 
   return (
     <div
+      ref={ref}
       role="dialog"
       aria-modal="true"
       aria-label="Recompensa desbloqueada"
@@ -57,7 +66,7 @@ export function RewardCelebration({ nombre }: { nombre: string }) {
         {nombre.split(" ")[0]}, muéstrale tu QR al cajero en tu próxima visita y reclama tu corte sin costo.
       </p>
       <button
-        onClick={() => setOpen(false)}
+        onClick={onClose}
         className="mt-7 min-h-[54px] w-full max-w-[300px] rounded-full bg-accent text-base font-semibold text-accent-ink"
       >
         Ver mi QR
