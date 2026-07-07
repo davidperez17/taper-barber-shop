@@ -10,6 +10,7 @@ import {
   removeEtiqueta,
   updateCliente,
   resetPinCliente,
+  regenerarQrCliente,
 } from "@/app/admin/actions";
 import {
   computeLoyalty,
@@ -30,6 +31,8 @@ export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeRese
   const [editando, setEditando] = useState(false);
   const [pinPend, startPin] = useTransition();
   const [pinMsg, setPinMsg] = useState<string | null>(null);
+  const [qrPend, startQr] = useTransition();
+  const [qrMsg, setQrMsg] = useState<string | null>(null);
   const loyalty = computeLoyalty(ficha.loyalty);
   const invertido = ficha.historial.reduce((s, v) => s + Number(v.total), 0);
 
@@ -39,6 +42,15 @@ export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeRese
     startPin(async () => {
       const r = await resetPinCliente(ficha.cliente.id);
       setPinMsg(r.ok ? "PIN reiniciado. El cliente lo configura al ingresar." : r.error ?? "Error");
+    });
+  };
+
+  const regenerarQr = () => {
+    if (!confirm(`¿Regenerar el QR de ${ficha.cliente.nombre}? El QR anterior dejará de funcionar y el cliente deberá volver a ingresar con su teléfono y PIN.`)) return;
+    setQrMsg(null);
+    startQr(async () => {
+      const r = await regenerarQrCliente(ficha.cliente.id);
+      setQrMsg(r.ok ? "QR regenerado. El anterior ya no sirve; el cliente ve el nuevo al reingresar." : r.error ?? "Error");
     });
   };
 
@@ -85,8 +97,14 @@ export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeRese
             {pinPend ? "Reiniciando…" : "Reiniciar PIN"}
           </button>
         )}
+        {puedeResetPin && (
+          <button onClick={regenerarQr} disabled={qrPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
+            {qrPend ? "Regenerando…" : "Regenerar QR"}
+          </button>
+        )}
       </div>
       {pinMsg && <p role="status" className="mt-2 text-sm text-muted">{pinMsg}</p>}
+      {qrMsg && <p role="status" className="mt-2 text-sm text-muted">{qrMsg}</p>}
 
       {/* Tabs */}
       <div className="mt-6 flex gap-5 border-b border-line">
