@@ -7,6 +7,7 @@ import { PanelHeaderNav } from "@/components/admin/PanelHeaderNav";
 import { OfflineSync } from "@/components/admin/OfflineSync";
 import { AdminSidebar, AdminBottomNav, type SucursalNav } from "@/components/admin/AdminNav";
 import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
+import { ActualizarApp } from "@/components/admin/ActualizarApp";
 import { NotifyOptIn } from "@/components/NotifyOptIn";
 
 // Mantiene el manifest del app admin en todo el panel (instalable aparte del cliente).
@@ -54,6 +55,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
                 <p className="text-[13px] font-semibold text-ink">{staff.nombre}</p>
                 <p className="text-[11px] text-subtle">{ROL_LABEL[staff.rol] ?? staff.rol}</p>
               </div>
+              <ActualizarApp />
               <form action={logoutStaff}>
                 <button type="submit" className="min-h-9 rounded-lg border border-line px-3 text-[13px] text-muted hover:border-line-strong hover:text-ink">
                   Salir
