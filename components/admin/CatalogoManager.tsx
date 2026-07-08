@@ -139,8 +139,16 @@ function Campo({ label, children }: { label: string; children: ReactNode }) {
 }
 const inputCls = "min-h-[46px] w-full rounded-lg border border-line bg-elevated px-3.5 text-base text-ink outline-none placeholder:text-muted focus:border-accent";
 
-function Fila({ children }: { children: ReactNode }) {
-  return <div className="flex items-center gap-3 rounded-xl border border-line bg-elevated px-4 py-3">{children}</div>;
+// En móvil apila: info (nombre/precio) a ancho completo arriba y las acciones
+// (toggle + editar) abajo, para que el nombre no se parta palabra por palabra.
+// En sm+ vuelve a una sola fila.
+function Fila({ main, actions }: { main: ReactNode; actions: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2.5 rounded-xl border border-line bg-elevated px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">{main}</div>
+      <div className="flex shrink-0 items-center justify-end gap-2">{actions}</div>
+    </div>
+  );
 }
 function BtnNuevo({ onClick, label }: { onClick: () => void; label: string }) {
   return (
@@ -158,17 +166,26 @@ function ServiciosTab({ servicios }: { servicios: Servicio[] }) {
       <div className="mb-3 flex justify-end"><BtnNuevo onClick={() => setEdit("nuevo")} label="Nuevo servicio" /></div>
       <div className="flex flex-col gap-2">
         {servicios.map((s) => (
-          <Fila key={s.id}>
-            <Thumb src={s.imagen_url} nombre={s.nombre} />
-            <div className="min-w-0 flex-1">
-              <p className={`font-semibold ${s.activo ? "text-ink" : "text-subtle line-through"}`}>{s.nombre}</p>
-              <p className="text-[13px] text-muted">
-                {fmtQ(Number(s.precio))}{s.categoria ? ` · ${s.categoria}` : ""}{s.cuenta_lealtad ? " · cuenta lealtad" : ""}
-              </p>
-            </div>
-            <ToggleActivo tabla="servicios" id={s.id} activo={s.activo} nombre={s.nombre} />
-            <EditarBtn onClick={() => setEdit(s)} />
-          </Fila>
+          <Fila
+            key={s.id}
+            main={
+              <>
+                <Thumb src={s.imagen_url} nombre={s.nombre} />
+                <div className="min-w-0 flex-1">
+                  <p className={`font-semibold ${s.activo ? "text-ink" : "text-subtle line-through"}`}>{s.nombre}</p>
+                  <p className="text-[13px] text-muted">
+                    {fmtQ(Number(s.precio))}{s.categoria ? ` · ${s.categoria}` : ""}{s.cuenta_lealtad ? " · cuenta lealtad" : ""}
+                  </p>
+                </div>
+              </>
+            }
+            actions={
+              <>
+                <ToggleActivo tabla="servicios" id={s.id} activo={s.activo} nombre={s.nombre} />
+                <EditarBtn onClick={() => setEdit(s)} />
+              </>
+            }
+          />
         ))}
       </div>
       {edit && <ServicioSheet servicio={edit === "nuevo" ? null : edit} onClose={() => setEdit(null)} />}
@@ -221,20 +238,29 @@ function ProductosTab({ productos }: { productos: Producto[] }) {
       <div className="mb-3 flex justify-end"><BtnNuevo onClick={() => setEdit("nuevo")} label="Nuevo producto" /></div>
       <div className="flex flex-col gap-2">
         {productos.map((p) => (
-          <Fila key={p.id}>
-            <Thumb src={p.imagen_url} nombre={p.nombre} />
-            <div className="min-w-0 flex-1">
-              <p className={`font-semibold ${p.activo ? "text-ink" : "text-subtle line-through"}`}>{p.nombre}</p>
-              <p className="text-[13px] text-muted">
-                {fmtQ(Number(p.precio))}{p.categoria ? ` · ${p.categoria}` : ""}
-                {p.controla_stock && (
-                  <span className={p.stock <= p.stock_min ? "text-warning" : "text-muted"}> · {p.stock} en stock</span>
-                )}
-              </p>
-            </div>
-            <ToggleActivo tabla="productos" id={p.id} activo={p.activo} nombre={p.nombre} />
-            <EditarBtn onClick={() => setEdit(p)} />
-          </Fila>
+          <Fila
+            key={p.id}
+            main={
+              <>
+                <Thumb src={p.imagen_url} nombre={p.nombre} />
+                <div className="min-w-0 flex-1">
+                  <p className={`font-semibold ${p.activo ? "text-ink" : "text-subtle line-through"}`}>{p.nombre}</p>
+                  <p className="text-[13px] text-muted">
+                    {fmtQ(Number(p.precio))}{p.categoria ? ` · ${p.categoria}` : ""}
+                    {p.controla_stock && (
+                      <span className={p.stock <= p.stock_min ? "text-warning" : "text-muted"}> · {p.stock} en stock</span>
+                    )}
+                  </p>
+                </div>
+              </>
+            }
+            actions={
+              <>
+                <ToggleActivo tabla="productos" id={p.id} activo={p.activo} nombre={p.nombre} />
+                <EditarBtn onClick={() => setEdit(p)} />
+              </>
+            }
+          />
         ))}
       </div>
       {edit && <ProductoSheet producto={edit === "nuevo" ? null : edit} onClose={() => setEdit(null)} />}
@@ -300,11 +326,16 @@ function BarberosTab({ barberos }: { barberos: Barbero[] }) {
       <div className="mb-3 flex justify-end"><BtnNuevo onClick={() => setEdit("nuevo")} label="Nuevo barbero" /></div>
       <div className="flex flex-col gap-2">
         {barberos.map((b) => (
-          <Fila key={b.id}>
-            <p className={`min-w-0 flex-1 font-semibold ${b.activo ? "text-ink" : "text-subtle line-through"}`}>{b.nombre}</p>
-            <ToggleActivo tabla="barberos" id={b.id} activo={b.activo} nombre={b.nombre} />
-            <EditarBtn onClick={() => setEdit(b)} />
-          </Fila>
+          <Fila
+            key={b.id}
+            main={<p className={`min-w-0 flex-1 font-semibold ${b.activo ? "text-ink" : "text-subtle line-through"}`}>{b.nombre}</p>}
+            actions={
+              <>
+                <ToggleActivo tabla="barberos" id={b.id} activo={b.activo} nombre={b.nombre} />
+                <EditarBtn onClick={() => setEdit(b)} />
+              </>
+            }
+          />
         ))}
       </div>
       {edit && <BarberoSheet barbero={edit === "nuevo" ? null : edit} onClose={() => setEdit(null)} />}
