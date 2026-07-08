@@ -193,7 +193,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
             Nueva venta
           </button>
           <button
-            onClick={() => router.refresh()}
+            onClick={() => router.push(`/admin/clientes/${cliente.id}`)}
             className="min-h-11 text-sm text-muted hover:text-ink"
           >
             Ver ficha del cliente
