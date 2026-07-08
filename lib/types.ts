@@ -26,6 +26,9 @@ export interface HistorialVenta {
   recompensa_canjeada: boolean;
   barbero: string | null;
   items: VentaItemDetalle[];
+  // Para editar la venta desde la ficha (se completan en getClienteFicha).
+  metodo_pago?: "efectivo" | "tarjeta" | "transferencia";
+  barbero_id?: string | null;
 }
 
 export interface LoyaltyRawData {
@@ -84,6 +87,9 @@ export interface ClienteFicha {
   historial: HistorialVenta[];
   notas: ClienteNota[];
   etiquetas: string[];
+  // Contexto para gestión (editar venta / ajustar sellos) desde el panel.
+  sucursalId: string | null;
+  barberos: { id: string; nombre: string }[];
 }
 
 // ── Catálogo (panel admin) ──────────────────────────────────────

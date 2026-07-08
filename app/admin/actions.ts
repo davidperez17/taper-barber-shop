@@ -255,6 +255,56 @@ export async function regenerarQrCliente(clienteId: string): Promise<ActionResul
   return { ok: true };
 }
 
+/** Guardia común: solo dueño/admin pueden anular/editar ventas y ajustar sellos. */
+async function soloDuenoAdmin(): Promise<ActionResult | null> {
+  const staff = await getStaff();
+  return staff?.rol === "dueno" || staff?.rol === "admin" ? null : { ok: false, error: "No autorizado." };
+}
+
+/** Anula una venta: la archiva y la borra (recalcula lealtad, reportes y caja). */
+export async function anularVenta(ventaId: string, clienteId: string, motivo?: string): Promise<ActionResult> {
+  const no = await soloDuenoAdmin();
+  if (no) return no;
+  const sb = await createClient();
+  const { error } = await sb.rpc("venta_anular", { p_venta_id: ventaId, p_motivo: motivo?.trim() || null });
+  if (error) return { ok: false, error: "No se pudo anular la venta." };
+  revalidatePath(`/admin/clientes/${clienteId}`);
+  return { ok: true };
+}
+
+/** Edita monto, método de pago y barbero de una venta ya registrada. */
+export async function editarVenta(input: {
+  ventaId: string; clienteId: string; total: number;
+  metodo: "efectivo" | "tarjeta" | "transferencia"; barberoId: string | null;
+}): Promise<ActionResult> {
+  const no = await soloDuenoAdmin();
+  if (no) return no;
+  if (!(input.total >= 0)) return { ok: false, error: "Total inválido." };
+  const sb = await createClient();
+  const { error } = await sb.rpc("venta_editar", {
+    p_venta_id: input.ventaId, p_total: input.total, p_metodo: input.metodo, p_barbero_id: input.barberoId,
+  });
+  if (error) return { ok: false, error: "No se pudo editar la venta." };
+  revalidatePath(`/admin/clientes/${input.clienteId}`);
+  return { ok: true };
+}
+
+/** Ajuste manual de sellos de lealtad (delta +/-) para un cliente en una sucursal. */
+export async function ajustarSellos(input: {
+  clienteId: string; sucursalId: string; delta: number; motivo?: string;
+}): Promise<ActionResult> {
+  const no = await soloDuenoAdmin();
+  if (no) return no;
+  if (!Number.isInteger(input.delta) || input.delta === 0) return { ok: false, error: "El ajuste debe ser distinto de 0." };
+  const sb = await createClient();
+  const { error } = await sb.rpc("ajuste_lealtad_crear", {
+    p_cliente_id: input.clienteId, p_sucursal_id: input.sucursalId, p_delta: input.delta, p_motivo: input.motivo?.trim() || null,
+  });
+  if (error) return { ok: false, error: "No se pudo ajustar los sellos." };
+  revalidatePath(`/admin/clientes/${input.clienteId}`);
+  return { ok: true };
+}
+
 export async function addNota(clienteId: string, texto: string): Promise<ActionResult> {
   const limpio = texto.trim();
   if (!limpio) return { ok: false, error: "Escribe la nota." };

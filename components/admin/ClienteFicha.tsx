@@ -11,6 +11,9 @@ import {
   updateCliente,
   resetPinCliente,
   regenerarQrCliente,
+  anularVenta,
+  editarVenta,
+  ajustarSellos,
 } from "@/app/admin/actions";
 import {
   computeLoyalty,
@@ -26,9 +29,10 @@ import { useModalA11y } from "@/components/admin/useModalA11y";
 type Tab = "resumen" | "historial" | "notas";
 const ETIQUETAS_SUGERIDAS = ["vip", "frecuente", "nuevo", "barba", "recuperar"];
 
-export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeResetPin?: boolean }) {
+export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: Ficha; puedeResetPin?: boolean; puedeGestionar?: boolean }) {
   const [tab, setTab] = useState<Tab>("resumen");
   const [editando, setEditando] = useState(false);
+  const [ajustando, setAjustando] = useState(false);
   const [pinPend, startPin] = useTransition();
   const [pinMsg, setPinMsg] = useState<string | null>(null);
   const [qrPend, startQr] = useTransition();
@@ -121,15 +125,32 @@ export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeRese
 
       <div className="mt-5">
         {tab === "resumen" && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat value={String(ficha.loyalty.cortes_total)} label="Cortes totales" accent />
-            <Stat value={String(ficha.loyalty.visitas_12m)} label="Visitas (12m)" />
-            <Stat value={fmtQ(invertido)} label="Invertido" />
-            <Stat value={fmtDiaMes(ficha.loyalty.ultima_visita)} label="Última visita" />
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat value={String(ficha.loyalty.cortes_total)} label="Cortes totales" accent />
+              <Stat value={String(ficha.loyalty.visitas_12m)} label="Visitas (12m)" />
+              <Stat value={fmtQ(invertido)} label="Invertido" />
+              <Stat value={fmtDiaMes(ficha.loyalty.ultima_visita)} label="Última visita" />
+            </div>
+            {puedeGestionar && (
+              <button
+                onClick={() => setAjustando(true)}
+                className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line bg-elevated px-4 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
+              >
+                Ajustar sellos
+              </button>
+            )}
+          </>
         )}
 
-        {tab === "historial" && <Historial ventas={ficha.historial} />}
+        {tab === "historial" && (
+          <Historial
+            ventas={ficha.historial}
+            clienteId={ficha.cliente.id}
+            barberos={ficha.barberos}
+            puedeGestionar={!!puedeGestionar}
+          />
+        )}
 
         {tab === "notas" && (
           <NotasEtiquetas
@@ -141,6 +162,14 @@ export function ClienteFicha({ ficha, puedeResetPin }: { ficha: Ficha; puedeRese
       </div>
 
       {editando && <EditarSheet cliente={ficha.cliente} onClose={() => setEditando(false)} />}
+      {ajustando && (
+        <AjustarSellosSheet
+          clienteId={ficha.cliente.id}
+          sucursalId={ficha.sucursalId}
+          actuales={ficha.loyalty.cortes_total}
+          onClose={() => setAjustando(false)}
+        />
+      )}
     </div>
   );
 }
@@ -154,7 +183,19 @@ function Stat({ value, label, accent }: { value: string; label: string; accent?:
   );
 }
 
-function Historial({ ventas }: { ventas: HistorialVenta[] }) {
+function Historial({
+  ventas, clienteId, barberos, puedeGestionar,
+}: {
+  ventas: HistorialVenta[];
+  clienteId: string;
+  barberos: { id: string; nombre: string }[];
+  puedeGestionar: boolean;
+}) {
+  const router = useRouter();
+  const [pend, start] = useTransition();
+  const [editar, setEditar] = useState<HistorialVenta | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
   if (ventas.length === 0) {
     return <p className="rounded-xl border border-dashed border-line p-8 text-center text-sm text-muted">Sin ventas registradas todavía.</p>;
   }
@@ -165,8 +206,21 @@ function Historial({ ventas }: { ventas: HistorialVenta[] }) {
     arr.push(v);
     grupos.set(k, arr);
   }
+
+  const anular = (v: HistorialVenta) => {
+    if (!confirm(`¿Anular esta venta de ${fmtQ(v.total)}? Se quitará el sello correspondiente y se corregirán reportes y caja. No se puede deshacer.`)) return;
+    const motivo = prompt("Motivo (opcional):") ?? undefined;
+    setMsg(null);
+    start(async () => {
+      const r = await anularVenta(v.id, clienteId, motivo);
+      if (!r.ok) { setMsg(r.error ?? "Error"); return; }
+      router.refresh();
+    });
+  };
+
   return (
     <div className="flex flex-col gap-5">
+      {msg && <p role="alert" className="text-sm text-danger">{msg}</p>}
       {[...grupos.entries()].map(([mes, vs]) => (
         <section key={mes}>
           <p className="mb-2.5 text-xs uppercase tracking-[0.06em] text-subtle">{mes}</p>
@@ -184,11 +238,25 @@ function Historial({ ventas }: { ventas: HistorialVenta[] }) {
                 {v.recompensa_canjeada && (
                   <span className="mt-2 inline-block rounded-full bg-success-dim px-2.5 py-1 text-[11px] font-semibold text-success">Corte gratis canjeado</span>
                 )}
+                {puedeGestionar && (
+                  <div className="mt-3 flex gap-2 border-t border-line pt-3">
+                    <button onClick={() => setEditar(v)} disabled={pend} className="min-h-9 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
+                      Editar
+                    </button>
+                    <button onClick={() => anular(v)} disabled={pend} className="min-h-9 rounded-full border border-danger/40 px-3.5 text-[13px] font-medium text-danger hover:border-danger disabled:opacity-50">
+                      Anular
+                    </button>
+                  </div>
+                )}
               </article>
             ))}
           </div>
         </section>
       ))}
+
+      {editar && (
+        <EditarVentaSheet venta={editar} clienteId={clienteId} barberos={barberos} onClose={() => setEditar(null)} />
+      )}
     </div>
   );
 }
@@ -332,5 +400,153 @@ function Field({ label, value, onChange, inputMode, placeholder }: { label: stri
         className="min-h-[48px] w-full rounded-lg border border-line bg-elevated px-4 text-base text-ink outline-none placeholder:text-muted focus:border-accent"
       />
     </label>
+  );
+}
+
+const METODOS = ["efectivo", "tarjeta", "transferencia"] as const;
+type Metodo = (typeof METODOS)[number];
+
+function EditarVentaSheet({
+  venta, clienteId, barberos, onClose,
+}: {
+  venta: HistorialVenta;
+  clienteId: string;
+  barberos: { id: string; nombre: string }[];
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [total, setTotal] = useState(String(venta.total));
+  const [metodo, setMetodo] = useState<Metodo>(venta.metodo_pago ?? "efectivo");
+  const [barberoId, setBarberoId] = useState<string>(venta.barbero_id ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const ref = useModalA11y(onClose);
+
+  const guardar = () => {
+    const t = Number(total);
+    if (!(t >= 0)) { setError("Monto inválido."); return; }
+    setError(null);
+    start(async () => {
+      const r = await editarVenta({ ventaId: venta.id, clienteId, total: t, metodo, barberoId: barberoId || null });
+      if (!r.ok) { setError(r.error ?? "Error"); return; }
+      onClose();
+      router.refresh();
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Editar venta">
+      <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
+        <h2 className="font-display text-xl font-bold text-ink">Editar venta</h2>
+        <p className="mt-1 text-[13px] text-muted">{fmtDiaMes(venta.created_at)} · {venta.items.map((i) => i.nombre).join(" · ") || "Venta"}</p>
+
+        <div className="mt-4 flex flex-col gap-4">
+          <Field label="Monto (Q)" value={total} onChange={setTotal} inputMode="tel" />
+
+          <div>
+            <span className="mb-1.5 block text-[13px] font-medium text-muted">Método de pago</span>
+            <div className="flex flex-wrap gap-2">
+              {METODOS.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMetodo(m)}
+                  className={`min-h-10 rounded-full border px-4 text-sm font-medium capitalize transition-colors ${metodo === m ? "border-accent bg-accent text-accent-ink" : "border-line bg-elevated text-muted hover:text-ink"}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {barberos.length > 0 && (
+            <label className="block">
+              <span className="mb-1.5 block text-[13px] font-medium text-muted">Barbero</span>
+              <select
+                value={barberoId}
+                onChange={(e) => setBarberoId(e.target.value)}
+                className="min-h-[48px] w-full rounded-lg border border-line bg-elevated px-4 text-base text-ink outline-none focus:border-accent"
+              >
+                <option value="">Sin asignar</option>
+                {barberos.map((b) => (
+                  <option key={b.id} value={b.id}>{b.nombre}</option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+
+        {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
+        <div className="mt-5 flex gap-3">
+          <button onClick={onClose} className="min-h-[48px] flex-1 rounded-full border border-line text-sm font-medium text-muted hover:text-ink">Cancelar</button>
+          <button onClick={guardar} disabled={pending} className="min-h-[48px] flex-1 rounded-full bg-accent text-sm font-semibold text-accent-ink disabled:opacity-50">
+            {pending ? "Guardando…" : "Guardar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AjustarSellosSheet({
+  clienteId, sucursalId, actuales, onClose,
+}: {
+  clienteId: string;
+  sucursalId: string | null;
+  actuales: number;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [delta, setDelta] = useState(0);
+  const [motivo, setMotivo] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const ref = useModalA11y(onClose);
+  const resultado = Math.max(0, actuales + delta);
+
+  const guardar = () => {
+    if (delta === 0) { setError("Cambia el número de sellos (+/−)."); return; }
+    if (!sucursalId) { setError("No hay sucursal activa."); return; }
+    setError(null);
+    start(async () => {
+      const r = await ajustarSellos({ clienteId, sucursalId, delta, motivo });
+      if (!r.ok) { setError(r.error ?? "Error"); return; }
+      onClose();
+      router.refresh();
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Ajustar sellos">
+      <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
+        <h2 className="font-display text-xl font-bold text-ink">Ajustar sellos</h2>
+        <p className="mt-1 text-[13px] text-muted">Corrección manual. Actual: <b className="text-ink">{actuales}</b> · Quedará en <b className="text-accent">{resultado}</b>.</p>
+
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <button onClick={() => setDelta((d) => d - 1)} className="grid size-12 place-items-center rounded-full border border-line bg-elevated text-2xl text-ink hover:border-line-strong" aria-label="Quitar sello">−</button>
+          <span className="min-w-[64px] text-center font-display text-3xl font-bold tabular-nums text-ink">{delta > 0 ? `+${delta}` : delta}</span>
+          <button onClick={() => setDelta((d) => d + 1)} className="grid size-12 place-items-center rounded-full border border-line bg-elevated text-2xl text-ink hover:border-line-strong" aria-label="Agregar sello">+</button>
+        </div>
+
+        <label className="mt-4 block">
+          <span className="mb-1.5 block text-[13px] font-medium text-muted">Motivo (opcional)</span>
+          <input
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            placeholder="cortesía, corrección…"
+            className="min-h-[48px] w-full rounded-lg border border-line bg-elevated px-4 text-base text-ink outline-none placeholder:text-muted focus:border-accent"
+          />
+        </label>
+
+        {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
+        <div className="mt-5 flex gap-3">
+          <button onClick={onClose} className="min-h-[48px] flex-1 rounded-full border border-line text-sm font-medium text-muted hover:text-ink">Cancelar</button>
+          <button onClick={guardar} disabled={pending || delta === 0} className="min-h-[48px] flex-1 rounded-full bg-accent text-sm font-semibold text-accent-ink disabled:opacity-50">
+            {pending ? "Guardando…" : "Guardar"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
