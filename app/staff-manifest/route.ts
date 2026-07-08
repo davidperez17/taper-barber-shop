@@ -22,8 +22,8 @@ export function GET() {
     scope: "/",
     categories: ["business", "productivity"],
     icons: [
-      { src: "/icon-admin.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icon-admin.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+      { src: "/iso.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/iso.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
     ],
   };
 

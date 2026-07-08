@@ -18,15 +18,15 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Taper Barber",
+  title: "Taper Barber Shop",
   description: "Tu tarjeta de lealtad digital.",
   manifest: "/cliente-manifest",
-  applicationName: "Taper",
-  appleWebApp: { capable: true, statusBarStyle: "black", title: "Taper" },
+  applicationName: "Taper Barber Shop",
+  appleWebApp: { capable: true, statusBarStyle: "black", title: "Taper Barber Shop" },
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/iso.svg",
+    shortcut: "/iso.svg",
+    apple: "/iso.svg",
   },
 };
 

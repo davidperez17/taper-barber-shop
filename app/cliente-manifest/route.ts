@@ -4,7 +4,7 @@ export const dynamic = "force-static";
 export function GET() {
   const manifest = {
     id: "/",
-    name: "Taper Barber",
+    name: "Taper Barber Shop",
     short_name: "Taper",
     description: "Tu tarjeta de lealtad digital.",
     lang: "es",
@@ -17,8 +17,8 @@ export function GET() {
     scope: "/",
     categories: ["lifestyle", "shopping"],
     icons: [
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icon-maskable.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+      { src: "/iso.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/iso.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
     ],
   };
 
