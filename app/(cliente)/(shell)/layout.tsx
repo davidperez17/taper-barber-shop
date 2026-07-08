@@ -9,7 +9,8 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   return (
     <div data-app-shell className="mx-auto flex h-full w-full max-w-[440px] flex-col overflow-hidden bg-bg">
       <AutoRefresh />
-      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+      {/* pt safe-area: separa el contenido de la status bar/notch en la PWA */}
+      <div className="min-h-0 flex-1 overflow-y-auto pt-[env(safe-area-inset-top)]">{children}</div>
       <BottomNav />
     </div>
   );
