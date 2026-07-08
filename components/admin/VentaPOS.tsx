@@ -310,8 +310,9 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
 
       {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
-      {/* Barra total + confirmar: sticky. En móvil se eleva sobre el bottom-nav fijo (~88px); en lg el nav se oculta y va al borde. */}
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+88px)] z-[var(--z-sticky)] mt-8 border-t border-line bg-elevated px-5 py-3.5 lg:bottom-0">
+      {/* Barra total + confirmar: sticky al borde inferior. En la pantalla de venta
+          el bottom-nav se oculta, así que no hay nada que librar. */}
+      <div className="sticky bottom-0 z-[var(--z-sticky)] mt-8 border-t border-line bg-elevated px-5 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-3.5">
         <div className="mx-auto flex max-w-[640px] items-center gap-4">
           <div>
             {descuento > 0 && (

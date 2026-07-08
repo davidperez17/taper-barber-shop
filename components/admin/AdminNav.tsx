@@ -168,7 +168,11 @@ export function AdminSidebar({ rol, nombre, sucursal }: { rol: RolStaff; nombre:
 // ── Bottom nav (móvil/tablet, <lg): 4 primarios + Más ───────────
 export function AdminBottomNav({ rol }: { rol: RolStaff }) {
   const active = useActiveHref();
+  const pathname = usePathname();
   const [masAbierto, setMasAbierto] = useState(false);
+  // En la pantalla de venta (checkout) el bottom nav estorba con la barra fija
+  // "Total / Confirmar"; se oculta y se sale por el botón "atrás" del header.
+  if (pathname.startsWith("/admin/venta/")) return null;
   const primarios = PRIMARY.filter((i) => puede(rol, i.roles));
   const primarioHrefs = new Set(primarios.map((i) => i.href));
   // "Más" queda resaltado cuando la ruta activa no es un primario.
