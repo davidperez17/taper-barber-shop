@@ -247,18 +247,22 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
         })}
       </div>
 
-      {/* Productos */}
-      <h2 className="mb-2.5 mt-6 font-display text-lg font-bold text-ink">Productos</h2>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {productos.map((p) => {
-          const q = prod[p.id] ?? 0;
-          return (
-            <CatItem key={p.id} nombre={p.nombre} precio={Number(p.precio)} imagen={p.imagen_url} qty={q}
-              stock={p.controla_stock ? p.stock : null} stockMin={p.stock_min}
-              onAdd={() => addProducto(p)} onSub={() => subProducto(p)} />
-          );
-        })}
-      </div>
+      {/* Productos: solo si hay; sin datos la sección quedaba como un hueco vacío. */}
+      {productos.length > 0 && (
+        <>
+          <h2 className="mb-2.5 mt-6 font-display text-lg font-bold text-ink">Productos</h2>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {productos.map((p) => {
+              const q = prod[p.id] ?? 0;
+              return (
+                <CatItem key={p.id} nombre={p.nombre} precio={Number(p.precio)} imagen={p.imagen_url} qty={q}
+                  stock={p.controla_stock ? p.stock : null} stockMin={p.stock_min}
+                  onAdd={() => addProducto(p)} onSub={() => subProducto(p)} />
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Barbero + método */}
       <h2 className="mb-2.5 mt-6 font-display text-lg font-bold text-ink">Detalles</h2>
@@ -310,9 +314,9 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
 
       {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
-      {/* Barra total + confirmar: sticky al borde inferior. En la pantalla de venta
-          el bottom-nav se oculta, así que no hay nada que librar. */}
-      <div className="sticky bottom-0 z-[var(--z-sticky)] mt-8 border-t border-line bg-elevated px-5 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-3.5">
+      {/* Barra de acción anclada al borde inferior (el bottom-nav se oculta en venta).
+          En móvil va fixed edge-to-edge; en desktop fluye sticky dentro del contenido. */}
+      <div className="fixed inset-x-0 bottom-0 z-[var(--z-sticky)] border-t border-line bg-elevated/95 px-5 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-3.5 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md lg:sticky lg:inset-x-auto lg:mt-8 lg:bg-elevated lg:shadow-none">
         <div className="mx-auto flex max-w-[640px] items-center gap-4">
           <div>
             {descuento > 0 && (
