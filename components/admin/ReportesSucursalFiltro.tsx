@@ -13,7 +13,7 @@ export function ReportesSucursalFiltro({
   const opciones = [{ id: "all", nombre: "Todas las sucursales" }, ...sucursales];
   const activaKey = activaId ?? "all";
   return (
-    <div role="tablist" aria-label="Sucursal del reporte" className="mt-3 inline-flex flex-wrap gap-1 rounded-full border border-line bg-elevated p-1">
+    <div role="tablist" aria-label="Sucursal del reporte" className="mt-3 inline-flex flex-wrap gap-1 rounded-[22px] border border-line bg-elevated p-1">
       {opciones.map((o) => {
         const activo = o.id === activaKey;
         return (
