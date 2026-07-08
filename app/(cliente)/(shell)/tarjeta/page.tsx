@@ -7,6 +7,7 @@ import { TierUpCelebration } from "@/components/cliente/TierUpCelebration";
 import { TarjetaCards, type TarjetaVM } from "@/components/cliente/TarjetaCards";
 import { IconStats } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
+import { ActualizarApp } from "@/components/ActualizarApp";
 import { VentaLive } from "@/components/cliente/VentaLive";
 import { getBandeja } from "@/lib/queries/notificaciones";
 
@@ -57,7 +58,10 @@ export default async function TarjetaPage() {
           <p className="text-[13px] text-muted">Hola,</p>
           <h1 className="font-display text-[26px] font-bold leading-none text-ink">{firstName}</h1>
         </div>
-        <NotifyBell notisInicial={bandeja.notis} noLeidasInicial={bandeja.noLeidas} />
+        <div className="flex items-center gap-2">
+          <ActualizarApp />
+          <NotifyBell notisInicial={bandeja.notis} noLeidasInicial={bandeja.noLeidas} />
+        </div>
       </header>
 
       <TarjetaCards
