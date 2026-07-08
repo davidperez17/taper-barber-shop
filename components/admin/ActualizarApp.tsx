@@ -4,9 +4,9 @@ import { useState } from "react";
 
 /**
  * Botón para traer la última versión sin cerrar la PWA.
- * Pide al navegador un service worker nuevo (refresca estáticos cacheados) y
- * recarga. La navegación es network-first, así que el HTML/JS del deploy nuevo
- * entra en el reload aunque el SW aún esté instalando en segundo plano.
+ * iOS cachea el PWA de forma muy agresiva, así que además de pedir un service
+ * worker nuevo BORRA todos los caches (chunks/estáticos viejos) y recarga desde
+ * red. Con eso el deploy nuevo entra aunque el navegador sirviera algo viejo.
  */
 export function ActualizarApp() {
   const [cargando, setCargando] = useState(false);
@@ -14,14 +14,26 @@ export function ActualizarApp() {
   async function actualizar() {
     setCargando(true);
     try {
+      // 1) Borra TODOS los caches del SW (lo que deja la app pegada en iOS).
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      // 2) Fuerza un SW nuevo y que tome control de inmediato si hay uno esperando.
       if ("serviceWorker" in navigator) {
         const reg = await navigator.serviceWorker.getRegistration();
-        await reg?.update();
+        if (reg) {
+          await reg.update();
+          reg.waiting?.postMessage({ type: "SKIP_WAITING" });
+        }
       }
     } catch {
-      // sin SW o red caída: recargamos igual, no dejamos el botón colgado
+      // sin SW/caches o red caída: recargamos igual, no dejamos el botón colgado
     }
-    window.location.reload();
+    // 3) Recarga desde red (cache-busting por query para saltar el HTTP cache de iOS).
+    const u = new URL(window.location.href);
+    u.searchParams.set("v", Date.now().toString(36));
+    window.location.replace(u.toString());
   }
 
   return (

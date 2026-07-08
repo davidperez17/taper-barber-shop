@@ -1,7 +1,7 @@
 // Service Worker — Taper Barbershop PWA
 // Shell offline + cache-first para estáticos. No intercepta Supabase.
 // Push: muestra notificaciones del sistema aunque la app esté cerrada.
-const CACHE = "taper-v4";
+const CACHE = "taper-v5";
 const SHELL = ["/offline", "/icon.svg"];
 
 self.addEventListener("install", (e) => {
@@ -12,6 +12,11 @@ self.addEventListener("install", (e) => {
       .then((c) => Promise.all(SHELL.map((u) => c.add(u).catch(() => {}))))
       .then(() => self.skipWaiting()),
   );
+});
+
+// El botón "Actualizar" puede pedir que un SW en espera tome control ya.
+self.addEventListener("message", (e) => {
+  if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
