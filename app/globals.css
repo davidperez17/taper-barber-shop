@@ -149,12 +149,17 @@ body:has([data-app-shell]) {
   overflow: hidden;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
+/* En @layer base: si no, este reset (sin capa) gana a @layer utilities y anula
+   utilidades de color como text-accent-ink en <button> (texto blanco sobre el
+   amarillo del acento). Dentro de base, las utilidades vuelven a mandar. */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 }
 
 /* Touch targets on coarse pointers */
