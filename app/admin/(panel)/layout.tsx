@@ -71,7 +71,8 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           )}
         </div>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-5 py-6 lg:px-8">
+        {/* pb móvil = espacio del bottom nav fijo (nav ~60px + margen + inset). En lg el nav se oculta y manda la sidebar. */}
+        <main className="min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+104px)] lg:px-8 lg:py-6">
           <div className="mx-auto max-w-[420px] lg:mx-0">
             <NotifyOptIn />
           </div>

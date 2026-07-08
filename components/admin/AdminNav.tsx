@@ -178,7 +178,7 @@ export function AdminBottomNav({ rol }: { rol: RolStaff }) {
     <>
       <nav
         aria-label="Navegación del panel"
-        className="mx-3 mb-[max(env(safe-area-inset-bottom),0.875rem)] flex shrink-0 items-stretch rounded-2xl border border-line bg-elevated px-1.5 py-2 shadow-lg shadow-black/40 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 mx-3 mb-[max(env(safe-area-inset-bottom),0.875rem)] flex items-stretch rounded-2xl border border-line bg-elevated px-1.5 py-2 shadow-lg shadow-black/40 lg:hidden"
       >
         {primarios.map(({ href, label, Icon }) => (
           <Link
