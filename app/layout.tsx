@@ -35,7 +35,6 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover", // habilita env(safe-area-inset-*) bajo notch/status bar
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
