@@ -141,7 +141,11 @@ body {
    registro) siguen scrolleando el body normalmente. */
 html:has([data-app-shell]),
 body:has([data-app-shell]) {
-  height: 100%;
+  /* dvh, no %: con viewport-fit=cover un `height:100%` se mide contra el
+     viewport de layout (incluye la zona bajo la barra de gestos) y al recargar
+     la PWA el shell queda más alto que la pantalla visible → overflow:hidden
+     recortaba el bottom nav. dvh sigue el viewport dinámico y se mide bien. */
+  height: 100dvh;
   overflow: hidden;
 }
 
