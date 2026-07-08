@@ -77,8 +77,13 @@ export function LoyaltyCard({
     flexDirection: "column",
     justifyContent: "space-between",
     border: "1px solid rgba(255,255,255,0.16)",
+    // backface-visibility ayuda donde funciona; en WebKit (iOS) es poco fiable
+    // y las dos caras se transparentan. Por eso NO dependemos de él: la opacidad
+    // de cada cara conmuta en seco a mitad del giro (250ms de 500ms), cuando la
+    // card está de canto y no se ve nada. Robusto en todos los navegadores.
     WebkitBackfaceVisibility: "hidden",
     backfaceVisibility: "hidden",
+    transition: "opacity 0s linear 250ms",
   };
 
   const handleFlip = () => {
@@ -127,6 +132,7 @@ export function LoyaltyCard({
               boxShadow: cardShadow,
               animation: recompensaDisponible ? "taperPulseSuccess 1.6s ease-in-out infinite" : "none",
               color: ink,
+              opacity: flipped ? 0 : 1, // frente: visible en la 1ª mitad del giro
             }}
           >
             {/* Glare holográfico: la luz se desplaza con --gx/--gy (giroscopio/mouse).
@@ -231,6 +237,7 @@ export function LoyaltyCard({
               transform: "rotateY(180deg)",
               alignItems: "center",
               color: "#f0f0f2",
+              opacity: flipped ? 1 : 0, // reverso (QR): visible en la 2ª mitad del giro
             }}
           >
             {/* Barra superior idéntica al frente (misma marca + tier) */}
@@ -268,11 +275,11 @@ export function LoyaltyCard({
         </div>
       </button>
 
-      {(flipped || !flippedOnce) && (
-        <p className="mt-3.5 text-center" style={{ fontSize: 12, color: "var(--subtle)" }}>
-          {flipped ? "Muéstrale el código al cajero · toca para volver" : "Toca la tarjeta para ver tu QR"}
-        </p>
-      )}
+      {/* Siempre presente con altura reservada: así el texto aparece/cambia sin
+          empujar el contenido de abajo (evita el salto al voltear). */}
+      <p className="mt-3.5 text-center" style={{ fontSize: 12, lineHeight: 1.5, minHeight: "1.5em", color: "var(--subtle)" }}>
+        {flipped ? "Muéstrale el código al cajero · toca para volver" : !flippedOnce ? "Toca la tarjeta para ver tu QR" : ""}
+      </p>
     </div>
   );
 }

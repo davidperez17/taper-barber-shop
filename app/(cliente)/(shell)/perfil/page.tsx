@@ -1,6 +1,7 @@
 import { requireDashboard } from "@/lib/queries/cliente";
 import { logout } from "@/app/(cliente)/actions";
 import { PushToggle } from "@/components/cliente/PushToggle";
+import { InstallPWA } from "@/components/InstallPWA";
 import {
   computeLoyalty,
   memberId,
@@ -74,6 +75,9 @@ export default async function PerfilPage() {
       )}
 
       <PushToggle />
+
+      {/* Instalar la app: botón real en Android; en iOS muestra los pasos. Se auto-oculta si ya está instalada. */}
+      <InstallPWA />
 
       <form action={logout} className="mt-8">
         <button
