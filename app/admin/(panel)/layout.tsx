@@ -48,7 +48,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
         {/* Header solo en móvil/tablet; en desktop la sidebar lo cubre */}
         <div className="lg:hidden">
-          <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+          <header className="flex items-center justify-between gap-3 border-b border-line px-5 pb-3.5 pt-[calc(env(safe-area-inset-top)+0.875rem)]">
             <PanelHeaderNav />
             <div className="flex items-center gap-3">
               <div className="text-right leading-tight">
