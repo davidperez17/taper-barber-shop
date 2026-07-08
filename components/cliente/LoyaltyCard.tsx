@@ -100,9 +100,13 @@ export function LoyaltyCard({
         style={{ perspective: "1400px", aspectRatio: "3 / 2" }}
       >
         {/* Wrapper de TILT (giroscopio/mouse): inclina toda la card en espacio de pantalla */}
+        {/* tiltRef NO usa preserve-3d: WebKit (PWA iOS) rompe backface-visibility con
+            preserve-3d anidados y muestra las dos caras a la vez. Da 'perspective' al
+            flip (único contexto 3D) para que conserve profundidad; el tilt se ve con
+            la perspective del <button>. */}
         <div
           ref={tiltRef}
-          style={{ position: "relative", width: "100%", height: "100%", transformStyle: "preserve-3d", willChange: "transform" }}
+          style={{ position: "relative", width: "100%", height: "100%", perspective: "1400px", willChange: "transform" }}
         >
         <div
           style={{
