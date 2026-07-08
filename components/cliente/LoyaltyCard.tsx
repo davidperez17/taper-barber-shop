@@ -119,7 +119,10 @@ export function LoyaltyCard({
             width: "100%",
             height: "100%",
             transformStyle: "preserve-3d",
-            transition: "transform 500ms var(--ease-spring)",
+            // Easing simétrico sin rebote: a mitad de tiempo (250ms) la card está
+            // a 90° (de canto), justo cuando conmuta la opacidad de las caras, así
+            // el cambio es invisible. El spring rebotaba y hacía el flip "raro".
+            transition: "transform 500ms cubic-bezier(0.45, 0, 0.55, 1)",
             transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
           }}
         >

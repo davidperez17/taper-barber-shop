@@ -7,7 +7,7 @@ import { PanelHeaderNav } from "@/components/admin/PanelHeaderNav";
 import { OfflineSync } from "@/components/admin/OfflineSync";
 import { AdminSidebar, AdminBottomNav, type SucursalNav } from "@/components/admin/AdminNav";
 import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
-import { ActualizarApp } from "@/components/admin/ActualizarApp";
+import { ActualizarApp } from "@/components/ActualizarApp";
 import { NotifyOptIn } from "@/components/NotifyOptIn";
 
 // Mantiene el manifest del app admin en todo el panel (instalable aparte del cliente).
