@@ -50,6 +50,14 @@ export function NotifyOptIn() {
     setEstado(Notification.permission === "granted" ? "oculto" : "ofrecer");
   }, []);
 
+  // Tras activar mostramos "Notificaciones activas" un momento y luego el
+  // banner se retira solo para no ocupar espacio de forma permanente.
+  useEffect(() => {
+    if (estado !== "listo") return;
+    const t = setTimeout(() => setEstado("oculto"), 3000);
+    return () => clearTimeout(t);
+  }, [estado]);
+
   const descartar = () => {
     sessionStorage.setItem(DESCARTE_KEY, "1");
     setEstado("oculto");
