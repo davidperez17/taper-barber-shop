@@ -129,7 +129,11 @@ export function LoyaltyCard({
               color: ink,
             }}
           >
-            {/* Glare holográfico: la luz se desplaza con --gx/--gy (giroscopio/mouse) */}
+            {/* Glare holográfico: la luz se desplaza con --gx/--gy (giroscopio/mouse).
+                Al voltear se apaga y su blend pasa a 'normal': un hijo con
+                mix-blend-mode promueve la cara a una capa que IGNORA
+                backface-visibility en WebKit, y sin eso el frente (estampas)
+                se colaba sobre el QR. Con normal+opacity0, backface la oculta. */}
             <div
               ref={glareRef}
               aria-hidden
@@ -140,7 +144,9 @@ export function LoyaltyCard({
                 pointerEvents: "none",
                 zIndex: 0,
                 background: "radial-gradient(circle at var(--gx,50%) var(--gy,28%), rgba(255,255,255,0.16), transparent 45%)",
-                mixBlendMode: "soft-light",
+                mixBlendMode: flipped ? "normal" : "soft-light",
+                opacity: flipped ? 0 : 1,
+                transition: "opacity 200ms linear",
               }}
             />
             <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
