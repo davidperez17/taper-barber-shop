@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { guardarSuscripcion, enviarPrueba, type SubJSON } from "@/app/push/actions";
 
-const VAPID = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+// Defensivo: si en Vercel se pegó la clave con comillas, quítalas.
+const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
 
 const isStandalone = () =>
   window.matchMedia("(display-mode: standalone)").matches ||
@@ -46,8 +47,25 @@ export function NotifyOptIn() {
     if (Notification.permission === "denied") return;
     if (sessionStorage.getItem(DESCARTE_KEY)) return;
     // Depende de APIs del navegador: solo se puede decidir tras montar.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEstado(Notification.permission === "granted" ? "oculto" : "ofrecer");
+    if (Notification.permission !== "granted") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEstado("ofrecer");
+      return;
+    }
+    // Permiso concedido: solo ocultar si de verdad hay una suscripción activa.
+    // Si el permiso quedó "granted" pero la suscripción se perdió (o nunca se
+    // llegó a crear), hay que volver a ofrecer o el banner desaparecería para
+    // siempre sin forma de reactivar.
+    let vivo = true;
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => {
+        if (vivo && !sub) setEstado("ofrecer");
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
   }, []);
 
   // Tras activar mostramos "Notificaciones activas" un momento y luego el
@@ -74,13 +92,14 @@ export function NotifyOptIn() {
         (await reg.pushManager.getSubscription()) ??
         (await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlB64ToUint8Array(VAPID!),
+          applicationServerKey: urlB64ToUint8Array(VAPID),
         }));
 
       const { ok } = await guardarSuscripcion(sub.toJSON() as SubJSON);
-      setEstado(ok ? "listo" : "oculto");
-    } catch {
-      setEstado("oculto");
+      setEstado(ok ? "listo" : "ofrecer");
+    } catch (e) {
+      console.error("[push] fallo al activar:", e);
+      setEstado("ofrecer");
     }
   };
 
