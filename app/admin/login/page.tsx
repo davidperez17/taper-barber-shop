@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { LoginForm } from "@/components/admin/LoginForm";
 import { InstallPWA } from "@/components/InstallPWA";
-import { Isotipo } from "@/components/Isotipo";
+import { Wordmark } from "@/components/Wordmark";
 
 // Enlaza el manifest del app admin (instalable aparte del app cliente) + identidad iOS.
 export const metadata: Metadata = {
@@ -37,10 +37,7 @@ export default async function AdminLoginPage({
           style={{ background: "linear-gradient(to top,rgba(15,15,15,0.72) 0%,rgba(15,15,15,0.18) 55%,rgba(15,15,15,0.35) 100%)" }}
         />
         <div className="absolute inset-x-0 bottom-0 p-10">
-          <div className="mb-3 flex items-center gap-2.5">
-            <Isotipo className="h-[9px] w-[18px] text-accent" />
-            <span className="font-display text-[15px] font-bold tracking-[0.28em] text-ink">TAPER BARBER</span>
-          </div>
+          <Wordmark className="mb-3" />
           <p className="max-w-[340px] font-display text-2xl font-bold leading-tight text-ink">
             Cada corte cuenta. Cada cliente vuelve.
           </p>
@@ -64,8 +61,7 @@ export default async function AdminLoginPage({
         <div className="relative z-[1] w-full max-w-[380px]">
           <div className="mb-8">
             <div className="mb-5 flex items-center gap-2.5">
-              <Isotipo className="h-[9px] w-[18px] text-accent" />
-              <span className="font-display text-[15px] font-bold tracking-[0.28em] text-ink">TAPER BARBER</span>
+              <Wordmark />
               <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Panel</span>
             </div>
             <h1 className="font-display text-[30px] font-bold tracking-[-0.01em] text-ink">Acceso staff</h1>
