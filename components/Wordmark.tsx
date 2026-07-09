@@ -13,7 +13,7 @@ export function Wordmark({ className, inline = false }: { className?: string; in
     <span className={`flex items-center gap-2.5 ${className ?? ""}`}>
       <Isotipo className="h-[9px] w-[18px] shrink-0 text-accent" />
       {inline ? (
-        <span className="font-display text-[14px] font-bold tracking-[0.12em] text-ink">
+        <span className="whitespace-nowrap font-display text-[14px] font-bold tracking-[0.1em] text-ink">
           TAPER BARBER SHOP
         </span>
       ) : (

@@ -50,10 +50,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         <div className="lg:hidden">
           <header className="flex items-center justify-between gap-3 border-b border-line px-5 pb-3.5 pt-[max(env(safe-area-inset-top),1.25rem)]">
             <PanelHeaderNav />
-            <div className="flex items-center gap-3">
-              <div className="text-right leading-tight">
-                <p className="text-[13px] font-semibold text-ink">{staff.nombre}</p>
-                <p className="text-[11px] text-subtle">{ROL_LABEL[staff.rol] ?? staff.rol}</p>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="min-w-0 text-right leading-tight">
+                <p className="truncate text-[13px] font-semibold text-ink">{staff.nombre}</p>
+                <p className="truncate text-[11px] text-subtle">{ROL_LABEL[staff.rol] ?? staff.rol}</p>
               </div>
               <ActualizarApp />
               <form action={logoutStaff}>
