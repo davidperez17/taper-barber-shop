@@ -2,12 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/queries/staff";
 import { getSucursalActiva, getSucursales } from "@/lib/sucursal";
-import { logoutStaff } from "@/app/admin/actions";
 import { PanelHeaderNav } from "@/components/admin/PanelHeaderNav";
 import { OfflineSync } from "@/components/admin/OfflineSync";
 import { AdminSidebar, AdminBottomNav, type SucursalNav } from "@/components/admin/AdminNav";
 import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
-import { ActualizarApp } from "@/components/ActualizarApp";
 import { NotifyOptIn } from "@/components/NotifyOptIn";
 
 // Mantiene el manifest del app admin en todo el panel (instalable aparte del cliente).
@@ -17,13 +15,6 @@ export const metadata: Metadata = {
   manifest: "/staff-manifest",
   appleWebApp: { capable: true, statusBarStyle: "black", title: "Taper Admin" },
   icons: { icon: "/icon-admin.svg", shortcut: "/icon-admin.svg", apple: "/icon-admin.svg" },
-};
-
-const ROL_LABEL: Record<string, string> = {
-  cajero: "Cajero",
-  barbero: "Barbero",
-  admin: "Admin",
-  dueno: "Dueño",
 };
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -48,20 +39,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
         {/* Header solo en móvil/tablet; en desktop la sidebar lo cubre */}
         <div className="lg:hidden">
-          <header className="flex items-center justify-between gap-3 border-b border-line px-5 pb-3.5 pt-[max(env(safe-area-inset-top),1.25rem)]">
+          {/* Barra = solo marca. Identidad + Actualizar + Salir viven en "Más". */}
+          <header className="flex items-center border-b border-line px-5 pb-3.5 pt-[max(env(safe-area-inset-top),1.25rem)]">
             <PanelHeaderNav />
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="min-w-0 text-right leading-tight">
-                <p className="truncate text-[13px] font-semibold text-ink">{staff.nombre}</p>
-                <p className="truncate text-[11px] text-subtle">{ROL_LABEL[staff.rol] ?? staff.rol}</p>
-              </div>
-              <ActualizarApp />
-              <form action={logoutStaff}>
-                <button type="submit" className="min-h-9 rounded-lg border border-line px-3 text-[13px] text-muted hover:border-line-strong hover:text-ink">
-                  Salir
-                </button>
-              </form>
-            </div>
           </header>
           {/* Sucursal activa en su propia fila: nombre completo visible y con espacio para tocar */}
           {mostrarSwitcher && (
@@ -79,7 +59,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           {children}
         </main>
 
-        <AdminBottomNav rol={staff.rol} />
+        <AdminBottomNav
+          rol={staff.rol}
+          nombre={staff.nombre}
+          sucursalNombre={sucursalNav.sucursales.find((s) => s.id === activeId)?.nombre}
+        />
       </div>
     </div>
   );

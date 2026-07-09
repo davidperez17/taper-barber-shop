@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
 import { Wordmark } from "@/components/Wordmark";
+import { ActualizarApp } from "@/components/ActualizarApp";
 import { logoutStaff } from "@/app/admin/actions";
 import type { RolStaff } from "@/lib/queries/staff";
 import {
@@ -96,6 +97,10 @@ const ROL_LABEL: Record<RolStaff, string> = {
 const puede = (rol: RolStaff, roles: Roles) => roles === "all" || roles.includes(rol);
 const ALL_HREFS = GROUPS.flatMap((g) => g.items.map((i) => i.href));
 
+/** Iniciales para el avatar de cuenta en la hoja "Más" (máx. 2 letras). */
+const iniciales = (n: string) =>
+  n.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
+
 /** Href activo = el más específico (prefijo más largo) que casa con la ruta. */
 function useActiveHref(): string | null {
   const pathname = usePathname();
@@ -165,7 +170,15 @@ export function AdminSidebar({ rol, nombre, sucursal }: { rol: RolStaff; nombre:
 }
 
 // ── Bottom nav (móvil/tablet, <lg): 4 primarios + Más ───────────
-export function AdminBottomNav({ rol }: { rol: RolStaff }) {
+export function AdminBottomNav({
+  rol,
+  nombre,
+  sucursalNombre,
+}: {
+  rol: RolStaff;
+  nombre: string;
+  sucursalNombre?: string;
+}) {
   const active = useActiveHref();
   const pathname = usePathname();
   const [masAbierto, setMasAbierto] = useState(false);
@@ -211,12 +224,32 @@ export function AdminBottomNav({ rol }: { rol: RolStaff }) {
         </button>
       </nav>
 
-      {masAbierto && <MasSheet rol={rol} active={active} onClose={() => setMasAbierto(false)} />}
+      {masAbierto && (
+        <MasSheet
+          rol={rol}
+          nombre={nombre}
+          sucursalNombre={sucursalNombre}
+          active={active}
+          onClose={() => setMasAbierto(false)}
+        />
+      )}
     </>
   );
 }
 
-function MasSheet({ rol, active, onClose }: { rol: RolStaff; active: string | null; onClose: () => void }) {
+function MasSheet({
+  rol,
+  nombre,
+  sucursalNombre,
+  active,
+  onClose,
+}: {
+  rol: RolStaff;
+  nombre: string;
+  sucursalNombre?: string;
+  active: string | null;
+  onClose: () => void;
+}) {
   const ref = useModalA11y(onClose);
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -260,6 +293,23 @@ function MasSheet({ rol, active, onClose }: { rol: RolStaff; active: string | nu
         >
           <div className="h-1.5 w-11 rounded-full bg-line-strong" />
         </div>
+        {/* Cuenta: quién está dentro */}
+        <div className="mb-4 flex items-center gap-3">
+          <span
+            aria-hidden
+            className="grid size-11 shrink-0 place-items-center rounded-full bg-accent/15 text-sm font-bold text-accent"
+          >
+            {iniciales(nombre)}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-ink">{nombre}</p>
+            <p className="truncate text-xs text-muted">
+              {ROL_LABEL[rol]}
+              {sucursalNombre ? ` · ${sucursalNombre}` : ""}
+            </p>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-4">
           {GROUPS.map((g) => {
             const items = g.items.filter((i) => puede(rol, i.roles));
@@ -287,6 +337,33 @@ function MasSheet({ rol, active, onClose }: { rol: RolStaff; active: string | nu
               </div>
             );
           })}
+
+          {/* Sesión: acciones de cuenta, separadas; "Salir" en peligro */}
+          <div className="border-t border-line">
+            <ActualizarApp variant="full" />
+            <form action={logoutStaff} className="mt-2">
+              <button
+                type="submit"
+                className="flex min-h-12 w-full items-center gap-2.5 rounded-2xl border border-danger/40 px-3.5 text-sm font-semibold text-danger transition-colors hover:border-danger"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-5 shrink-0"
+                  aria-hidden
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" x2="9" y1="12" y2="12" />
+                </svg>
+                Salir
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>,
