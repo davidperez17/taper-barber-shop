@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
 import { Wordmark } from "@/components/Wordmark";
-import { ActualizarApp } from "@/components/ActualizarApp";
 import { logoutStaff } from "@/app/admin/actions";
 import type { RolStaff } from "@/lib/queries/staff";
 import {
@@ -338,10 +337,9 @@ function MasSheet({
             );
           })}
 
-          {/* Sesión: acciones de cuenta, separadas; "Salir" en peligro */}
-          <div className="border-t border-line">
-            <ActualizarApp variant="full" />
-            <form action={logoutStaff} className="mt-2">
+          {/* Sesión: separada del resto; "Salir" en peligro */}
+          <div className="border-t border-line pt-4">
+            <form action={logoutStaff}>
               <button
                 type="submit"
                 className="flex min-h-12 w-full items-center gap-2.5 rounded-2xl border border-danger/40 px-3.5 text-sm font-semibold text-danger transition-colors hover:border-danger"

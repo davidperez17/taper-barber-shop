@@ -6,6 +6,7 @@ import { PanelHeaderNav } from "@/components/admin/PanelHeaderNav";
 import { OfflineSync } from "@/components/admin/OfflineSync";
 import { AdminSidebar, AdminBottomNav, type SucursalNav } from "@/components/admin/AdminNav";
 import { SucursalSwitcher } from "@/components/admin/SucursalSwitcher";
+import { ActualizarApp } from "@/components/ActualizarApp";
 import { NotifyOptIn } from "@/components/NotifyOptIn";
 
 // Mantiene el manifest del app admin en todo el panel (instalable aparte del cliente).
@@ -39,9 +40,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
         {/* Header solo en móvil/tablet; en desktop la sidebar lo cubre */}
         <div className="lg:hidden">
-          {/* Barra = solo marca. Identidad + Actualizar + Salir viven en "Más". */}
-          <header className="flex items-center border-b border-line px-5 pb-3.5 pt-[max(env(safe-area-inset-top),1.25rem)]">
+          {/* Barra = marca + acceso rápido a Actualizar. Identidad y Salir en "Más". */}
+          <header className="flex items-center justify-between gap-3 border-b border-line px-5 pb-3.5 pt-[max(env(safe-area-inset-top),1.25rem)]">
             <PanelHeaderNav />
+            <ActualizarApp />
           </header>
           {/* Sucursal activa en su propia fila: nombre completo visible y con espacio para tocar */}
           {mostrarSwitcher && (
