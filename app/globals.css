@@ -162,9 +162,11 @@ body:has([data-app-shell]) {
   }
 }
 
-/* Touch targets on coarse pointers */
+/* Touch targets on coarse pointers. Los switches quedan fuera: tienen su propia
+   altura de pastilla (h-6) y esta regla —al ir sin @layer— gana a las utilidades
+   Tailwind, forzándolos a 44px de alto → cuadrado → círculo con rounded-full. */
 @media (pointer: coarse) {
-  button,
+  button:not([role="switch"]),
   a[role="button"],
   select {
     min-height: 44px;
