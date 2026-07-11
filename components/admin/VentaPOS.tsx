@@ -9,6 +9,7 @@ import { fmtDiaMes, fmtQ } from "@/lib/format";
 import type { Servicio, Producto, Barbero } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Thumb } from "@/components/admin/Thumb";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 interface Props {
   cliente: { id: string; nombre: string; numero: number };
@@ -53,15 +54,21 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
   // Vender sin stock se permite (no perder la venta), pero se avisa una vez por
   // producto. El stock puede quedar negativo = faltante por reponer (ledger real).
   const [okSinStock, setOkSinStock] = useState<Record<string, true>>({});
+  const [sinStock, setSinStock] = useState<Producto | null>(null);
   const addProducto = (p: Producto) => {
     const q = prod[p.id] ?? 0;
     if (p.controla_stock && q + 1 > p.stock && !okSinStock[p.id]) {
-      const restante = Math.max(0, p.stock);
-      const ok = window.confirm(`No hay stock suficiente de ${p.nombre} (quedan ${restante}). ¿Vender de todos modos?`);
-      if (!ok) return;
-      setOkSinStock((s) => ({ ...s, [p.id]: true }));
+      setSinStock(p); // confirmación temática antes de vender en negativo
+      return;
     }
     inc(prod, setProd, p.id, 1);
+  };
+  const confirmarSinStock = () => {
+    const p = sinStock;
+    if (!p) return;
+    setOkSinStock((s) => ({ ...s, [p.id]: true }));
+    inc(prod, setProd, p.id, 1);
+    setSinStock(null);
   };
   const subProducto = (p: Producto) => {
     if ((prod[p.id] ?? 0) - 1 <= 0) {
@@ -338,6 +345,15 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
           </button>
         </div>
       </div>
+      {sinStock && (
+        <ConfirmDialog
+          title="Sin stock suficiente"
+          message={`Quedan ${Math.max(0, sinStock.stock)} de ${sinStock.nombre}. Al vender igual, el stock queda en negativo (faltante por reponer).`}
+          confirmLabel="Vender igual"
+          onConfirm={confirmarSinStock}
+          onCancel={() => setSinStock(null)}
+        />
+      )}
     </div>
   );
 }

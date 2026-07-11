@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { crearMovimientoCaja, borrarMovimientoCaja, cerrarCaja } from "@/app/admin/actions";
 import { fmtQ } from "@/lib/format";
 import type { CajaResumen } from "@/lib/queries/caja";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 const inputCls =
   "min-h-[46px] w-full rounded-lg border border-line bg-elevated px-3.5 text-base text-ink outline-none placeholder:text-muted focus:border-accent";
@@ -23,6 +24,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
   const [fondo, setFondo] = useState("0");
   const [contado, setContado] = useState("");
   const [notas, setNotas] = useState("");
+  const [confCerrar, setConfCerrar] = useState(false);
 
   // Nuevo movimiento
   const [movTipo, setMovTipo] = useState<"egreso" | "ingreso">("egreso");
@@ -51,8 +53,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
   };
 
   const cerrar = () => {
-    if (!confirm("¿Cerrar la caja del día? No podrás editar movimientos después.")) return;
-    run(() => cerrarCaja(resumen.fecha, Number(fondo) || 0, Number(contado) || 0, notas));
+    run(() => cerrarCaja(resumen.fecha, Number(fondo) || 0, Number(contado) || 0, notas), () => setConfCerrar(false));
   };
 
   // ── Día ya cerrado ─────────────────────────────────────────────
@@ -146,9 +147,21 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
 
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
-      <button onClick={cerrar} disabled={pending || contado === ""} className="min-h-[52px] rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] disabled:opacity-40">
+      <button onClick={() => setConfCerrar(true)} disabled={pending || contado === ""} className="min-h-[52px] rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] disabled:opacity-40">
         {pending ? "Cerrando…" : "Cerrar caja del día"}
       </button>
+
+      {confCerrar && (
+        <ConfirmDialog
+          title="¿Cerrar la caja del día?"
+          message="No podrás editar movimientos después. Se guarda el arqueo con el efectivo contado."
+          confirmLabel="Cerrar caja"
+          pending={pending}
+          pendingLabel="Cerrando…"
+          onConfirm={cerrar}
+          onCancel={() => setConfCerrar(false)}
+        />
+      )}
     </div>
   );
 }

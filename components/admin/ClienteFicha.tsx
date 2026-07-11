@@ -25,6 +25,7 @@ import { fmtDiaMes, fmtFecha, fmtMesAnio, fmtQ } from "@/lib/format";
 import type { ClienteFicha as Ficha, HistorialVenta } from "@/lib/types";
 import { IconPlus } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 type Tab = "resumen" | "historial" | "notas";
 const ETIQUETAS_SUGERIDAS = ["vip", "frecuente", "nuevo", "barba", "recuperar"];
@@ -37,24 +38,25 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
   const [pinMsg, setPinMsg] = useState<string | null>(null);
   const [qrPend, startQr] = useTransition();
   const [qrMsg, setQrMsg] = useState<string | null>(null);
+  const [confirmar, setConfirmar] = useState<null | "pin" | "qr">(null);
   const loyalty = computeLoyalty(ficha.loyalty);
   const invertido = ficha.historial.reduce((s, v) => s + Number(v.total), 0);
 
   const reiniciarPin = () => {
-    if (!confirm(`¿Reiniciar el PIN de ${ficha.cliente.nombre}? Creará uno nuevo en su próximo ingreso.`)) return;
     setPinMsg(null);
     startPin(async () => {
       const r = await resetPinCliente(ficha.cliente.id);
       setPinMsg(r.ok ? "PIN reiniciado. El cliente lo configura al ingresar." : r.error ?? "Error");
+      setConfirmar(null);
     });
   };
 
   const regenerarQr = () => {
-    if (!confirm(`¿Regenerar el QR de ${ficha.cliente.nombre}? El QR anterior dejará de funcionar y el cliente deberá volver a ingresar con su teléfono y PIN.`)) return;
     setQrMsg(null);
     startQr(async () => {
       const r = await regenerarQrCliente(ficha.cliente.id);
       setQrMsg(r.ok ? "QR regenerado. El anterior ya no sirve; el cliente ve el nuevo al reingresar." : r.error ?? "Error");
+      setConfirmar(null);
     });
   };
 
@@ -97,18 +99,42 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
           Editar datos
         </button>
         {puedeResetPin && (
-          <button onClick={reiniciarPin} disabled={pinPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
+          <button onClick={() => setConfirmar("pin")} disabled={pinPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
             {pinPend ? "Reiniciando…" : "Reiniciar PIN"}
           </button>
         )}
         {puedeResetPin && (
-          <button onClick={regenerarQr} disabled={qrPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
+          <button onClick={() => setConfirmar("qr")} disabled={qrPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
             {qrPend ? "Regenerando…" : "Regenerar QR"}
           </button>
         )}
       </div>
       {pinMsg && <p role="status" className="mt-2 text-sm text-muted">{pinMsg}</p>}
       {qrMsg && <p role="status" className="mt-2 text-sm text-muted">{qrMsg}</p>}
+
+      {confirmar === "pin" && (
+        <ConfirmDialog
+          title="¿Reiniciar el PIN?"
+          message={`${ficha.cliente.nombre} configurará un PIN nuevo la próxima vez que ingrese.`}
+          confirmLabel="Sí, reiniciar"
+          pending={pinPend}
+          pendingLabel="Reiniciando…"
+          onConfirm={reiniciarPin}
+          onCancel={() => setConfirmar(null)}
+        />
+      )}
+      {confirmar === "qr" && (
+        <ConfirmDialog
+          title="¿Regenerar el QR?"
+          message={`El QR anterior de ${ficha.cliente.nombre} dejará de funcionar; deberá reingresar con su teléfono y PIN.`}
+          confirmLabel="Sí, regenerar"
+          danger
+          pending={qrPend}
+          pendingLabel="Regenerando…"
+          onConfirm={regenerarQr}
+          onCancel={() => setConfirmar(null)}
+        />
+      )}
 
       {/* Tabs */}
       <div className="mt-6 flex gap-5 border-b border-line">
@@ -194,6 +220,7 @@ function Historial({
   const router = useRouter();
   const [pend, start] = useTransition();
   const [editar, setEditar] = useState<HistorialVenta | null>(null);
+  const [anularV, setAnularV] = useState<HistorialVenta | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   if (ventas.length === 0) {
@@ -207,13 +234,14 @@ function Historial({
     grupos.set(k, arr);
   }
 
-  const anular = (v: HistorialVenta) => {
-    if (!confirm(`¿Anular esta venta de ${fmtQ(v.total)}? Se quitará el sello correspondiente y se corregirán reportes y caja. No se puede deshacer.`)) return;
-    const motivo = prompt("Motivo (opcional):") ?? undefined;
+  const confirmarAnular = (motivo?: string) => {
+    const v = anularV;
+    if (!v) return;
     setMsg(null);
     start(async () => {
-      const r = await anularVenta(v.id, clienteId, motivo);
+      const r = await anularVenta(v.id, clienteId, motivo || undefined);
       if (!r.ok) { setMsg(r.error ?? "Error"); return; }
+      setAnularV(null);
       router.refresh();
     });
   };
@@ -243,7 +271,7 @@ function Historial({
                     <button onClick={() => setEditar(v)} disabled={pend} className="min-h-9 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
                       Editar
                     </button>
-                    <button onClick={() => anular(v)} disabled={pend} className="min-h-9 rounded-full border border-danger/40 px-3.5 text-[13px] font-medium text-danger hover:border-danger disabled:opacity-50">
+                    <button onClick={() => setAnularV(v)} disabled={pend} className="min-h-9 rounded-full border border-danger/40 px-3.5 text-[13px] font-medium text-danger hover:border-danger disabled:opacity-50">
                       Anular
                     </button>
                   </div>
@@ -256,6 +284,19 @@ function Historial({
 
       {editar && (
         <EditarVentaSheet venta={editar} clienteId={clienteId} barberos={barberos} onClose={() => setEditar(null)} />
+      )}
+      {anularV && (
+        <ConfirmDialog
+          title={`¿Anular esta venta de ${fmtQ(anularV.total)}?`}
+          message="Se quitará el sello correspondiente y se corregirán reportes y caja. No se puede deshacer."
+          confirmLabel="Sí, anular"
+          danger
+          pending={pend}
+          pendingLabel="Anulando…"
+          reason={{ label: "Motivo (opcional)", placeholder: "Ej. cobro duplicado" }}
+          onConfirm={confirmarAnular}
+          onCancel={() => setAnularV(null)}
+        />
       )}
     </div>
   );
