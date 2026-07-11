@@ -75,7 +75,7 @@ function StockBadge({ producto }: { producto: Producto }) {
 
 function ProductoFila({ producto, onMover }: { producto: Producto; onMover: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-line bg-elevated px-4 py-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5 rounded-xl border border-line bg-elevated px-4 py-3">
       <Thumb src={producto.imagen_url} nombre={producto.nombre} />
       <div className="min-w-0 flex-1">
         <p className={`truncate font-semibold ${producto.activo ? "text-ink" : "text-subtle line-through"}`}>{producto.nombre}</p>
@@ -90,10 +90,11 @@ function ProductoFila({ producto, onMover }: { producto: Producto; onMover: () =
         <p className="text-[11px] text-subtle">en stock</p>
       </div>
       <StockBadge producto={producto} />
+      {/* En móvil el botón baja a su propia línea (la fila no cabía a 375px). */}
       <button
         type="button"
         onClick={onMover}
-        className="min-h-11 shrink-0 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink"
+        className="min-h-11 w-full shrink-0 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink sm:w-auto"
       >
         Movimiento
       </button>

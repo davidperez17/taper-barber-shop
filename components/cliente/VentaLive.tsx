@@ -31,7 +31,12 @@ export function VentaLive({ clienteId }: { clienteId: string }) {
     };
     window.addEventListener("pointerdown", unlock, { passive: true });
 
+    // Respeta reduced-motion: nada de sonido/vibración sorpresa (el refresh
+    // visual del sello sí ocurre igual).
+    const quieto = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
     const ding = () => {
+      if (quieto) return;
       const ctx = ctxRef.current;
       if (!ctx || ctx.state !== "running") {
         navigator.vibrate?.(120);
