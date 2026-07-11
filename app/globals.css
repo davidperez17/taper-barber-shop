@@ -170,6 +170,7 @@ body:has([data-app-shell]) {
 @media (pointer: coarse) {
   button:not([role="switch"]),
   a[role="button"],
+  [role="tab"],
   select {
     min-height: 44px;
   }

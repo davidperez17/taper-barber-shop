@@ -66,7 +66,7 @@ export function AgendaManager({ fecha, hoy, citas, barberos, servicios }: Props)
 
       {/* Navegador de día */}
       <div className="mb-5 flex items-center justify-between gap-2 rounded-xl border border-line bg-elevated px-2 py-2">
-        <button onClick={() => irA(sumarDias(fecha, -1))} aria-label="Día anterior" className="flex size-10 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-ink">
+        <button onClick={() => irA(sumarDias(fecha, -1))} aria-label="Día anterior" className="flex size-11 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-ink">
           <IconChevronLeft size={18} />
         </button>
         <div className="text-center">
@@ -75,7 +75,7 @@ export function AgendaManager({ fecha, hoy, citas, barberos, servicios }: Props)
             <button onClick={() => irA(hoy)} className="text-[12px] font-medium text-accent hover:underline">Ir a hoy</button>
           )}
         </div>
-        <button onClick={() => irA(sumarDias(fecha, 1))} aria-label="Día siguiente" className="flex size-10 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-ink">
+        <button onClick={() => irA(sumarDias(fecha, 1))} aria-label="Día siguiente" className="flex size-11 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-ink">
           <span className="rotate-180"><IconChevronLeft size={18} /></span>
         </button>
       </div>

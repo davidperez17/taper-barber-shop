@@ -60,7 +60,7 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
 
   return (
     <div>
-      <Link href="/admin/clientes" className="mb-4 inline-flex min-h-9 items-center gap-1 text-sm text-muted hover:text-ink">
+      <Link href="/admin/clientes" className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm text-muted hover:text-ink">
         ← Clientes
       </Link>
 

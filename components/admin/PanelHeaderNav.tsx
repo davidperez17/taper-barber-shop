@@ -15,7 +15,7 @@ export function PanelHeaderNav() {
         <Link
           href="/admin"
           aria-label="Volver al inicio"
-          className="-ml-1 flex size-9 items-center justify-center rounded-lg text-muted hover:bg-elevated hover:text-ink"
+          className="-ml-1 flex size-11 items-center justify-center rounded-lg text-muted hover:bg-elevated hover:text-ink"
         >
           <IconChevronLeft size={18} />
         </Link>
