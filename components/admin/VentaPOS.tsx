@@ -209,7 +209,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
       <div className={`${TIER_SURFACE[loyalty.tier]} rounded-2xl border border-white/15 p-4`} style={{ boxShadow: "0 8px 30px var(--tier-glow)" }}>
         <div className="flex items-start justify-between" style={{ color: "var(--tier-ink)" }}>
           <div>
-            <p className="font-display text-[22px] font-extrabold leading-none">{cliente.nombre}</p>
+            <h1 className="font-display text-[22px] font-extrabold leading-none">{cliente.nombre}</h1>
             <p className="mt-1 text-[13px] opacity-90">
               {memberId(cliente.numero)} · {TIER_LABEL[loyalty.tier]} · Últ. {fmtDiaMes(loyaltyRaw.ultima_visita)}
             </p>

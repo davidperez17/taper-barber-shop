@@ -118,10 +118,13 @@ function NotifSheet({
         </header>
 
         {notis.length === 0 ? (
-          <div className="px-5 pb-8 pt-6 text-center">
-            <p className="text-sm font-medium text-ink">Sin notificaciones</p>
-            <p className="mt-1 text-xs text-muted">
-              Aquí verás recordatorios, promos y novedades.
+          <div className="px-6 pb-10 pt-8 text-center">
+            <div className="mx-auto mb-3.5 flex size-14 items-center justify-center rounded-full bg-accent-dim text-accent">
+              <IconBell size={24} />
+            </div>
+            <p className="font-display text-base font-bold text-ink">Todo tranquilo por aquí</p>
+            <p className="mt-1.5 text-[13px] text-muted">
+              Te avisamos cuando tu corte gratis esté listo, cuando subas de nivel y de promos solo para miembros.
             </p>
           </div>
         ) : (

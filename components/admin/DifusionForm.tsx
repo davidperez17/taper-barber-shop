@@ -75,7 +75,7 @@ export function DifusionForm() {
       <Input label="Enlace al tocar" name="url" hint="(opcional)" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="/tarjeta" prefix="ruta" />
 
       {feedback && (
-        <p role="alert" className={"mb-4 text-sm " + (feedback.ok ? "text-accent" : "text-danger")}>
+        <p role={feedback.ok ? "status" : "alert"} className={"mb-4 text-sm " + (feedback.ok ? "text-accent" : "text-danger")}>
           {feedback.texto}
         </p>
       )}
