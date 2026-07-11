@@ -250,6 +250,7 @@ function ProductosTab({ productos }: { productos: Producto[] }) {
                     {p.controla_stock && (
                       <span className={p.stock <= p.stock_min ? "text-warning" : "text-muted"}> · {p.stock} en stock</span>
                     )}
+                    {p.cuenta_lealtad ? " · suma sello" : ""}
                   </p>
                 </div>
               </>
@@ -277,12 +278,13 @@ function ProductoSheet({ producto, onClose }: { producto: Producto | null; onClo
   const [controlaStock, setControlaStock] = useState(producto?.controla_stock ?? true);
   const [stockMin, setStockMin] = useState(producto ? String(producto.stock_min) : "0");
   const [stockInicial, setStockInicial] = useState("0");
+  const [cuentaLealtad, setCuentaLealtad] = useState(producto?.cuenta_lealtad ?? false);
 
   return (
     <Sheet title={producto ? "Editar producto" : "Nuevo producto"} onClose={onClose} pending={pending} error={error}
       onSave={() => run(() => saveProducto({
         id: producto?.id, nombre, precio: Number(precio) || 0, categoria, imagen_url: imagen,
-        controla_stock: controlaStock, stock_min: Number(stockMin) || 0,
+        controla_stock: controlaStock, stock_min: Number(stockMin) || 0, cuenta_lealtad: cuentaLealtad,
         stock_inicial: producto ? undefined : Number(stockInicial) || 0,
       }), onClose)}>
       <Campo label="Foto"><ImagePicker value={imagen} onChange={setImagen} /></Campo>
@@ -314,6 +316,13 @@ function ProductoSheet({ producto, onClose }: { producto: Producto | null; onClo
       {producto && controlaStock && (
         <p className="text-[12px] text-subtle">El stock se ajusta desde Inventario (entradas, salidas y conteos).</p>
       )}
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-elevated p-3">
+        <input type="checkbox" checked={cuentaLealtad} onChange={(e) => setCuentaLealtad(e.target.checked)} className="mt-0.5 size-5 accent-[var(--accent)]" />
+        <span className="text-sm text-ink">Suma sello de lealtad
+          <span className="mt-0.5 block text-[12px] text-subtle">Una venta con este producto marca un sello, aunque no lleve corte.</span>
+        </span>
+      </label>
     </Sheet>
   );
 }

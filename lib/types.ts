@@ -115,6 +115,7 @@ export interface Producto {
   stock: number;
   stock_min: number;
   controla_stock: boolean;
+  cuenta_lealtad: boolean;
 }
 
 export interface Barbero {

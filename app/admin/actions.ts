@@ -523,6 +523,7 @@ export async function saveProducto(input: {
   imagen_url: string | null;
   controla_stock: boolean;
   stock_min: number;
+  cuenta_lealtad: boolean;
   stock_inicial?: number;
 }): Promise<ActionResult> {
   if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio." };
@@ -537,6 +538,7 @@ export async function saveProducto(input: {
     imagen_url: input.imagen_url,
     controla_stock: input.controla_stock,
     stock_min: input.stock_min,
+    cuenta_lealtad: input.cuenta_lealtad,
   };
   // El stock se gestiona con movimientos; solo se fija el inicial al crear.
   if (!input.id) {
