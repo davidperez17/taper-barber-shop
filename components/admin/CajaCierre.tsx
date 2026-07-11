@@ -98,8 +98,8 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
               </button>
             ))}
           </div>
-          <input value={movMonto} onChange={(e) => setMovMonto(e.target.value)} inputMode="decimal" placeholder="Monto Q" className={`${inputCls} max-w-[120px]`} />
-          <input value={movMotivo} onChange={(e) => setMovMotivo(e.target.value)} placeholder="Motivo" className={`${inputCls} min-w-[140px] flex-1`} />
+          <input value={movMonto} onChange={(e) => setMovMonto(e.target.value)} inputMode="decimal" placeholder="Monto Q" aria-label="Monto del movimiento" className={`${inputCls} max-w-[120px]`} />
+          <input value={movMotivo} onChange={(e) => setMovMotivo(e.target.value)} placeholder="Motivo" aria-label="Motivo del movimiento" className={`${inputCls} min-w-[140px] flex-1`} />
           <button onClick={agregarMov} disabled={pending} className="min-h-[46px] rounded-full bg-accent px-5 text-sm font-semibold text-accent-ink disabled:opacity-50">Agregar</button>
         </div>
 
@@ -141,7 +141,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
         )}
       </section>
 
-      <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} placeholder="Notas del cierre (opcional)…"
+      <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} placeholder="Notas del cierre (opcional)…" aria-label="Notas del cierre"
         className="w-full resize-none rounded-xl border border-line bg-elevated p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent" />
 
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}

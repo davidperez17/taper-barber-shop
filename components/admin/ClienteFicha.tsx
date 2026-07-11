@@ -305,6 +305,7 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
             onChange={(e) => setNuevaEtiqueta(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregarEtiqueta(nuevaEtiqueta); } }}
             placeholder="Nueva etiqueta…"
+            aria-label="Nueva etiqueta"
             className="min-h-10 rounded-lg border border-line bg-elevated px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
           />
           {sugeridas.map((s) => (
@@ -322,6 +323,7 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
           value={nuevaNota}
           onChange={(e) => setNuevaNota(e.target.value)}
           placeholder="Preferencias, recordatorios, contexto del cliente…"
+          aria-label="Nota interna"
           rows={3}
           className="w-full resize-none rounded-xl border border-line bg-elevated p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
         />

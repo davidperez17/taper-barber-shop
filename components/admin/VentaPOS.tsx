@@ -298,6 +298,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
             onChange={(e) => { setCuponCodigo(e.target.value.toUpperCase()); setCuponError(null); }}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); aplicarCupon(); } }}
             placeholder="Código del cupón"
+            aria-label="Código del cupón"
             autoCapitalize="characters"
             className="min-h-[46px] flex-1 rounded-lg border border-line bg-elevated px-3.5 font-mono text-base tracking-wide text-ink outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-muted focus:border-accent"
           />

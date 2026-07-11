@@ -18,7 +18,7 @@
   /* Foregrounds */
   --ink:    #ffffff;
   --muted:  #a0a0a0;
-  --subtle: #8a8a8a; /* AA 4.5:1 sobre --bg/--elevated (texto caption/label) */
+  --subtle: #949494; /* AA 4.5:1 sobre --bg/--elevated/--surface (caption/label) */
 
   /* Lines */
   --line:        rgba(255, 255, 255, 0.08);
@@ -178,15 +178,19 @@ body:has([data-app-shell]) {
   outline-offset: 2px;
 }
 
-/* Campos de texto: foco limpio por borde (sin outline amarillo al clic/tap).
-   El foco por teclado sigue marcándose con el cambio de color de borde. */
+/* Campos de texto: al clic/tap (mouse) el foco se marca solo por el borde,
+   sin outline amarillo. Pero el foco por TECLADO conserva un anillo visible
+   accesible (WCAG 2.4.7): border-accent de 1px solo no basta como indicador. */
 input:focus,
-input:focus-visible,
 textarea:focus,
-textarea:focus-visible,
-select:focus,
-select:focus-visible {
+select:focus {
   outline: none;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 ::selection {
