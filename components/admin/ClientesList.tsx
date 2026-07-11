@@ -2,19 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { computeLoyalty, TIER_LABEL, type Tier } from "@/lib/loyalty";
+import { computeLoyalty, TIER_LABEL, TIER_DOT } from "@/lib/loyalty";
 import { fmtDiaMes } from "@/lib/format";
 import type { ClienteRow } from "@/lib/types";
 import { IconSearch } from "@/components/icons";
 
 type Orden = "nombre" | "visitas" | "reciente" | "inactivo";
-
-const TIER_DOT: Record<Tier, string> = {
-  silver: "#a1a1aa",
-  gold: "#f5c800",
-  platinum: "#3b82f6",
-  black: "#e4e4e7",
-};
 
 export function ClientesList({ clientes }: { clientes: ClienteRow[] }) {
   const [q, setQ] = useState("");

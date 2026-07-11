@@ -102,6 +102,18 @@ export const TIER_LABEL: Record<Tier, string> = {
   black: "Black",
 };
 
+/**
+ * Color sólido representativo por tier — para dots/strips en listas (admin) y
+ * stats (cliente). Única fuente de verdad (antes duplicado en ClientesList y
+ * stats). Gold usa el token de marca; el resto son sólidos representativos.
+ */
+export const TIER_DOT: Record<Tier, string> = {
+  silver: "#a1a1aa",
+  gold: "var(--accent)",
+  platinum: "#3b82f6",
+  black: "#e4e4e7",
+};
+
 /** Clase CSS de superficie (definida en globals.css). */
 export const TIER_SURFACE: Record<Tier, string> = {
   silver: "tier-silver",

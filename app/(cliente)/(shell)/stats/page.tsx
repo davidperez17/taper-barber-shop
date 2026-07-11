@@ -1,13 +1,8 @@
 import { requireDashboard } from "@/lib/queries/cliente";
-import { computeLoyalty, TIER_LABEL, TIER_MIN_VISITAS, type Tier } from "@/lib/loyalty";
+import { computeLoyalty, TIER_LABEL, TIER_MIN_VISITAS, TIER_ORDER, TIER_DOT } from "@/lib/loyalty";
 import { fmtMesCorto } from "@/lib/format";
 
-const STRIP: { tier: Tier; color: string }[] = [
-  { tier: "silver", color: "#a1a1aa" },
-  { tier: "gold", color: "#f5c800" },
-  { tier: "platinum", color: "#3b82f6" },
-  { tier: "black", color: "#e4e4e7" },
-];
+const STRIP = TIER_ORDER.map((tier) => ({ tier, color: TIER_DOT[tier] }));
 
 export default async function StatsPage() {
   const dash = await requireDashboard();
