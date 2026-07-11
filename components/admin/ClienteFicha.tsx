@@ -21,7 +21,7 @@ import {
   TIER_LABEL,
   TIER_SURFACE,
 } from "@/lib/loyalty";
-import { fmtDiaMes, fmtMesAnio, fmtMesCorto, fmtQ } from "@/lib/format";
+import { fmtDiaMes, fmtFecha, fmtMesAnio, fmtQ } from "@/lib/format";
 import type { ClienteFicha as Ficha, HistorialVenta } from "@/lib/types";
 import { IconPlus } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
@@ -70,7 +70,7 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
           <div className="min-w-0">
             <h1 className="font-display text-[26px] font-extrabold leading-none">{ficha.cliente.nombre}</h1>
             <p className="mt-1.5 text-[13px] opacity-85">
-              {memberId(ficha.cliente.numero)} · {TIER_LABEL[loyalty.tier]} · Miembro desde {fmtMesCorto(ficha.cliente.created_at)}
+              {memberId(ficha.cliente.numero)} · {TIER_LABEL[loyalty.tier]} · Unido al Club el {fmtFecha(ficha.cliente.created_at)}
             </p>
             <p className="mt-0.5 text-[13px] opacity-75">
               {ficha.cliente.telefono}

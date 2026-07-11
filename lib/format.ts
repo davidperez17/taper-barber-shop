@@ -40,6 +40,20 @@ export function fmtMesCorto(iso: string | null): string {
   return `${MESES[m - 1]} ${y}`;
 }
 
+/** "20 Jun 2026" — fecha exacta con año */
+export function fmtFecha(iso: string | null): string {
+  if (!iso) return "—";
+  const { y, m, d } = partesGT(iso);
+  return `${d} ${MESES[m - 1]} ${y}`;
+}
+
+/** "20 de julio de 2026" — fecha larga en prosa */
+export function fmtFechaLarga(iso: string | null): string {
+  if (!iso) return "—";
+  const { y, m, d } = partesGT(iso);
+  return `${d} de ${MESES_LARGO[m - 1].toLowerCase()} de ${y}`;
+}
+
 /** "Q1,250" */
 export function fmtQ(n: number): string {
   return `Q${Math.round(n).toLocaleString("es-GT")}`;

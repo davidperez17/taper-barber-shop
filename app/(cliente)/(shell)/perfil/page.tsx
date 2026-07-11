@@ -1,4 +1,5 @@
 import { requireDashboard } from "@/lib/queries/cliente";
+import { fmtFechaLarga } from "@/lib/format";
 import { logout } from "@/app/(cliente)/actions";
 import { PushToggle } from "@/components/cliente/PushToggle";
 import { InstallPWA } from "@/components/InstallPWA";
@@ -41,6 +42,9 @@ export default async function PerfilPage() {
         </div>
         <p className="mt-2 text-xs" style={{ color: "var(--tier-ink)", opacity: 0.85 }}>
           {next ? `${visitas} / ${min} visitas para ${TIER_LABEL[next]}` : "Nivel máximo alcanzado"}
+        </p>
+        <p className="mt-3 border-t border-white/15 pt-3 text-[11px]" style={{ color: "var(--tier-ink)", opacity: 0.75 }}>
+          Unido al Club el {fmtFechaLarga(dash.cliente.created_at)}
         </p>
       </div>
 

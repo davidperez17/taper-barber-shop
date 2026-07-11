@@ -2,6 +2,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { requireDashboard } from "@/lib/queries/cliente";
 import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL } from "@/lib/loyalty";
+import { fmtMesAnio } from "@/lib/format";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
 import { TierUpCelebration } from "@/components/cliente/TierUpCelebration";
 import { TarjetaCards, type TarjetaVM } from "@/components/cliente/TarjetaCards";
@@ -57,6 +58,7 @@ export default async function TarjetaPage() {
         <div>
           <p className="text-[13px] text-muted">Hola,</p>
           <h1 className="font-display text-[26px] font-bold leading-none text-ink">{firstName}</h1>
+          <p className="mt-1.5 text-[11px] text-subtle">Unido al Club desde {fmtMesAnio(dash.cliente.created_at)}</p>
         </div>
         <div className="flex items-center gap-2">
           <ActualizarApp />
