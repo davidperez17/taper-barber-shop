@@ -69,15 +69,15 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
         <div className="flex flex-wrap items-start justify-between gap-3" style={{ color: "var(--tier-ink)" }}>
           <div className="min-w-0">
             <h1 className="font-display text-[26px] font-extrabold leading-none">{ficha.cliente.nombre}</h1>
-            <p className="mt-1.5 text-[13px] opacity-85">
+            <p className="mt-1.5 text-[13px] opacity-90">
               {memberId(ficha.cliente.numero)} · {TIER_LABEL[loyalty.tier]} · Unido al Club el {fmtFecha(ficha.cliente.created_at)}
             </p>
-            <p className="mt-0.5 text-[13px] opacity-75">
+            <p className="mt-0.5 text-[13px] opacity-90">
               {ficha.cliente.telefono}
               {ficha.cliente.correo ? ` · ${ficha.cliente.correo}` : ""}
             </p>
           </div>
-          <span className="rounded-full bg-black/25 px-2.5 py-1 text-[13px] font-semibold">
+          <span className="rounded-full bg-black/25 px-2.5 py-1 text-[13px] font-semibold text-white">
             {loyalty.cortesCiclo}/{loyalty.objetivo}
           </span>
         </div>

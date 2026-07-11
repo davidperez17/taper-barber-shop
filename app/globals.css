@@ -40,15 +40,17 @@
   --focus:       #f5c800;
 
   /* VIP tiers */
-  --tier-silver-from: #71717a;
-  --tier-silver-to:   #3f3f46;
+  /* Tonos joya profundos: el texto claro/oscuro pasa AA 4.5:1 sobre todo el
+     gradiente (antes el extremo claro washeaba el texto). */
+  --tier-silver-from: #57575d; /* acero más profundo (antes #71717a, ~4:1) */
+  --tier-silver-to:   #303036;
   --tier-silver-glow: rgba(161, 161, 170, 0.35);
   --tier-silver-ink:  #e4e4e7;
-  --tier-gold-from:   #f59e0b;
-  --tier-gold-to:     #92400e;
+  --tier-gold-from:   #f5b60b; /* oro brillante + tinta oscura = grabado premium */
+  --tier-gold-to:     #e08a0a; /* ámbar (antes café #92400e): tinta oscura legible arriba y abajo */
   --tier-gold-glow:   rgba(245, 158, 11, 0.45);
-  --tier-gold-ink:    #fffbeb;
-  --tier-plat-from:   #3b82f6;
+  --tier-gold-ink:    #3a1d00; /* café oscuro sobre oro (antes crema #fffbeb, ~2:1) */
+  --tier-plat-from:   #1e3fa8; /* azul real profundo (antes #3b82f6, ~3.5:1) */
   --tier-plat-to:     #1e1b4b;
   --tier-plat-glow:   rgba(59, 130, 246, 0.45);
   --tier-plat-ink:    #eff6ff;

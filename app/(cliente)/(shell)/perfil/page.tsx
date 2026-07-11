@@ -32,18 +32,18 @@ export default async function PerfilPage() {
       <div className={`${TIER_SURFACE[tier]} rounded-2xl border border-white/15 p-[18px]`} style={{ boxShadow: "0 8px 30px var(--tier-glow)" }}>
         <div className="mb-3.5 flex items-start justify-between" style={{ color: "var(--tier-ink)" }}>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.1em] opacity-70">Nivel actual</p>
+            <p className="text-[11px] uppercase tracking-[0.1em] opacity-90">Nivel actual</p>
             <p className="font-display text-[26px] font-extrabold leading-none">{TIER_LABEL[tier]}</p>
           </div>
-          <span className="text-sm opacity-80">{memberId(dash.cliente.numero)}</span>
+          <span className="text-sm opacity-90">{memberId(dash.cliente.numero)}</span>
         </div>
         <div className="h-[7px] overflow-hidden rounded-full bg-black/25">
           <div className="h-full rounded-full bg-white/85" style={{ width: `${pct}%` }} />
         </div>
-        <p className="mt-2 text-xs" style={{ color: "var(--tier-ink)", opacity: 0.85 }}>
+        <p className="mt-2 text-xs" style={{ color: "var(--tier-ink)", opacity: 0.9 }}>
           {next ? `${visitas} / ${min} visitas para ${TIER_LABEL[next]}` : "Nivel máximo alcanzado"}
         </p>
-        <p className="mt-3 border-t border-white/15 pt-3 text-[11px]" style={{ color: "var(--tier-ink)", opacity: 0.75 }}>
+        <p className="mt-3 border-t border-white/15 pt-3 text-[11px]" style={{ color: "var(--tier-ink)", opacity: 0.9 }}>
           Unido al Club el {fmtFechaLarga(dash.cliente.created_at)}
         </p>
       </div>

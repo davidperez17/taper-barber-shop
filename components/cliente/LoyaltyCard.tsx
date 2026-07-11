@@ -47,9 +47,9 @@ export function LoyaltyCard({
   // Sellos en 1 fila hasta 7; a partir de 8 se reparten en 2 filas.
   const cols = objetivo <= 7 ? objetivo : Math.ceil(objetivo / 2);
 
-  // Resalta número (bold) y "corte gratis". El dorado no contrasta sobre la
-  // tarjeta Gold (naranja) → ahí usa crema; en el resto va el accent.
-  const hlColor = recompensaDisponible ? "inherit" : tier === "gold" ? "#fff6dd" : "var(--accent)";
+  // Resalta número (bold) y "corte gratis". Gold ahora usa tinta oscura
+  // (grabado sobre oro) → el énfasis va en café muy oscuro; en el resto, accent.
+  const hlColor = recompensaDisponible ? "inherit" : tier === "gold" ? "#241200" : "var(--accent)";
   // Riel conector (tira perforada): oro sobre tiers oscuros; blanco en Gold por contraste.
   const railFill = recompensaDisponible ? "var(--success)" : tier === "gold" ? "rgba(255,255,255,0.72)" : "var(--accent)";
   const renderMotiv = (text: string) =>
