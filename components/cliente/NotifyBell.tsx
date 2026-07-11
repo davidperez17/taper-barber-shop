@@ -128,7 +128,7 @@ function NotifSheet({
             </p>
           </div>
         ) : (
-          <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
+          <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto overscroll-contain">
             {notis.map((n) => (
               <li key={n.id}>
                 <button

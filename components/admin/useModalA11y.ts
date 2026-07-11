@@ -13,9 +13,14 @@ export function useModalA11y(onClose: () => void) {
   useEffect(() => {
     const disparador = document.activeElement as HTMLElement | null;
 
-    // Scroll-lock del body.
+    // Scroll-lock. El fondo scrollea en el scroller del shell (un contenedor
+    // interno con overflow-y-auto), NO en body → bloquear body solo no evita
+    // que el fondo se mueva al hacer swipe sobre el modal. Se bloquean ambos.
     const overflowPrevio = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const shell = document.querySelector<HTMLElement>("[data-shell-scroll]");
+    const shellPrevio = shell?.style.overflow ?? "";
+    if (shell) shell.style.overflow = "hidden";
 
     // Foco inicial: primer elemento enfocable dentro del diálogo.
     const enfocables = () =>
@@ -53,6 +58,7 @@ export function useModalA11y(onClose: () => void) {
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = overflowPrevio;
+      if (shell) shell.style.overflow = shellPrevio;
       disparador?.focus?.();
     };
   }, [onClose]);
