@@ -44,6 +44,8 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<number | null>(null);
   const [pendiente, setPendiente] = useState(false);
+  // Congelado al confirmar: la pantalla de éxito no debe depender del carrito.
+  const [puntosGanados, setPuntosGanados] = useState(0);
 
   const inc = (m: Record<string, number>, set: (v: Record<string, number>) => void, id: string, d: number) => {
     const next = { ...m, [id]: Math.max(0, (m[id] ?? 0) + d) };
@@ -77,9 +79,21 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
     inc(prod, setProd, p.id, -1);
   };
 
-  const hayCorteEnCarrito = useMemo(
-    () => servicios.some((s) => s.cuenta_lealtad && (serv[s.id] ?? 0) > 0),
+  // Candado del CANJE, no de la acumulación: la recompensa es un corte gratis,
+  // así que exige un servicio de lealtad en el carrito (no se canjea un corte
+  // comprando pomada). Para lo que suma la tarjeta, ver `puntosCarrito`.
+  const hayServicioLealtadEnCarrito = useMemo(
+    () => servicios.some((s) => s.puntos > 0 && (serv[s.id] ?? 0) > 0),
     [serv, servicios],
+  );
+
+  // Espejo en cliente del cálculo del servidor, solo para mostrar: la verdad
+  // la fija record_venta leyendo `puntos` del catálogo. Incluye productos.
+  const puntosCarrito = useMemo(
+    () =>
+      servicios.reduce((n, s) => n + s.puntos * (serv[s.id] ?? 0), 0) +
+      productos.reduce((n, p) => n + p.puntos * (prod[p.id] ?? 0), 0),
+    [serv, prod, servicios, productos],
   );
 
   const { items, total } = useMemo(() => {
@@ -91,7 +105,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
       const precio = Number(s.precio);
       // El corte gratis cubre UNA sola unidad del primer servicio de lealtad.
       // Si hay más de una, el resto se cobra normal (una recompensa ≠ línea entera).
-      if (canjear && hayCorteEnCarrito && s.cuenta_lealtad && !usadoGratis) {
+      if (canjear && hayServicioLealtadEnCarrito && s.puntos > 0 && !usadoGratis) {
         usadoGratis = true;
         it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio: 0, cantidad: 1 });
         if (q > 1) it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio, cantidad: q - 1 });
@@ -106,7 +120,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
     }
     const tot = it.reduce((s, i) => s + i.precio * i.cantidad, 0);
     return { items: it, total: tot };
-  }, [serv, prod, canjear, hayCorteEnCarrito, servicios, productos]);
+  }, [serv, prod, canjear, hayServicioLealtadEnCarrito, servicios, productos]);
 
   // El cupón se validó contra un subtotal concreto: si el carrito cambió, ya no aplica.
   const cuponVigente = cupon && cupon.subtotal === total ? cupon : null;
@@ -142,11 +156,12 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
   async function confirmar() {
     setSubmitting(true);
     setError(null);
+    setPuntosGanados(puntosCarrito);
     const payload: VentaInput = {
       clienteId: cliente.id,
       barberoId: barbero || null,
       metodo,
-      canjear: canjear && hayCorteEnCarrito,
+      canjear: canjear && hayServicioLealtadEnCarrito,
       items,
       cuponId: cuponVigente?.cuponId ?? null,
     };
@@ -190,7 +205,9 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
         <p className="mt-2 max-w-[280px] text-sm text-muted">
           {pendiente
             ? "Sin conexión: se sincronizará automáticamente al recuperar la red."
-            : `${cliente.nombre} suma su corte. El progreso ya se refleja en su app.`}
+            : puntosGanados > 0
+              ? `${cliente.nombre} suma ${puntosGanados} sello${puntosGanados > 1 ? "s" : ""}. El progreso ya se refleja en su app.`
+              : `${cliente.nombre} no suma sellos con esta venta.`}
         </p>
         <div className="mt-7 flex w-full max-w-[320px] flex-col gap-3">
           <button
@@ -237,7 +254,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
           <input type="checkbox" checked={canjear} onChange={(e) => setCanjear(e.target.checked)} className="size-5 accent-[var(--success)]" />
           <span className="text-sm text-ink">
             Canjear corte gratis en esta venta
-            {canjear && !hayCorteEnCarrito && <span className="block text-xs text-warning">Agrega un corte para aplicarlo.</span>}
+            {canjear && !hayServicioLealtadEnCarrito && <span className="block text-xs text-warning">Agrega un corte para aplicarlo.</span>}
           </span>
         </label>
       )}
@@ -334,6 +351,11 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
             )}
             <p className="text-[13px] font-medium text-muted">Total</p>
             <p className="font-display text-2xl font-bold tabular-nums text-ink">{fmtQ(totalFinal)}</p>
+            {puntosCarrito > 0 && (
+              <p className="text-[13px] font-semibold tabular-nums text-accent">
+                +{puntosCarrito} sello{puntosCarrito > 1 ? "s" : ""}
+              </p>
+            )}
           </div>
           <button
             onClick={confirmar}

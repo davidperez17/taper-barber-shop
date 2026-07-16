@@ -99,7 +99,8 @@ export interface Servicio {
   precio: number;
   categoria: string | null;
   duracion_min: number | null;
-  cuenta_lealtad: boolean;
+  /** Puntos de lealtad que otorga cada unidad vendida. 0 = no suma. */
+  puntos: number;
   activo: boolean;
   orden: number;
   imagen_url: string | null;
@@ -115,7 +116,8 @@ export interface Producto {
   stock: number;
   stock_min: number;
   controla_stock: boolean;
-  cuenta_lealtad: boolean;
+  /** Puntos de lealtad que otorga cada unidad vendida. 0 = no suma. */
+  puntos: number;
 }
 
 export interface Barbero {

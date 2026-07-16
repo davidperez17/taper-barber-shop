@@ -174,7 +174,7 @@ function ServiciosTab({ servicios }: { servicios: Servicio[] }) {
                 <div className="min-w-0 flex-1">
                   <p className={`font-semibold ${s.activo ? "text-ink" : "text-subtle line-through"}`}>{s.nombre}</p>
                   <p className="text-[13px] text-muted">
-                    {fmtQ(Number(s.precio))}{s.categoria ? ` · ${s.categoria}` : ""}{s.cuenta_lealtad ? " · cuenta lealtad" : ""}
+                    {fmtQ(Number(s.precio))}{s.categoria ? ` · ${s.categoria}` : ""}{s.puntos > 0 ? ` · ${s.puntos} pt${s.puntos > 1 ? "s" : ""}` : ""}
                   </p>
                 </div>
               </>
@@ -199,7 +199,7 @@ function ServicioSheet({ servicio, onClose }: { servicio: Servicio | null; onClo
   const [precio, setPrecio] = useState(String(servicio?.precio ?? ""));
   const [categoria, setCategoria] = useState(servicio?.categoria ?? "");
   const [duracion, setDuracion] = useState(servicio?.duracion_min != null ? String(servicio.duracion_min) : "");
-  const [cuentaLealtad, setCuentaLealtad] = useState(servicio?.cuenta_lealtad ?? true);
+  const [puntos, setPuntos] = useState(String(servicio?.puntos ?? 1));
   const [orden, setOrden] = useState(String(servicio?.orden ?? 0));
   const [imagen, setImagen] = useState<string | null>(servicio?.imagen_url ?? null);
 
@@ -209,7 +209,7 @@ function ServicioSheet({ servicio, onClose }: { servicio: Servicio | null; onClo
         id: servicio?.id,
         nombre, precio: Number(precio) || 0, categoria,
         duracion_min: duracion ? Number(duracion) : null,
-        cuenta_lealtad: cuentaLealtad, orden: Number(orden) || 0,
+        puntos: Math.max(0, Math.round(Number(puntos) || 0)), orden: Number(orden) || 0,
         imagen_url: imagen,
       }), onClose)}>
       <Campo label="Foto"><ImagePicker value={imagen} onChange={setImagen} /></Campo>
@@ -222,10 +222,10 @@ function ServicioSheet({ servicio, onClose }: { servicio: Servicio | null; onClo
         <Campo label="Categoría"><input value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="corte, barba…" className={inputCls} /></Campo>
         <Campo label="Orden POS"><input value={orden} onChange={(e) => setOrden(e.target.value)} inputMode="numeric" className={inputCls} /></Campo>
       </div>
-      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-elevated p-3">
-        <input type="checkbox" checked={cuentaLealtad} onChange={(e) => setCuentaLealtad(e.target.checked)} className="size-5 accent-[var(--accent)]" />
-        <span className="text-sm text-ink">Suma corte al programa de lealtad</span>
-      </label>
+      <Campo label="Puntos de lealtad">
+        <input value={puntos} onChange={(e) => setPuntos(e.target.value)} inputMode="numeric" className={inputCls} />
+      </Campo>
+      <p className="text-[12px] text-subtle">Puntos que suma a la tarjeta por cada unidad vendida. 0 = no suma.</p>
     </Sheet>
   );
 }
@@ -250,7 +250,7 @@ function ProductosTab({ productos }: { productos: Producto[] }) {
                     {p.controla_stock && (
                       <span className={p.stock <= p.stock_min ? "text-warning" : "text-muted"}> · {p.stock} en stock</span>
                     )}
-                    {p.cuenta_lealtad ? " · suma sello" : ""}
+                    {p.puntos > 0 ? ` · ${p.puntos} pt${p.puntos > 1 ? "s" : ""}` : ""}
                   </p>
                 </div>
               </>
@@ -278,13 +278,14 @@ function ProductoSheet({ producto, onClose }: { producto: Producto | null; onClo
   const [controlaStock, setControlaStock] = useState(producto?.controla_stock ?? true);
   const [stockMin, setStockMin] = useState(producto ? String(producto.stock_min) : "0");
   const [stockInicial, setStockInicial] = useState("0");
-  const [cuentaLealtad, setCuentaLealtad] = useState(producto?.cuenta_lealtad ?? false);
+  const [puntos, setPuntos] = useState(String(producto?.puntos ?? 0));
 
   return (
     <Sheet title={producto ? "Editar producto" : "Nuevo producto"} onClose={onClose} pending={pending} error={error}
       onSave={() => run(() => saveProducto({
         id: producto?.id, nombre, precio: Number(precio) || 0, categoria, imagen_url: imagen,
-        controla_stock: controlaStock, stock_min: Number(stockMin) || 0, cuenta_lealtad: cuentaLealtad,
+        controla_stock: controlaStock, stock_min: Number(stockMin) || 0,
+        puntos: Math.max(0, Math.round(Number(puntos) || 0)),
         stock_inicial: producto ? undefined : Number(stockInicial) || 0,
       }), onClose)}>
       <Campo label="Foto"><ImagePicker value={imagen} onChange={setImagen} /></Campo>
@@ -317,12 +318,10 @@ function ProductoSheet({ producto, onClose }: { producto: Producto | null; onClo
         <p className="text-[12px] text-subtle">El stock se ajusta desde Inventario (entradas, salidas y conteos).</p>
       )}
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-elevated p-3">
-        <input type="checkbox" checked={cuentaLealtad} onChange={(e) => setCuentaLealtad(e.target.checked)} className="mt-0.5 size-5 accent-[var(--accent)]" />
-        <span className="text-sm text-ink">Suma sello de lealtad
-          <span className="mt-0.5 block text-[12px] text-subtle">Una venta con este producto marca un sello, aunque no lleve corte.</span>
-        </span>
-      </label>
+      <Campo label="Puntos de lealtad">
+        <input value={puntos} onChange={(e) => setPuntos(e.target.value)} inputMode="numeric" className={inputCls} />
+      </Campo>
+      <p className="text-[12px] text-subtle">Puntos que suma a la tarjeta por cada unidad vendida. 0 = no suma.</p>
     </Sheet>
   );
 }

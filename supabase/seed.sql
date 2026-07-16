@@ -4,14 +4,16 @@
 -- ════════════════════════════════════════════════════════════════
 
 -- ── Servicios (orden = más frecuentes primero en el POS) ────────
-insert into servicios (nombre, precio, categoria, duracion_min, cuenta_lealtad, orden) values
-  ('Corte Clásico',  50, 'corte', 30, true,  10),
-  ('Corte Fade',     60, 'corte', 35, true,  20),
-  ('Corte + Barba',  90, 'corte', 50, true,  30),
-  ('Barba',          45, 'barba', 20, false, 40),
-  ('Tratamiento',    80, 'tratamiento', 40, false, 50);
+-- `puntos` = sellos que suma cada unidad a la tarjeta (0028). El combo vale 2
+-- porque son dos servicios; `cuenta_lealtad` quedó obsoleta y la dropea 0029.
+insert into servicios (nombre, precio, categoria, duracion_min, puntos, orden) values
+  ('Corte Clásico',  50, 'corte', 30, 1, 10),
+  ('Corte Fade',     60, 'corte', 35, 1, 20),
+  ('Corte + Barba',  90, 'corte', 50, 2, 30),
+  ('Barba',          45, 'barba', 20, 1, 40),
+  ('Tratamiento',    80, 'tratamiento', 40, 0, 50);
 
--- ── Productos ───────────────────────────────────────────────────
+-- ── Productos (puntos = 0: no suman a la tarjeta) ───────────────
 insert into productos (nombre, precio, categoria) values
   ('Shampoo Premium', 65, 'cuidado'),
   ('Cera Mate',       55, 'styling'),

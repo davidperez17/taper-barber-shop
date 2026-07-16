@@ -486,12 +486,13 @@ export async function saveServicio(input: {
   precio: number;
   categoria: string;
   duracion_min: number | null;
-  cuenta_lealtad: boolean;
+  puntos: number;
   orden: number;
   imagen_url: string | null;
 }): Promise<ActionResult> {
   if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio." };
   if (input.precio < 0) return { ok: false, error: "Precio inválido." };
+  if (!Number.isInteger(input.puntos) || input.puntos < 0) return { ok: false, error: "Puntos inválidos." };
 
   const sb = await createClient();
   const fila: Record<string, unknown> = {
@@ -499,7 +500,7 @@ export async function saveServicio(input: {
     precio: input.precio,
     categoria: input.categoria.trim() || null,
     duracion_min: input.duracion_min,
-    cuenta_lealtad: input.cuenta_lealtad,
+    puntos: input.puntos,
     orden: input.orden,
     imagen_url: input.imagen_url,
   };
@@ -523,12 +524,13 @@ export async function saveProducto(input: {
   imagen_url: string | null;
   controla_stock: boolean;
   stock_min: number;
-  cuenta_lealtad: boolean;
+  puntos: number;
   stock_inicial?: number;
 }): Promise<ActionResult> {
   if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio." };
   if (input.precio < 0) return { ok: false, error: "Precio inválido." };
   if (input.stock_min < 0) return { ok: false, error: "Stock mínimo inválido." };
+  if (!Number.isInteger(input.puntos) || input.puntos < 0) return { ok: false, error: "Puntos inválidos." };
 
   const sb = await createClient();
   const fila: Record<string, unknown> = {
@@ -538,7 +540,7 @@ export async function saveProducto(input: {
     imagen_url: input.imagen_url,
     controla_stock: input.controla_stock,
     stock_min: input.stock_min,
-    cuenta_lealtad: input.cuenta_lealtad,
+    puntos: input.puntos,
   };
   // El stock se gestiona con movimientos; solo se fija el inicial al crear.
   if (!input.id) {
