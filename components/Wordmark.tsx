@@ -11,7 +11,9 @@ import { Isotipo } from "@/components/Isotipo";
 export function Wordmark({ className, inline = false }: { className?: string; inline?: boolean }) {
   return (
     <span className={`flex items-center gap-2.5 ${className ?? ""}`}>
-      <Isotipo className="h-[9px] w-[18px] shrink-0 text-accent" />
+      <Isotipo
+        className={`shrink-0 text-accent ${inline ? "h-[20px] w-[11px]" : "h-[41px] w-[22px]"}`}
+      />
       {inline ? (
         <span className="whitespace-nowrap font-display text-[14px] font-bold tracking-[0.1em] text-ink">
           TAPER BARBER SHOP

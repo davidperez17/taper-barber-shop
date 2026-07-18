@@ -55,7 +55,7 @@ export function TarjetaCards({
           }}
         >
           <div className="flex w-full items-center gap-2">
-            <Isotipo style={{ width: 18, height: 9, color: "#f0f0f2", opacity: 0.9 }} />
+            <Isotipo style={{ width: 9, height: 17, color: "#f0f0f2", opacity: 0.9 }} />
             <span className="font-display text-[13px] font-bold uppercase tracking-[0.1em] opacity-85">
               Taper Barber Shop
             </span>

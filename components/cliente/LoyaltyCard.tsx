@@ -161,7 +161,7 @@ export function LoyaltyCard({
             <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                <Isotipo style={{ width: 18, height: 9, color: ink, opacity: 0.9 }} />
+                <Isotipo style={{ width: 9, height: 17, color: ink, opacity: 0.9 }} />
                 <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.1em", opacity: 0.85 }}>TAPER BARBER SHOP</span>
               </div>
               <span
@@ -246,7 +246,7 @@ export function LoyaltyCard({
             {/* Barra superior idéntica al frente (misma marca + tier) */}
             <div className="flex w-full items-start justify-between">
               <div className="flex items-center gap-2">
-                <Isotipo style={{ width: 18, height: 9, color: "#f0f0f2", opacity: 0.9 }} />
+                <Isotipo style={{ width: 9, height: 17, color: "#f0f0f2", opacity: 0.9 }} />
                 <span className="font-display" style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.1em", opacity: 0.85 }}>TAPER BARBER SHOP</span>
               </div>
               <span
