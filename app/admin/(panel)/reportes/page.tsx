@@ -6,7 +6,7 @@ import { getReporte, getHeatmapHorario } from "@/lib/queries/reportes";
 import { ReportesSucursalFiltro } from "@/components/admin/ReportesSucursalFiltro";
 import { fmtQ } from "@/lib/format";
 import { PRESETS, resolverRango, ymd, hoyGT } from "@/lib/rango";
-import { TendenciaChart, TopBars } from "@/components/admin/Charts";
+import { TopBars } from "@/components/admin/Charts";
 import { BusyPeriods, type PeriodoBP } from "@/components/admin/BusyPeriods";
 import { ReportesTabs } from "@/components/admin/ReportesTabs";
 import { RangoPersonalizado } from "@/components/admin/RangoPersonalizado";
@@ -95,14 +95,6 @@ export default async function ReportesPage({
         <h2 className="mb-3 font-display text-lg font-bold text-ink">Horarios concurridos</h2>
         <div className="rounded-2xl border border-line bg-elevated p-4">
           <BusyPeriods cells={heatCells} periodo={bp} rangoQS={rangoQS} suc={sucSel} />
-        </div>
-      </section>
-
-      {/* Tendencia */}
-      <section className="mt-6">
-        <h2 className="mb-3 font-display text-lg font-bold text-ink">Tendencia de ventas <span className="text-sm font-normal text-subtle">· {label.toLowerCase()}</span></h2>
-        <div className="rounded-2xl border border-line bg-elevated p-4">
-          <TendenciaChart data={data.por_dia} />
         </div>
       </section>
 

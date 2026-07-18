@@ -1,28 +1,5 @@
 import { fmtQ } from "@/lib/format";
-import type { DiaRow, TopRow } from "@/lib/queries/reportes";
-
-/** Tendencia de ventas: barras verticales por día (CSS, sin libs). */
-export function TendenciaChart({ data }: { data: DiaRow[] }) {
-  if (data.length === 0) {
-    return <p className="rounded-xl border border-dashed border-line p-8 text-center text-sm text-muted">Sin ventas en el rango.</p>;
-  }
-  const max = Math.max(...data.map((d) => d.total), 1);
-  const paso = Math.ceil(data.length / 8); // densidad de labels
-
-  return (
-    <div className="flex h-44 items-end gap-1.5 overflow-x-auto pb-1" role="img" aria-label="Ventas por día">
-      {data.map((d, i) => (
-        <div key={d.dia} className="flex h-full min-w-[16px] flex-1 flex-col items-center justify-end gap-1.5" title={`${d.dia}: ${fmtQ(d.total)} · ${d.num} ventas`}>
-          <div
-            className="w-full rounded-t bg-accent transition-[height]"
-            style={{ height: `${Math.max(3, (d.total / max) * 100)}%` }}
-          />
-          <span className="text-[11px] tabular-nums text-subtle">{i % paso === 0 ? d.dia.slice(8, 10) : ""}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+import type { TopRow } from "@/lib/queries/reportes";
 
 /** Top horizontal: nombre + barra proporcional + valor. */
 export function TopBars({ rows, label }: { rows: TopRow[]; label?: string }) {
