@@ -15,7 +15,14 @@ export const metadata: Metadata = {
   applicationName: "Taper Admin",
   manifest: "/staff-manifest",
   appleWebApp: { capable: true, statusBarStyle: "black", title: "Taper Admin" },
-  icons: { icon: "/icon-admin.svg", shortcut: "/icon-admin.svg", apple: "/icon-admin.svg" },
+  icons: {
+    icon: [
+      { url: "/admin-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/admin-icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/admin-icon-192.png",
+    apple: { url: "/admin-apple-touch-icon.png", sizes: "180x180" },
+  },
 };
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
