@@ -102,6 +102,8 @@ export interface VentaItemInput {
   nombre: string;
   precio: number;
   cantidad: number;
+  // Línea del corte gratis canjeado: no otorga sello (record_venta la fuerza a 0 puntos).
+  es_recompensa?: boolean;
 }
 
 export interface VentaInput {

@@ -96,6 +96,15 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
     [serv, prod, servicios, productos],
   );
 
+  // El corte gratis canjeado NO otorga sello: descuenta sus puntos del conteo
+  // que se muestra tras la venta (espejo de lo que hace record_venta).
+  const puntosRecompensa = useMemo(() => {
+    if (!canjear || !hayServicioLealtadEnCarrito) return 0;
+    const s = servicios.find((s) => s.puntos > 0 && (serv[s.id] ?? 0) > 0);
+    return s ? s.puntos : 0;
+  }, [canjear, hayServicioLealtadEnCarrito, serv, servicios]);
+  const puntosNetos = Math.max(0, puntosCarrito - puntosRecompensa);
+
   const { items, total } = useMemo(() => {
     const it: VentaItemInput[] = [];
     let usadoGratis = false;
@@ -107,7 +116,8 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
       // Si hay más de una, el resto se cobra normal (una recompensa ≠ línea entera).
       if (canjear && hayServicioLealtadEnCarrito && s.puntos > 0 && !usadoGratis) {
         usadoGratis = true;
-        it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio: 0, cantidad: 1 });
+        // El corte gratis es la recompensa: no vuelve a otorgar sello (record_venta lo fuerza a 0).
+        it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio: 0, cantidad: 1, es_recompensa: true });
         if (q > 1) it.push({ tipo: "servicio", servicio_id: s.id, nombre: s.nombre, precio, cantidad: q - 1 });
         continue;
       }
@@ -156,7 +166,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
   async function confirmar() {
     setSubmitting(true);
     setError(null);
-    setPuntosGanados(puntosCarrito);
+    setPuntosGanados(puntosNetos);
     const payload: VentaInput = {
       clienteId: cliente.id,
       barberoId: barbero || null,
