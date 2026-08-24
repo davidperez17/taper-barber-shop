@@ -19,35 +19,48 @@ export function OfflineSync() {
   // Estado del navegador como external store (sin setState en effect; SSR asume online).
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const [synced, setSynced] = useState(0);
+  // Motivo del primer rechazo al vaciar la cola (p. ej. canje fuera de horario):
+  // sin esto la venta se queda en `pendientes` para siempre y nadie se entera.
+  const [rechazo, setRechazo] = useState<string | null>(null);
   const router = useRouter();
 
   // Vacía la cola al montar y en cada reconexión.
   useEffect(() => {
     if (!online) return;
     let cancelado = false;
-    let t: ReturnType<typeof setTimeout> | undefined;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
     (async () => {
       const q = getQueue();
       if (q.length === 0) return;
       const pendientes = [];
       let ok = 0;
+      let motivo: string | null = null;
       for (const v of q) {
         const r = await recordVenta(v);
         if (r.ok) ok++;
-        else pendientes.push(v);
+        else {
+          pendientes.push(v);
+          motivo ??= r.error;
+        }
       }
       setQueue(pendientes);
-      if (ok > 0 && !cancelado) {
+      if (cancelado) return;
+      if (motivo) {
+        setRechazo(motivo);
+        timers.push(setTimeout(() => setRechazo(null), 8000));
+      }
+      if (ok > 0) {
         setSynced(ok);
         router.refresh();
-        t = setTimeout(() => setSynced(0), 4000);
+        // Si hay rechazo, el toast de éxito espera a que ese aviso se vaya.
+        timers.push(setTimeout(() => setSynced(0), motivo ? 12000 : 4000));
       }
     })();
 
     return () => {
       cancelado = true;
-      if (t) clearTimeout(t);
+      for (const t of timers) clearTimeout(t);
     };
   }, [online, router]);
 
@@ -58,7 +71,15 @@ export function OfflineSync() {
           Sin conexión — las ventas se guardan y sincronizan al reconectar.
         </div>
       )}
-      {synced > 0 && (
+      {rechazo && (
+        <div
+          role="alert"
+          className="animate-fade-up fixed bottom-5 left-1/2 z-[var(--z-toast)] w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl bg-danger px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+        >
+          Venta pendiente sin sincronizar: {rechazo}
+        </div>
+      )}
+      {synced > 0 && !rechazo && (
         <div
           role="status"
           aria-live="polite"

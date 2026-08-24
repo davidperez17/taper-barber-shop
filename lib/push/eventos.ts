@@ -2,6 +2,7 @@ import "server-only";
 import { enviarPush } from "./send";
 import { subsDeCliente, subsPorTipo } from "./targets";
 import { registrarNoti } from "./inbox";
+import { CANJE_HORARIO } from "@/lib/horario";
 
 // Eventos transaccionales → notificación. Cada función se aísla: nunca lanza,
 // para que un fallo de push jamás rompa la operación principal (venta, cita…).
@@ -22,7 +23,7 @@ function cuandoGT(iso: string): string {
 /** El cliente ganó una nueva recompensa (corte gratis disponible). */
 export async function pushRecompensaLista(clienteId: string): Promise<void> {
   const titulo = "¡Recompensa lista! 🎉";
-  const cuerpo = "Tu próximo corte va por la casa. Pásalo a canjear.";
+  const cuerpo = `Tu próximo corte va por la casa. Canjéalo ${CANJE_HORARIO}.`;
   await registrarNoti(clienteId, { tipo: "recompensa", titulo, cuerpo, url: "/tarjeta" });
   try {
     await enviarPush(await subsDeCliente(clienteId), {

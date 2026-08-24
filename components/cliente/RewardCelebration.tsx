@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { IconCheck } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
 import { Confetti, type ConfettiPiece } from "./Confetti";
+import { CANJE_HORARIO } from "@/lib/horario";
 
 const CONFETTI: ConfettiPiece[] = [
   { l: 12, col: "#f5c800", d: 0, dur: 1600, w: 8 },
@@ -56,6 +57,9 @@ function RewardDialog({ nombre, onClose }: { nombre: string; onClose: () => void
       </h2>
       <p className="mt-3.5 max-w-[280px] text-center text-[15px] text-muted">
         {nombre.split(" ")[0]}, muéstrale tu QR al cajero en tu próxima visita y reclama tu corte sin costo.
+      </p>
+      <p className="mt-2 max-w-[280px] text-center text-[13px] text-subtle">
+        Canjéalo {CANJE_HORARIO}.
       </p>
       <button
         onClick={onClose}

@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { requireDashboard } from "@/lib/queries/cliente";
 import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL } from "@/lib/loyalty";
 import { fmtMesAnio } from "@/lib/format";
+import { CANJE_HORARIO } from "@/lib/horario";
 import { RewardCelebration } from "@/components/cliente/RewardCelebration";
 import { TierUpCelebration } from "@/components/cliente/TierUpCelebration";
 import { TarjetaCards, type TarjetaVM } from "@/components/cliente/TarjetaCards";
@@ -34,6 +35,7 @@ export default async function TarjetaPage() {
     };
   });
   const cortesGlobal = dash.loyalty_sucursales.reduce((sum, s) => sum + s.cortes_total, 0);
+  const algunaRecompensa = cards.some((c) => c.recompensaDisponible);
 
   // Sin width/height fijos en el <svg> → escala al contenedor (tile responsive en la card).
   const qrSvg = (
@@ -73,6 +75,13 @@ export default async function TarjetaPage() {
         memberId={memberId(dash.cliente.numero)}
         qrSvg={qrSvg}
       />
+
+      {/* El canje tiene ventana (0032); el sello se gana a cualquier hora. */}
+      {algunaRecompensa && (
+        <p className="mt-3.5 text-center text-xs text-muted">
+          Canjea tu corte gratis {CANJE_HORARIO}.
+        </p>
+      )}
 
       {/* Quick actions */}
       <div className="mt-6">

@@ -3,6 +3,7 @@ import { getClienteParaVenta, getCatalogo } from "@/lib/queries/admin";
 import { getStaff } from "@/lib/queries/staff";
 import { getSucursalActiva } from "@/lib/sucursal";
 import { VentaPOS } from "@/components/admin/VentaPOS";
+import { canjeAbierto } from "@/lib/horario";
 
 export default async function VentaPage({
   params,
@@ -24,6 +25,7 @@ export default async function VentaPage({
       productos={catalogo.productos}
       barberos={catalogo.barberos}
       defaultBarberoId={staff.barbero_id}
+      canjeAbiertoInicial={canjeAbierto()}
     />
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { recordVenta, validarCupon, type VentaItemInput, type VentaInput } from "@/app/admin/actions";
 import { enqueueVenta } from "@/lib/offline";
 import { computeLoyalty, memberId, TIER_LABEL, TIER_SURFACE, type LoyaltyRaw } from "@/lib/loyalty";
 import { fmtDiaMes, fmtQ } from "@/lib/format";
+import { canjeAbierto, CANJE_HORARIO } from "@/lib/horario";
 import type { Servicio, Producto, Barbero } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Thumb } from "@/components/admin/Thumb";
@@ -18,11 +19,12 @@ interface Props {
   productos: Producto[];
   barberos: Barbero[];
   defaultBarberoId?: string | null; // barbero del staff logueado (auto-atribución)
+  canjeAbiertoInicial: boolean; // ventana de canje calculada en el server (evita mismatch de hidratación)
 }
 
 type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
 
-export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, defaultBarberoId }: Props) {
+export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, defaultBarberoId, canjeAbiertoInicial }: Props) {
   const router = useRouter();
   const loyalty = computeLoyalty(loyaltyRaw);
 
@@ -46,6 +48,19 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
   const [pendiente, setPendiente] = useState(false);
   // Congelado al confirmar: la pantalla de éxito no debe depender del carrito.
   const [puntosGanados, setPuntosGanados] = useState(0);
+
+  // La ventana de canje (L–V 10:30–19:30 GT) puede cerrarse con el POS abierto,
+  // así que se revisa cada minuto además del valor que llegó del server.
+  const [canjeAbiertoAhora, setCanjeAbiertoAhora] = useState(canjeAbiertoInicial);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const abierto = canjeAbierto();
+      setCanjeAbiertoAhora(abierto);
+      if (!abierto) setCanjear(false);
+    }, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const puedeCanjear = loyalty.recompensaDisponible && canjeAbiertoAhora;
 
   const inc = (m: Record<string, number>, set: (v: Record<string, number>) => void, id: string, d: number) => {
     const next = { ...m, [id]: Math.max(0, (m[id] ?? 0) + d) };
@@ -171,7 +186,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
       clienteId: cliente.id,
       barberoId: barbero || null,
       metodo,
-      canjear: canjear && hayServicioLealtadEnCarrito,
+      canjear: canjear && hayServicioLealtadEnCarrito && canjeAbiertoAhora,
       items,
       cuponId: cuponVigente?.cuponId ?? null,
     };
@@ -259,7 +274,7 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
         )}
       </div>
 
-      {loyalty.recompensaDisponible && (
+      {puedeCanjear && (
         <label className="mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-success/40 bg-success-dim p-3.5">
           <input type="checkbox" checked={canjear} onChange={(e) => setCanjear(e.target.checked)} className="size-5 accent-[var(--success)]" />
           <span className="text-sm text-ink">
@@ -267,6 +282,14 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
             {canjear && !hayServicioLealtadEnCarrito && <span className="block text-xs text-warning">Agrega un corte para aplicarlo.</span>}
           </span>
         </label>
+      )}
+
+      {/* Ganó la recompensa pero está fuera de la ventana de canje: la venta
+          se registra normal y suma su sello; el corte gratis queda pendiente. */}
+      {loyalty.recompensaDisponible && !canjeAbiertoAhora && (
+        <p className="mt-3 rounded-xl border border-warning/40 bg-warning/10 p-3.5 text-sm text-warning">
+          El canje del corte gratis está disponible {CANJE_HORARIO}. Esta venta se registra normal y suma su sello.
+        </p>
       )}
 
       {/* Servicios */}

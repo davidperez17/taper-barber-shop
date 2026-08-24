@@ -8,6 +8,7 @@ import { createAdmin } from "@/lib/supabase/admin";
 import { getStaff } from "@/lib/queries/staff";
 import { getSucursalActiva, getSucursales, SUCURSAL_COOKIE } from "@/lib/sucursal";
 import { computeLoyalty, type LoyaltyRaw } from "@/lib/loyalty";
+import { CANJE_HORARIO } from "@/lib/horario";
 import { pushRecompensaLista, pushCitaCliente, pushStockBajoStaff } from "@/lib/push/eventos";
 import { enviarPush } from "@/lib/push/send";
 import { subsPorTipo } from "@/lib/push/targets";
@@ -136,7 +137,10 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
   const { data, error } = await sb.rpc("record_venta", params);
 
   if (error) {
-    // El candado de canje por sucursal (record_venta) rebota con P0001.
+    // Los candados de canje (record_venta) rebotan con P0001.
+    if (input.canjear && /fuera de horario/i.test(error.message)) {
+      return { ok: false, error: `El canje del corte gratis solo está disponible ${CANJE_HORARIO}.` };
+    }
     if (input.canjear && /recompensa disponible/i.test(error.message)) {
       return { ok: false, error: "Este cliente no tiene un corte gratis disponible en esta sucursal." };
     }
