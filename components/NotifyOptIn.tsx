@@ -1,28 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { guardarSuscripcion, enviarPrueba, type SubJSON } from "@/app/push/actions";
-
-// Defensivo: si en Vercel se pegó la clave con comillas, quítalas.
-const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
-
-const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches ||
-  (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-const isIOS = () =>
-  /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
-  !/crios|fxios/i.test(window.navigator.userAgent);
-
-/** VAPID public key (base64url) → Uint8Array para applicationServerKey. */
-function urlB64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
-  const pad = "=".repeat((4 - (base64.length % 4)) % 4);
-  const b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(b64);
-  const arr = new Uint8Array(new ArrayBuffer(raw.length));
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-  return arr;
-}
+import { enviarPrueba } from "@/app/push/actions";
+import { activarPush, pushDisponible, sincronizarPush } from "@/lib/push/cliente";
 
 type Estado = "oculto" | "ofrecer" | "guardando" | "listo";
 
@@ -37,13 +17,10 @@ const DESCARTE_KEY = "taper_notif_luego";
  */
 export function NotifyOptIn() {
   const [estado, setEstado] = useState<Estado>("oculto");
+  const [prueba, setPrueba] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!VAPID) return;
-    const soporta = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-    if (!soporta) return;
-    // iOS: push solo en PWA instalada. Sin instalar, no ofrecer.
-    if (isIOS() && !isStandalone()) return;
+    if (!pushDisponible()) return;
     if (Notification.permission === "denied") return;
     if (sessionStorage.getItem(DESCARTE_KEY)) return;
     // Depende de APIs del navegador: solo se puede decidir tras montar.
@@ -52,15 +29,14 @@ export function NotifyOptIn() {
       setEstado("ofrecer");
       return;
     }
-    // Permiso concedido: solo ocultar si de verdad hay una suscripción activa.
-    // Si el permiso quedó "granted" pero la suscripción se perdió (o nunca se
-    // llegó a crear), hay que volver a ofrecer o el banner desaparecería para
-    // siempre sin forma de reactivar.
+    // Permiso concedido: re-sincroniza la suscripción con el servidor (cura
+    // filas podadas, llaves VAPID desfasadas y cambios de dueño). Si no hay
+    // suscripción (se perdió o nunca se creó), volver a ofrecer o el banner
+    // desaparecería para siempre sin forma de reactivar.
     let vivo = true;
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => {
-        if (vivo && !sub) setEstado("ofrecer");
+    sincronizarPush()
+      .then((on) => {
+        if (vivo && !on) setEstado("ofrecer");
       })
       .catch(() => {});
     return () => {
@@ -84,23 +60,18 @@ export function NotifyOptIn() {
   const activar = async () => {
     try {
       setEstado("guardando");
-      const permiso = await Notification.requestPermission();
-      if (permiso !== "granted") return setEstado("oculto");
-
-      const reg = await navigator.serviceWorker.ready;
-      const sub =
-        (await reg.pushManager.getSubscription()) ??
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlB64ToUint8Array(VAPID),
-        }));
-
-      const { ok } = await guardarSuscripcion(sub.toJSON() as SubJSON);
-      setEstado(ok ? "listo" : "ofrecer");
+      const r = await activarPush();
+      if (r === "granted") setEstado("listo");
+      else setEstado(r === "error" ? "ofrecer" : "oculto");
     } catch (e) {
       console.error("[push] fallo al activar:", e);
       setEstado("ofrecer");
     }
+  };
+
+  const probar = async () => {
+    const { enviadas } = await enviarPrueba();
+    setPrueba(enviadas > 0 ? "Prueba enviada" : "No se pudo enviar");
   };
 
   if (estado === "oculto") return null;
@@ -118,9 +89,13 @@ export function NotifyOptIn() {
         {estado === "listo" ? (
           <>
             <p className="text-sm font-semibold text-ink">Notificaciones activas</p>
-            <button onClick={() => enviarPrueba()} className="mt-0.5 text-xs font-medium text-accent">
-              Enviar prueba
-            </button>
+            {prueba ? (
+              <p className="mt-0.5 text-xs text-muted">{prueba}</p>
+            ) : (
+              <button onClick={probar} className="mt-0.5 text-xs font-medium text-accent">
+                Enviar prueba
+              </button>
+            )}
           </>
         ) : (
           <>

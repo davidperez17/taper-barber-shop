@@ -20,7 +20,12 @@ export function DifusionForm() {
     start(async () => {
       const r = await enviarDifusion({ titulo, mensaje, url, audiencia });
       if (r.ok) {
-        setFeedback({ ok: true, texto: `Enviada a ${r.enviadas} dispositivo(s).` });
+        setFeedback({
+          ok: r.fallidas === 0,
+          texto:
+            `Enviada a ${r.enviadas} dispositivo(s).` +
+            (r.fallidas > 0 ? ` ${r.fallidas} fallaron (revisar logs).` : ""),
+        });
         setTitulo("");
         setMensaje("");
         setUrl("");

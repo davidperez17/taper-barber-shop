@@ -1,27 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { guardarSuscripcion, borrarSuscripcion, type SubJSON } from "@/app/push/actions";
-
-// Defensivo: si en Vercel se pegó la clave con comillas, quítalas.
-const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
-
-const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches ||
-  (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-const isIOS = () =>
-  /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
-  !/crios|fxios/i.test(window.navigator.userAgent);
-
-function urlB64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
-  const pad = "=".repeat((4 - (base64.length % 4)) % 4);
-  const b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(b64);
-  const arr = new Uint8Array(new ArrayBuffer(raw.length));
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-  return arr;
-}
+import { borrarSuscripcion } from "@/app/push/actions";
+import { activarPush, pushDisponible, sincronizarPush } from "@/lib/push/cliente";
 
 // on = suscrito; off = puede activar; guardando = en curso;
 // bloqueado = permiso denegado; no-disp = sin soporte / iOS sin instalar / sin clave.
@@ -32,11 +13,7 @@ export function PushToggle() {
   const [estado, setEstado] = useState<Estado>("no-disp");
 
   useEffect(() => {
-    if (!VAPID) return;
-    const soporta =
-      "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-    if (!soporta) return;
-    if (isIOS() && !isStandalone()) return;
+    if (!pushDisponible()) return;
     // Depende de APIs del navegador: solo se puede decidir tras montar.
     if (Notification.permission === "denied") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -47,10 +24,11 @@ export function PushToggle() {
       setEstado("off");
       return;
     }
+    // Permiso concedido: re-sincroniza la suscripción con el servidor en cada
+    // visita (cura filas podadas y llaves VAPID desfasadas).
     let vivo = true;
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => vivo && setEstado(sub ? "on" : "off"))
+    sincronizarPush()
+      .then((on) => vivo && setEstado(on ? "on" : "off"))
       .catch(() => vivo && setEstado("off"));
     return () => {
       vivo = false;
@@ -58,21 +36,10 @@ export function PushToggle() {
   }, []);
 
   const activar = async () => {
-    if (!VAPID) return;
     try {
       setEstado("guardando");
-      const permiso = await Notification.requestPermission();
-      if (permiso !== "granted") return setEstado(permiso === "denied" ? "bloqueado" : "off");
-
-      const reg = await navigator.serviceWorker.ready;
-      const sub =
-        (await reg.pushManager.getSubscription()) ??
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlB64ToUint8Array(VAPID),
-        }));
-      const { ok } = await guardarSuscripcion(sub.toJSON() as SubJSON);
-      setEstado(ok ? "on" : "off");
+      const r = await activarPush();
+      setEstado(r === "granted" ? "on" : r === "denied" ? "bloqueado" : "off");
     } catch (e) {
       console.error("[push] fallo al activar:", e);
       setEstado("off");

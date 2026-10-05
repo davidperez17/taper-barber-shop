@@ -10,7 +10,7 @@ import { getSucursalActiva, getSucursales, SUCURSAL_COOKIE } from "@/lib/sucursa
 import { computeLoyalty, type LoyaltyRaw } from "@/lib/loyalty";
 import { CANJE_HORARIO } from "@/lib/horario";
 import { pushRecompensaLista, pushCitaCliente, pushStockBajoStaff } from "@/lib/push/eventos";
-import { enviarPush } from "@/lib/push/send";
+import { enviarPush, ICONO_STAFF } from "@/lib/push/send";
 import { subsPorTipo } from "@/lib/push/targets";
 import { registrarNotiTodosClientes } from "@/lib/push/inbox";
 import { broadcastVenta } from "@/lib/realtime";
@@ -770,7 +770,7 @@ export async function updateConfigLealtad(cortes_objetivo: number, ventana_meses
 
 // ── Difusión: notificación manual a clientes o staff (admin/dueño) ──────
 export type DifusionResult =
-  | { ok: true; enviadas: number; podadas: number }
+  | { ok: true; enviadas: number; podadas: number; fallidas: number }
   | { ok: false; error: string };
 
 export async function enviarDifusion(input: {
@@ -797,11 +797,12 @@ export async function enviarDifusion(input: {
   }
 
   const subs = await subsPorTipo(input.audiencia === "clientes" ? "cliente" : "staff");
-  const { enviadas, podadas } = await enviarPush(subs, {
+  const { enviadas, podadas, fallidas } = await enviarPush(subs, {
     title: titulo,
     body: mensaje,
     url,
     tag: "difusion",
+    ...(input.audiencia === "staff" && { icon: ICONO_STAFF }),
   });
-  return { ok: true, enviadas, podadas };
+  return { ok: true, enviadas, podadas, fallidas };
 }

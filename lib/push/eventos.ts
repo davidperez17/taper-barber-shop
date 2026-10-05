@@ -1,5 +1,5 @@
 import "server-only";
-import { enviarPush } from "./send";
+import { enviarPush, ICONO_STAFF } from "./send";
 import { subsDeCliente, subsPorTipo } from "./targets";
 import { registrarNoti } from "./inbox";
 import { CANJE_HORARIO } from "@/lib/horario";
@@ -103,6 +103,7 @@ export async function pushNuevoClienteStaff(nombre: string): Promise<void> {
       body: `${nombre} acaba de crear su cuenta.`,
       url: "/admin/clientes",
       tag: "nuevo-cliente",
+      icon: ICONO_STAFF,
     });
   } catch {}
 }
@@ -117,6 +118,7 @@ export async function pushStockBajoStaff(nombres: string[]): Promise<void> {
       body: `Revisa inventario: ${lista}.`,
       url: "/admin/inventario",
       tag: "stock-bajo",
+      icon: ICONO_STAFF,
     });
   } catch {}
 }

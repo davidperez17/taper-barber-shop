@@ -92,8 +92,8 @@ self.addEventListener("push", (e) => {
   const title = data.title || "Taper Barbershop";
   const options = {
     body: data.body || "",
-    icon: data.icon || "/icon.svg",
-    badge: "/icon.svg",
+    // PNG: Android/Chrome no pintan SVG en notificaciones (salía genérico).
+    icon: data.icon || "/icon-192.png",
     tag: data.tag,
     data: { url: data.url || "/" },
   };
@@ -105,15 +105,20 @@ self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const target = (e.notification.data && e.notification.data.url) || "/";
 
+  // Preferir una ventana de la misma app (admin vs cliente): en Android/escritorio
+  // ambas PWAs comparten este SW. Enfocar primero y luego navegar; si navegar
+  // falla (ventana no controlada), abrir una nueva en la URL destino.
+  const esAdmin = target.startsWith("/admin");
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-      for (const c of list) {
-        if ("focus" in c) {
-          c.navigate(target).catch(() => {});
-          return c.focus();
-        }
-      }
-      return self.clients.openWindow(target);
+      const c = list.find(
+        (w) => "focus" in w && new URL(w.url).pathname.startsWith("/admin") === esAdmin,
+      );
+      if (!c) return self.clients.openWindow(target);
+      return c
+        .focus()
+        .then((w) => w.navigate(target))
+        .catch(() => self.clients.openWindow(target));
     }),
   );
 });

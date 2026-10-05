@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { createAdmin } from "@/lib/supabase/admin";
 import { getQrToken } from "@/lib/session";
 import { getStaff } from "@/lib/queries/staff";
-import { enviarPush } from "@/lib/push/send";
+import { enviarPush, ICONO_STAFF } from "@/lib/push/send";
 import { subsDeCliente, subsDeStaff } from "@/lib/push/targets";
 
 /** Suscripción tal como la serializa el navegador (PushSubscription.toJSON()). */
@@ -75,6 +75,7 @@ export async function enviarPrueba(): Promise<{ ok: boolean; enviadas: number }>
     title: "Taper Barber",
     body: "🔔 Notificaciones activadas. ¡Listo!",
     url: owner.type === "staff" ? "/admin" : "/",
+    ...(owner.type === "staff" && { icon: ICONO_STAFF }),
   });
   return { ok: true, enviadas };
 }
