@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { borrarSuscripcion } from "@/app/push/actions";
-import { activarPush, pushDisponible, sincronizarPush } from "@/lib/push/cliente";
+import { activarPush, pushDisponible, sincronizarPush, suscripcionActual } from "@/lib/push/cliente";
 
 // on = suscrito; off = puede activar; guardando = en curso;
 // bloqueado = permiso denegado; no-disp = sin soporte / iOS sin instalar / sin clave.
@@ -27,7 +27,7 @@ export function PushToggle() {
     // Permiso concedido: re-sincroniza la suscripción con el servidor en cada
     // visita (cura filas podadas y llaves VAPID desfasadas).
     let vivo = true;
-    sincronizarPush()
+    sincronizarPush("cliente")
       .then((on) => vivo && setEstado(on ? "on" : "off"))
       .catch(() => vivo && setEstado("off"));
     return () => {
@@ -38,7 +38,7 @@ export function PushToggle() {
   const activar = async () => {
     try {
       setEstado("guardando");
-      const r = await activarPush();
+      const r = await activarPush("cliente");
       setEstado(r === "granted" ? "on" : r === "denied" ? "bloqueado" : "off");
     } catch (e) {
       console.error("[push] fallo al activar:", e);
@@ -49,8 +49,7 @@ export function PushToggle() {
   const desactivar = async () => {
     try {
       setEstado("guardando");
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
+      const sub = await suscripcionActual("cliente");
       if (sub) {
         await borrarSuscripcion(sub.endpoint);
         await sub.unsubscribe();

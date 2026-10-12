@@ -15,11 +15,15 @@ const SW = `// Service Worker — Taper Barbershop PWA (generado; versión por b
 // Push: muestra notificaciones del sistema aunque la app esté cerrada.
 const CACHE = "taper-${VERSION}";
 const SHELL = ["/offline"];
+// Registro aparte del staff (ver lib/push/cliente.ts): no controla páginas,
+// solo recibe push. No precachea ni borra cachés: eso es del registro raíz.
+const SOLO_PUSH = self.registration.scope.endsWith("/push/staff/");
 
 self.addEventListener("install", (e) => {
   // SIN skipWaiting automático: el SW nuevo queda en "waiting" para que la app
   // muestre el aviso "Nueva versión disponible" y el usuario decida cuándo
   // aplicarlo (postMessage SKIP_WAITING → activate → recarga). Ver PWARegister.
+  if (SOLO_PUSH) return;
   e.waitUntil(
     caches
       .open(CACHE)
@@ -34,6 +38,7 @@ self.addEventListener("message", (e) => {
 });
 
 self.addEventListener("activate", (e) => {
+  if (SOLO_PUSH) return;
   e.waitUntil(
     caches
       .keys()
@@ -106,8 +111,9 @@ self.addEventListener("notificationclick", (e) => {
   const target = (e.notification.data && e.notification.data.url) || "/";
 
   // Preferir una ventana de la misma app (admin vs cliente): en Android/escritorio
-  // ambas PWAs comparten este SW. Enfocar primero y luego navegar; si navegar
-  // falla (ventana no controlada), abrir una nueva en la URL destino.
+  // ambas PWAs son del mismo origen. Enfocar primero y luego navegar. El SW de
+  // push del staff no controla ventanas (navigate falla): se le pide a la
+  // página que navegue ella (PWARegister escucha NAVIGATE).
   const esAdmin = target.startsWith("/admin");
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
@@ -117,7 +123,7 @@ self.addEventListener("notificationclick", (e) => {
       if (!c) return self.clients.openWindow(target);
       return c
         .focus()
-        .then((w) => w.navigate(target))
+        .then((w) => w.navigate(target).catch(() => w.postMessage({ type: "NAVIGATE", url: target })))
         .catch(() => self.clients.openWindow(target));
     }),
   );

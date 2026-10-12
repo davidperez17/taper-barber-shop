@@ -16,7 +16,7 @@ export function PushSync() {
       if (sessionStorage.getItem(SYNC_KEY)) return;
       sessionStorage.setItem(SYNC_KEY, "1");
     } catch {}
-    sincronizarPush().catch(() => {});
+    sincronizarPush("cliente").catch(() => {});
   }, []);
   return null;
 }

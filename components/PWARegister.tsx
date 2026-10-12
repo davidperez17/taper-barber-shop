@@ -22,6 +22,13 @@ export function PWARegister() {
     const hadController = !!sw.controller;
     let refreshing = false;
 
+    // El SW de push del staff no controla la ventana: al tocar una
+    // notificación pide navegar por mensaje (ver notificationclick en sw.js).
+    sw.addEventListener("message", (e) => {
+      const url = e.data?.type === "NAVIGATE" && typeof e.data.url === "string" ? e.data.url : null;
+      if (url && /^\/(?!\/)/.test(url)) window.location.assign(url); // solo rutas propias
+    });
+
     sw.addEventListener("controllerchange", () => {
       if (refreshing || !hadController) return; // primera instalación: no recargar
       refreshing = true;

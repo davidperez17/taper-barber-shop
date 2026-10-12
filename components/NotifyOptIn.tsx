@@ -34,7 +34,7 @@ export function NotifyOptIn() {
     // suscripción (se perdió o nunca se creó), volver a ofrecer o el banner
     // desaparecería para siempre sin forma de reactivar.
     let vivo = true;
-    sincronizarPush()
+    sincronizarPush("staff")
       .then((on) => {
         if (vivo && !on) setEstado("ofrecer");
       })
@@ -60,7 +60,7 @@ export function NotifyOptIn() {
   const activar = async () => {
     try {
       setEstado("guardando");
-      const r = await activarPush();
+      const r = await activarPush("staff");
       if (r === "granted") setEstado("listo");
       else setEstado(r === "error" ? "ofrecer" : "oculto");
     } catch (e) {
@@ -70,7 +70,7 @@ export function NotifyOptIn() {
   };
 
   const probar = async () => {
-    const { enviadas } = await enviarPrueba();
+    const { enviadas } = await enviarPrueba("staff");
     setPrueba(enviadas > 0 ? "Prueba enviada" : "No se pudo enviar");
   };
 

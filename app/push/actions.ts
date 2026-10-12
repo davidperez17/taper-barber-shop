@@ -13,12 +13,21 @@ export interface SubJSON {
   keys?: { p256dh?: string; auth?: string };
 }
 
-type Owner = { type: "cliente" | "staff"; id: string; sucursalId: string | null };
+type Owner = { type: AppPush; id: string; sucursalId: string | null };
 
-/** Identifica al dueño de la sesión actual (cliente por cookie, o staff). */
-async function ownerActual(): Promise<Owner | null> {
-  const staff = await getStaff();
-  if (staff) return { type: "staff", id: staff.id, sucursalId: staff.sucursal_id };
+/** App desde la que se llama: cada una tiene su propia suscripción. */
+export type AppPush = "cliente" | "staff";
+
+/**
+ * Dueño de la sesión para esa app. Explícito porque un mismo navegador puede
+ * tener a la vez sesión de staff y cookie de cliente: inferirlo (staff
+ * primero) guardaba como staff la suscripción de la app cliente.
+ */
+async function ownerActual(app: AppPush): Promise<Owner | null> {
+  if (app === "staff") {
+    const staff = await getStaff();
+    return staff ? { type: "staff", id: staff.id, sucursalId: staff.sucursal_id } : null;
+  }
 
   const token = await getQrToken();
   if (!token) return null;
@@ -32,8 +41,8 @@ async function ownerActual(): Promise<Owner | null> {
 }
 
 /** Guarda (o refresca) la suscripción push del usuario actual. */
-export async function guardarSuscripcion(sub: SubJSON): Promise<{ ok: boolean }> {
-  const owner = await ownerActual();
+export async function guardarSuscripcion(sub: SubJSON, app: AppPush): Promise<{ ok: boolean }> {
+  const owner = await ownerActual(app);
   if (!owner) return { ok: false };
   if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) return { ok: false };
 
@@ -65,9 +74,25 @@ export async function borrarSuscripcion(endpoint: string): Promise<{ ok: boolean
   return { ok: true };
 }
 
+/**
+ * Quita la fila staff de un endpoint del staff actual (la suscripción raíz que
+ * usaba antes de tener registro propio). Si esa fila ya es de un cliente, no
+ * la toca.
+ */
+export async function soltarSuscripcionStaff(endpoint: string): Promise<void> {
+  const staff = await getStaff();
+  if (!staff || !endpoint) return;
+  await createAdmin()
+    .from("push_subscriptions")
+    .delete()
+    .eq("endpoint", endpoint)
+    .eq("owner_type", "staff")
+    .eq("owner_id", staff.id);
+}
+
 /** Envía una notificación de prueba a los dispositivos del usuario actual. */
-export async function enviarPrueba(): Promise<{ ok: boolean; enviadas: number }> {
-  const owner = await ownerActual();
+export async function enviarPrueba(app: AppPush): Promise<{ ok: boolean; enviadas: number }> {
+  const owner = await ownerActual(app);
   if (!owner) return { ok: false, enviadas: 0 };
 
   const subs = owner.type === "staff" ? await subsDeStaff(owner.id) : await subsDeCliente(owner.id);
