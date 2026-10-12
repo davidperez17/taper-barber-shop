@@ -10,6 +10,10 @@ export const dynamic = "force-static";
 // flapping de versión entre instancias).
 const VERSION = (process.env.VERCEL_GIT_COMMIT_SHA || String(Date.now())).slice(0, 12);
 
+// Llave pública VAPID (se fija en build) para re-suscribir desde el SW en
+// `pushsubscriptionchange`. Misma limpieza de comillas que lib/push/cliente.ts.
+const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
+
 const SW = `// Service Worker — Taper Barbershop PWA (generado; versión por build)
 // Shell offline + cache-first para estáticos. No intercepta Supabase.
 // Push: muestra notificaciones del sistema aunque la app esté cerrada.
@@ -103,6 +107,41 @@ self.addEventListener("push", (e) => {
     data: { url: data.url || "/" },
   };
   e.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ── Suscripción rotada/expirada por el navegador ───────────────
+// Sin esto la fila vieja da 404/410, se poda, y el usuario deja de recibir
+// hasta volver a abrir la app (PushSync/NotifyOptIn re-sincronizan). Aquí se
+// re-suscribe y se avisa al server, que cambia endpoint/llaves conservando el
+// dueño. Si el navegador no da la suscripción vieja (algunos no), no hay cómo
+// ubicar la fila: queda para la re-sincronización al abrir la app.
+const VAPID = ${JSON.stringify(VAPID)};
+
+function llaveVapid() {
+  const b64 = (VAPID + "=".repeat((4 - (VAPID.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+}
+
+self.addEventListener("pushsubscriptionchange", (e) => {
+  const vieja = e.oldSubscription ? e.oldSubscription.toJSON() : null;
+  e.waitUntil(
+    Promise.resolve(
+      e.newSubscription ||
+        self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: llaveVapid() }),
+    )
+      .then((nueva) => {
+        if (!vieja || !vieja.keys) return;
+        return fetch("/api/push/rotar", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            vieja: { endpoint: vieja.endpoint, auth: vieja.keys.auth },
+            nueva: nueva.toJSON(),
+          }),
+        });
+      })
+      .catch(() => {}),
+  );
 });
 
 // ── Click: enfoca una pestaña existente o abre la URL destino ───
