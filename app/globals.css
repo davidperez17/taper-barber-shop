@@ -39,6 +39,11 @@
   --danger:      #ef4444;
   --focus:       #f5c800;
 
+  /* Promo Halloween 2026 (lib/promo.ts) — borrar tras el 31-oct */
+  --halloween-orange: #ff7a1a;
+  --halloween-purple: #7c3aed;
+  --halloween-flame:  #ffd23f;
+
   /* VIP tiers */
   /* Tonos joya profundos: el texto claro/oscuro pasa AA 4.5:1 sobre todo el
      gradiente (antes el extremo claro washeaba el texto). */
@@ -267,6 +272,78 @@ select:focus-visible {
   to   { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
+/* Promo Halloween 2026 (HalloweenPromo.tsx) — borrar tras el 31-oct */
+@keyframes taperBatFly {
+  0%   { transform: translate(-25vw, 0); }
+  25%  { transform: translate(15vw, -24px); }
+  50%  { transform: translate(50vw, 12px); }
+  75%  { transform: translate(85vw, -18px); }
+  100% { transform: translate(125vw, 0); }
+}
+@keyframes taperBatFlap {
+  from { transform: scaleY(1); }
+  to   { transform: scaleY(0.35); }
+}
+@keyframes taperFlicker {
+  0%, 100% { opacity: 1; }
+  12%      { opacity: 0.72; }
+  20%      { opacity: 0.95; }
+  48%      { opacity: 0.8; }
+  56%      { opacity: 1; }
+  80%      { opacity: 0.68; }
+}
+@keyframes taperFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+@keyframes taperGlow {
+  from { opacity: 0.55; transform: scale(0.94); }
+  to   { opacity: 1;    transform: scale(1.06); }
+}
+/* Calabaza "mascarilla de carbón" (ciclo 6 s): se unta, se despega, brilla */
+@keyframes taperMaskWipe {
+  0%, 8%    { transform: scaleX(0); }
+  26%, 100% { transform: scaleX(1); }
+}
+@keyframes taperMaskPeel {
+  0%, 54%   { transform: none; opacity: 1; }
+  70%, 100% { transform: rotate(-32deg) translate(-40px, 150px); opacity: 0; }
+}
+@keyframes taperSparkle {
+  0%, 64%   { opacity: 0; transform: scale(0) rotate(0deg); }
+  72%       { opacity: 1; transform: scale(1.25) rotate(45deg); }
+  86%, 100% { opacity: 0; transform: scale(0.6) rotate(90deg); }
+}
+@keyframes taperShine {
+  0%, 60% { opacity: 0.7; transform: scale(1); }
+  74%     { opacity: 1;   transform: scale(1.12); }
+  100%    { opacity: 0.7; transform: scale(1); }
+}
+
+.hw-bat {
+  animation: taperBatFly var(--dur, 7s) linear var(--delay, 0s) infinite both;
+}
+.hw-wing {
+  transform-box: fill-box;
+  transform-origin: 50% 30%;
+  animation: taperBatFlap 160ms ease-in-out infinite alternate;
+}
+.hw-float   { animation: taperFloat 3.2s ease-in-out 400ms infinite; }
+.hw-flicker { animation: taperFlicker 2.6s linear infinite; }
+.hw-glow    { animation: taperGlow 3.4s ease-in-out infinite alternate; }
+.hw-pk * { transform-box: fill-box; transform-origin: center; }
+.hw-wipe { transform-origin: left center; animation: taperMaskWipe 6s ease-in-out infinite; }
+.hw-peel {
+  transform-origin: 100% 0%;
+  animation: taperMaskPeel 6s cubic-bezier(0.5, 0, 0.75, 0) infinite;
+}
+.hw-sparkle {
+  opacity: 0;
+  animation: taperSparkle 6s ease-out infinite;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+.hw-shine { animation: taperShine 6s ease-in-out infinite; }
+
 /* Sello de lealtad — pop escalonado al montar (delay via --i) */
 .stamp-pop {
   animation: taperStamp 320ms var(--ease-spring) both;
@@ -312,5 +389,17 @@ select:focus-visible {
   /* El stagger usa animation-delay; sin esto los sellos quedarían ocultos. */
   .stamp-pop {
     animation: none !important;
+  }
+  /* Halloween: estático (los murciélagos se ocultan con motion-reduce:hidden). */
+  .hw-float,
+  .hw-flicker,
+  .hw-glow,
+  .hw-shine {
+    animation: none !important;
+  }
+  /* Sin movimiento: la calabaza queda encendida, sin mascarilla ni destellos. */
+  .hw-mask,
+  .hw-sparkle {
+    display: none;
   }
 }

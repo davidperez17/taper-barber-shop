@@ -12,6 +12,8 @@ import { NotifyBell } from "@/components/cliente/NotifyBell";
 import { ActualizarApp } from "@/components/ActualizarApp";
 import { VentaLive } from "@/components/cliente/VentaLive";
 import { getBandeja } from "@/lib/queries/notificaciones";
+import { faseHalloween } from "@/lib/promo";
+import { HalloweenBanner } from "@/components/cliente/HalloweenPromo";
 
 export default async function TarjetaPage() {
   const dash = await requireDashboard();
@@ -36,6 +38,7 @@ export default async function TarjetaPage() {
   });
   const cortesGlobal = dash.loyalty_sucursales.reduce((sum, s) => sum + s.cortes_total, 0);
   const algunaRecompensa = cards.some((c) => c.recompensaDisponible);
+  const halloween = faseHalloween();
 
   // Sin width/height fijos en el <svg> → escala al contenedor (tile responsive en la card).
   const qrSvg = (
@@ -82,6 +85,8 @@ export default async function TarjetaPage() {
           Canjea tu corte gratis {CANJE_HORARIO}.
         </p>
       )}
+
+      {halloween && <HalloweenBanner fase={halloween} />}
 
       {/* Quick actions */}
       <div className="mt-6">

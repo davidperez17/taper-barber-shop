@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdmin } from "@/lib/supabase/admin";
-import { pushRecordatorioCita, pushReactivacion } from "@/lib/push/eventos";
+import { pushAvisosHalloween, pushRecordatorioCita, pushReactivacion } from "@/lib/push/eventos";
 
 // web-push necesita runtime Node (no Edge). Nunca cachear.
 export const runtime = "nodejs";
@@ -71,7 +71,11 @@ export async function GET(req: NextRequest) {
   }
 
   const admin = createAdmin();
-  const [recordatoriosEnviados, reactivados] = await Promise.all([recordatorios(admin), reactivacion(admin)]);
+  const [recordatoriosEnviados, reactivados, halloween] = await Promise.all([
+    recordatorios(admin),
+    reactivacion(admin),
+    pushAvisosHalloween(),
+  ]);
 
-  return NextResponse.json({ ok: true, recordatoriosEnviados, reactivados });
+  return NextResponse.json({ ok: true, recordatoriosEnviados, reactivados, halloween });
 }
