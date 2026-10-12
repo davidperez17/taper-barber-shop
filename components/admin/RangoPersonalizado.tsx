@@ -23,8 +23,14 @@ export function RangoPersonalizado({
   const [h, setH] = useState(hasta);
   const box = useRef<HTMLDivElement>(null);
 
-  // Refleja el rango vigente si cambia desde fuera (al navegar).
-  useEffect(() => { setD(desde); setH(hasta); }, [desde, hasta]);
+  // Refleja el rango vigente si cambia desde fuera (al navegar). Se ajusta en
+  // render, no en un effect, para evitar el render en cascada.
+  const [prev, setPrev] = useState({ desde, hasta });
+  if (prev.desde !== desde || prev.hasta !== hasta) {
+    setPrev({ desde, hasta });
+    setD(desde);
+    setH(hasta);
+  }
 
   // Cierra al hacer clic afuera o con Escape.
   useEffect(() => {

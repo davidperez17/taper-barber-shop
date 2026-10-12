@@ -67,7 +67,7 @@ export async function enviarPush(
         // los logs de Vercel (antes se tragaba en silencio).
         fallidas++;
         console.error(
-          `[push] fallo ${code ?? "red"} → ${new URL(s.endpoint).host}:`,
+          `[push] fallo ${code ?? "red"} → ${s.endpoint.split("/")[2]}:`,
           body || (err as Error).message,
         );
       }

@@ -6,13 +6,13 @@ import { guardarSuscripcion, type SubJSON } from "@/app/push/actions";
 // (cliente) y NotifyOptIn (staff).
 
 // Defensivo: si en Vercel se pegó la clave con comillas, quítalas.
-export const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
+const VAPID = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").replace(/^["']|["']$/g, "").trim();
 
-export const isStandalone = () =>
+const isStandalone = () =>
   window.matchMedia("(display-mode: standalone)").matches ||
   (window.navigator as unknown as { standalone?: boolean }).standalone === true;
 
-export const isIOS = () =>
+const isIOS = () =>
   /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
   !/crios|fxios/i.test(window.navigator.userAgent);
 
