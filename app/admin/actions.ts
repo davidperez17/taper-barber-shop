@@ -773,6 +773,11 @@ function citaDeMiSucursal(
   return q;
 }
 
+/** 23P01 = el barbero ya tiene otra cita a esa hora (0042): el mensaje viene listo. */
+function citaError(error: { code?: string; message: string }): string {
+  return error.code === "23P01" ? error.message : catalogoError(error.message);
+}
+
 export async function saveCita(input: {
   id?: string;
   clienteId: string | null;
@@ -827,7 +832,7 @@ export async function saveCita(input: {
       .from("citas")
       .insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) }));
   }
-  if (error) return { ok: false, error: catalogoError(error.message) };
+  if (error) return { ok: false, error: citaError(error) };
 
   // Aviso al cliente registrado cuando se agenda una cita nueva.
   if (!input.id && input.clienteId) await pushCitaCliente(input.clienteId, "creada", inicia.toISOString());
@@ -843,7 +848,7 @@ export async function updateEstadoCita(
   const sb = await createClient();
   const staff = await getStaff();
   const { data: tocadas, error } = await citaDeMiSucursal(sb, staff, id, { estado }).select("id");
-  if (error) return { ok: false, error: catalogoError(error.message) };
+  if (error) return { ok: false, error: citaError(error) };
   if (!tocadas?.length) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
 
   // Aviso al cliente registrado cuando su cita se confirma o cancela.

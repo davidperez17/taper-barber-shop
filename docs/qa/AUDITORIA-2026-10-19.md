@@ -146,7 +146,7 @@ Todo el código nuevo tiene fallback si la migración aún no está aplicada (PG
 - Rate limit por IP (Upstash/Vercel) en login/registro: el bloqueo escalonado cubre fuerza bruta por cuenta, no enumeración masiva.
 - CSP: no se agregó (scripts inline de Next y de `/offline`).
 - ~~`resetPasswordStaff` no revoca sesiones abiertas~~ → rama `seguridad`, migración `0041_sesiones_staff.sql`: cambiar contraseña o desactivar borra sus sesiones de `auth.sessions` y pone `staff.sesiones_desde`; `is_active_staff`/`is_owner_admin`/`is_owner` y `getStaff` rechazan sesiones iniciadas antes del corte. En la cuenta propia conserva la sesión actual.
-- Agenda sin validación de traslape por barbero.
+- ~~Agenda sin validación de traslape por barbero~~ → rama `seguridad`, migración `0042_agenda_sin_traslapes.sql`: trigger que rechaza citas encimadas del mismo barbero (no canceladas, todas las sucursales) con mensaje listo para mostrar.
 - `safe-area-inset` en iPhone: verificar en dispositivo.
 - Permiso de giroscopio iOS al primer toque del QR.
 - Archivos viejos en git (`app-anterior/`, `qr-taperbarbershop.png`, `plan.md`): decidir si se borran.
