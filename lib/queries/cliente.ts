@@ -17,13 +17,13 @@ export async function getClienteDashboard(
 
 /**
  * Carga el dashboard del cliente con sesión. Redirige si no hay sesión
- * o el token ya no es válido (no se puede limpiar la cookie en render,
- * así que mandamos a /ingresar para evitar el loop con onboarding).
+ * o el token ya no es válido (no se puede limpiar la cookie en render:
+ * /salir la borra y lleva a /ingresar, sin loop con onboarding).
  */
 export async function requireDashboard(): Promise<ClienteDashboard> {
   const token = await getQrToken();
   if (!token) redirect("/");
   const dash = await getClienteDashboard(token);
-  if (!dash) redirect("/ingresar");
+  if (!dash) redirect("/salir");
   return dash;
 }

@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { setQrToken, clearQrToken } from "@/lib/session";
+import { createAdmin } from "@/lib/supabase/admin";
+import { setQrToken, clearQrToken, getQrToken } from "@/lib/session";
 import { pushNuevoClienteStaff } from "@/lib/push/eventos";
 import type { ClienteInfo } from "@/lib/types";
 
@@ -113,7 +114,21 @@ export async function crearPin(
   redirect("/tarjeta");
 }
 
-export async function logout(): Promise<void> {
+/** endpoint: suscripción push de este teléfono, para que deje de ser de este cliente. */
+export async function logout(endpoint?: string | null): Promise<void> {
+  const token = await getQrToken();
+  if (endpoint && token) {
+    const admin = createAdmin();
+    const { data } = await admin.from("clientes").select("id").eq("qr_token", token).maybeSingle();
+    if (data) {
+      await admin
+        .from("push_subscriptions")
+        .delete()
+        .eq("endpoint", endpoint)
+        .eq("owner_type", "cliente")
+        .eq("owner_id", data.id);
+    }
+  }
   await clearQrToken();
   redirect("/");
 }

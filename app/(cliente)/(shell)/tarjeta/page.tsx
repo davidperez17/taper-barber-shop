@@ -11,6 +11,7 @@ import { IconStats } from "@/components/icons";
 import { NotifyBell } from "@/components/cliente/NotifyBell";
 import { ActualizarApp } from "@/components/ActualizarApp";
 import { VentaLive } from "@/components/cliente/VentaLive";
+import { QrOfflineCache } from "@/components/cliente/QrOfflineCache";
 import { getBandeja } from "@/lib/queries/notificaciones";
 import { faseHalloween } from "@/lib/promo";
 import { HalloweenBanner } from "@/components/cliente/HalloweenPromo";
@@ -55,6 +56,7 @@ export default async function TarjetaPage() {
   return (
     <div className="px-5 pb-6 pt-14">
       <VentaLive clienteId={dash.cliente.id} />
+      <QrOfflineCache nombre={dash.cliente.nombre} memberId={memberId(dash.cliente.numero)} qrSvg={qrSvg} />
       {loyalty.recompensaDisponible && <RewardCelebration nombre={dash.cliente.nombre} />}
       <TierUpCelebration tier={loyalty.tier} tierLabel={TIER_LABEL[loyalty.tier]} />
 

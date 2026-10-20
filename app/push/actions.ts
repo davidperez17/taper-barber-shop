@@ -40,11 +40,30 @@ async function ownerActual(app: AppPush): Promise<Owner | null> {
   return { type: "cliente", id: data.id as string, sucursalId: null };
 }
 
+// Solo push services reales: el servidor hace POST a cada endpoint guardado en
+// cada difusión/cron, así que una URL arbitraria era un SSRF a ciegas.
+const PUSH_HOSTS = [
+  /^fcm\.googleapis\.com$/,
+  /^android\.googleapis\.com$/,
+  /(^|\.)push\.apple\.com$/,
+  /(^|\.)notify\.windows\.com$/,
+  /(^|\.)push\.services\.mozilla\.com$/,
+];
+function endpointPushValido(endpoint: string): boolean {
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === "https:" && PUSH_HOSTS.some((re) => re.test(u.hostname));
+  } catch {
+    return false;
+  }
+}
+
 /** Guarda (o refresca) la suscripción push del usuario actual. */
 export async function guardarSuscripcion(sub: SubJSON, app: AppPush): Promise<{ ok: boolean }> {
   const owner = await ownerActual(app);
   if (!owner) return { ok: false };
   if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) return { ok: false };
+  if (!endpointPushValido(sub.endpoint)) return { ok: false };
 
   const ua = (await headers()).get("user-agent") ?? null;
 
@@ -67,10 +86,20 @@ export async function guardarSuscripcion(sub: SubJSON, app: AppPush): Promise<{ 
   return { ok: !error };
 }
 
-/** Elimina una suscripción (al revocar permiso o cerrar sesión). */
-export async function borrarSuscripcion(endpoint: string): Promise<{ ok: boolean }> {
+/**
+ * Elimina la suscripción de un endpoint, solo si es del usuario actual de esa
+ * app (antes bastaba conocer el endpoint para borrar la de cualquiera).
+ */
+export async function borrarSuscripcion(endpoint: string, app: AppPush = "cliente"): Promise<{ ok: boolean }> {
   if (!endpoint) return { ok: false };
-  await createAdmin().from("push_subscriptions").delete().eq("endpoint", endpoint);
+  const owner = await ownerActual(app);
+  if (!owner) return { ok: false };
+  await createAdmin()
+    .from("push_subscriptions")
+    .delete()
+    .eq("endpoint", endpoint)
+    .eq("owner_type", owner.type)
+    .eq("owner_id", owner.id);
   return { ok: true };
 }
 
