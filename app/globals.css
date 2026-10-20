@@ -357,6 +357,17 @@ select:focus-visible {
   height: 100%;
 }
 
+/* Barra de tiempo del QR rotativo (QrTile): se vacía hasta el próximo cambio. */
+.qr-timer {
+  width: 100%;
+  transform-origin: left;
+  animation: taperQrTimer linear forwards;
+}
+@keyframes taperQrTimer {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
 .animate-fade-up     { animation: taperFadeUp 180ms ease-out both; }
 .animate-card-appear { animation: taperCardAppear 400ms var(--ease-spring) both; }
 
@@ -388,6 +399,10 @@ select:focus-visible {
   }
   /* El stagger usa animation-delay; sin esto los sellos quedarían ocultos. */
   .stamp-pop {
+    animation: none !important;
+  }
+  /* Sin movimiento: la barra del QR queda llena (el QR igual se renueva). */
+  .qr-timer {
     animation: none !important;
   }
   /* Halloween: estático (los murciélagos se ocultan con motion-reduce:hidden). */

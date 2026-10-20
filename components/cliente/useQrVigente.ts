@@ -14,14 +14,22 @@ const REINTENTO_MS = 5_000;
  * 30 s, pausa con la app en segundo plano y se pone al día al volver.
  * `vencido` = sin red el tiempo suficiente para que el código ya no sirva.
  */
-export function useQrVigente(inicial: QrVigente): { svg: string; vencido: boolean } {
+export function useQrVigente(inicial: QrVigente): {
+  svg: string;
+  vencido: boolean;
+  venceEn: number | null;
+  /** Sube con cada QR nuevo (reinicia la barra de tiempo). */
+  ciclo: number;
+} {
   const [qr, setQr] = useState(inicial);
+  const [ciclo, setCiclo] = useState(0);
   const [vencido, setVencido] = useState(false);
   // router.refresh() (venta en vivo, auto-refresh) trae un QR nuevo del servidor.
   const [previo, setPrevio] = useState(inicial);
   if (previo !== inicial) {
     setPrevio(inicial);
     setQr(inicial);
+    setCiclo((c) => c + 1);
     setVencido(false);
   }
 
@@ -49,6 +57,7 @@ export function useQrVigente(inicial: QrVigente): { svg: string; vencido: boolea
       if (siguiente) {
         obtenido = Date.now();
         setQr(siguiente);
+        setCiclo((c) => c + 1);
         setVencido(false);
         timer = setTimeout(pedir, ((siguiente.venceEn ?? 30) + 0.5) * 1000);
         return;
@@ -75,5 +84,5 @@ export function useQrVigente(inicial: QrVigente): { svg: string; vencido: boolea
     };
   }, [inicial]);
 
-  return { svg: qr.svg, vencido };
+  return { svg: qr.svg, vencido, venceEn: qr.venceEn, ciclo };
 }

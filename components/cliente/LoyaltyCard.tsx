@@ -7,6 +7,7 @@ import { TIER_SURFACE } from "@/lib/loyalty";
 import { IconFlip, IconScissors } from "@/components/icons";
 import { useCardTilt } from "./useCardTilt";
 import { Isotipo } from "@/components/Isotipo";
+import { QrTile } from "./QrTile";
 
 const TIER_BADGE: Record<Tier, { bg: string; ink: string; border: string; star: boolean }> = {
   silver: { bg: "rgba(113,113,122,0.5)", ink: "#e4e4e7", border: "rgba(161,161,170,0.55)", star: false },
@@ -24,10 +25,8 @@ interface Props {
   objetivo: number;
   motiv: string;
   recompensaDisponible: boolean;
-  /** SVG del QR ya renderizado en el servidor. */
-  qrSvg: string;
-  /** Sin red el tiempo suficiente para que el código rotativo ya no sirva. */
-  qrVencido?: boolean;
+  /** QR vigente (rotativo, ver useQrVigente). */
+  qr: { svg: string; vencido: boolean; venceEn: number | null; ciclo: number };
 }
 
 export function LoyaltyCard({
@@ -39,9 +38,9 @@ export function LoyaltyCard({
   objetivo,
   motiv,
   recompensaDisponible,
-  qrSvg,
-  qrVencido = false,
+  qr,
 }: Props) {
+  const qrVencido = qr.vencido;
   const [flipped, setFlipped] = useState(false);
   const [flippedOnce, setFlippedOnce] = useState(false);
   const { tiltRef, glareRef, requestGyro, setFlipped: setTiltFlipped } = useCardTilt(8);
@@ -263,12 +262,7 @@ export function LoyaltyCard({
 
             {/* QR — héroe del reverso: escala con la ALTURA de la card (66%), sin cap de ancho.
                 El aro dorado lo define sobre el fondo oscuro; padding chico porque el svg ya trae quiet zone. */}
-            <div
-              className="qr-tile"
-              style={{ boxSizing: "border-box", background: "#fff", borderRadius: 14, padding: 8, height: "72%", aspectRatio: "1", boxShadow: "0 0 0 1.5px rgba(245,200,0,0.5),0 10px 26px rgba(0,0,0,0.5)", opacity: qrVencido ? 0.15 : 1 }}
-              // QR generado en servidor (alto contraste, negro sobre blanco).
-              dangerouslySetInnerHTML={{ __html: qrSvg }}
-            />
+            <QrTile svg={qr.svg} vencido={qr.vencido} venceEn={qr.venceEn} ciclo={qr.ciclo} height="72%" />
 
             <div className="text-center">
               <p className="font-display" style={{ fontWeight: 700, fontSize: 18, lineHeight: 1, margin: 0 }}>{name}</p>
