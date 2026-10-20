@@ -1,5 +1,7 @@
 import { Isotipo } from "@/components/Isotipo";
+import { headers } from "next/headers";
 import { QR_OFFLINE_KEY } from "@/lib/qr-offline";
+import { NONCE_HEADER } from "@/lib/csp";
 
 // El SW sirve esta página (precacheada) cuando una navegación falla sin red.
 // Sus chunks JS pueden no estar en caché, así que todo lo dinámico va en un
@@ -19,7 +21,18 @@ const SCRIPT = `(function(){
   }catch(e){}
 })();`;
 
-export default function OfflinePage() {
+const BLOQUE_NUMERO = `<div id="offline-qr" hidden>
+  <div class="rounded-2xl border border-line bg-elevated p-5">
+    <p class="text-xs text-muted">Tu número de cliente</p>
+    <p id="offline-qr-id" class="mt-1 font-display text-4xl font-bold tabular-nums text-accent"></p>
+    <p id="offline-qr-nombre" class="mt-2 font-display text-base font-semibold text-ink"></p>
+  </div>
+  <p class="mt-2 text-xs text-muted">Sin internet tu QR no se actualiza. Dile este número al cajero.</p>
+</div>`;
+
+export default async function OfflinePage() {
+  // El script inline necesita el nonce de la CSP (lib/csp.ts).
+  const nonce = (await headers()).get(NONCE_HEADER) ?? undefined;
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-8 text-center">
       <div className="mb-5 flex size-16 items-center justify-center rounded-full border border-line bg-elevated">
@@ -30,14 +43,9 @@ export default function OfflinePage() {
         No hay internet ahora mismo. Tu tarjeta y progreso vuelven en cuanto recuperes la red.
       </p>
 
-      <div id="offline-qr" hidden className="mt-6 w-full max-w-[260px]">
-        <div className="rounded-2xl border border-line bg-elevated p-5">
-          <p className="text-xs text-muted">Tu número de cliente</p>
-          <p id="offline-qr-id" className="mt-1 font-display text-4xl font-bold tabular-nums text-accent" />
-          <p id="offline-qr-nombre" className="mt-2 font-display text-base font-semibold text-ink" />
-        </div>
-        <p className="mt-2 text-xs text-muted">Sin internet tu QR no se actualiza. Dile este número al cajero.</p>
-      </div>
+      {/* Fuera del árbol de React: el script lo llena antes de hidratar y, si
+          fuera JSX, la hidratación lo vaciaba (error #418, texto distinto). */}
+      <div className="mt-6 w-full max-w-[260px]" dangerouslySetInnerHTML={{ __html: BLOQUE_NUMERO }} />
 
       <button
         id="offline-retry"
@@ -46,7 +54,7 @@ export default function OfflinePage() {
       >
         Reintentar
       </button>
-      <script dangerouslySetInnerHTML={{ __html: SCRIPT }} />
+      <script nonce={nonce} dangerouslySetInnerHTML={{ __html: SCRIPT }} />
     </main>
   );
 }

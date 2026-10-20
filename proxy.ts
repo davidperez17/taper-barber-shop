@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 import { aplicarSesionRenovada, renovarSesionCliente } from "@/lib/sesion-cliente";
+import { cabeceraCsp, NONCE_HEADER, nuevoNonce, politicaCsp } from "@/lib/csp";
 
 // URL de admin oculta: solo se accede visitando el slug secreto (env), que
 // setea una cookie de "puerta". Sin ella, /admin responde 404. Es oscuridad;
@@ -70,11 +71,18 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // CSP con nonce (lib/csp.ts): va en la petición (Next lo lee para poner
+  // el nonce en sus scripts; las páginas lo leen de x-nonce) y en la respuesta.
+  const nonce = nuevoNonce();
+  const csp = politicaCsp(nonce);
+  const extra = new Headers({ [NONCE_HEADER]: nonce, "Content-Security-Policy": csp });
+
   // Antes de updateSession: si rota el token, la página de este request ya
-  // lee el nuevo (NextResponse.next({ request }) reenvía las cookies).
+  // lee el nuevo (NextResponse.next reenvía las cookies de la petición).
   const sesionNueva = await renovarSesionCliente(request);
-  const response = await updateSession(request);
+  const response = await updateSession(request, extra);
   if (sesionNueva) aplicarSesionRenovada(response, sesionNueva);
+  response.headers.set(cabeceraCsp(), csp);
   return response;
 }
 
