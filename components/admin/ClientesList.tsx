@@ -6,6 +6,7 @@ import { computeLoyalty, TIER_LABEL, TIER_DOT } from "@/lib/loyalty";
 import { fmtDiaMes } from "@/lib/format";
 import type { ClienteRow } from "@/lib/types";
 import { IconSearch } from "@/components/icons";
+import { numeroCliente } from "@/components/admin/filtroClientes";
 
 type Orden = "nombre" | "visitas" | "reciente" | "inactivo";
 
@@ -16,9 +17,14 @@ export function ClientesList({ clientes }: { clientes: ClienteRow[] }) {
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
     const digits = term.replace(/\D/g, "");
+    const num = numeroCliente(term);
     let r = clientes.filter((c) => {
       if (!term) return true;
-      return c.nombre.toLowerCase().includes(term) || (digits.length >= 3 && c.telefono.includes(digits));
+      return (
+        c.nombre.toLowerCase().includes(term) ||
+        (digits.length >= 3 && c.telefono.includes(digits)) ||
+        (num !== null && c.numero === num)
+      );
     });
     r = [...r].sort((a, b) => {
       switch (orden) {
@@ -44,7 +50,7 @@ export function ClientesList({ clientes }: { clientes: ClienteRow[] }) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nombre o teléfono…"
+            placeholder="Buscar por nombre, teléfono o #número…"
             aria-label="Buscar cliente"
             className="min-h-[48px] w-full bg-transparent text-base text-ink outline-none placeholder:text-muted"
           />

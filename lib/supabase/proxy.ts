@@ -5,8 +5,16 @@ import { NextResponse, type NextRequest } from "next/server";
  * Refresca la sesión de Supabase en cada request y protege rutas /admin.
  * El cliente (PWA) no usa sesión de auth; su identidad es el QR.
  */
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+export async function updateSession(request: NextRequest, extraHeaders?: Headers) {
+  // Reenvía la petición con sus cookies (ya actualizadas) + headers extra
+  // (CSP/nonce, que Next y las páginas leen de la petición).
+  const seguir = () => {
+    if (!extraHeaders) return NextResponse.next({ request });
+    const headers = new Headers(request.headers);
+    extraHeaders.forEach((v, k) => headers.set(k, v));
+    return NextResponse.next({ request: { headers } });
+  };
+  let response = seguir();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +28,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          response = NextResponse.next({ request });
+          response = seguir();
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );

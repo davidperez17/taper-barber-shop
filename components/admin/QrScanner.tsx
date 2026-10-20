@@ -37,12 +37,27 @@ export function QrScanner() {
     let cancelado = false;
 
     // true = cliente encontrado (navega); false = seguir escaneando.
-    async function resolverToken(token: string): Promise<boolean> {
+    // Desde 0040 el QR de la tarjeta es un código rotativo (TP1.…) que vence
+    // en ~2.5 min; los QRs viejos (token de sesión) ya no se aceptan.
+    async function resolverToken(codigo: string): Promise<boolean> {
       setEstado("buscando");
       let cliente: { id: string } | undefined;
+      let aviso = "QR no reconocido. Intenta de nuevo o busca al cliente.";
       try {
-        const { data } = await sb.current.rpc("get_cliente_by_qr", { p_qr_token: token });
-        cliente = (data as { cliente?: { id: string } } | null)?.cliente;
+        const { data, error } = await sb.current.rpc("get_cliente_by_codigo", { p_codigo: codigo });
+        if (error?.code === "PGRST202") {
+          // Base sin 0040: el QR todavía es el token.
+          const viejo = await sb.current.rpc("get_cliente_by_qr", { p_qr_token: codigo });
+          cliente = (viejo.data as { cliente?: { id: string } } | null)?.cliente;
+        } else {
+          const r = data as { cliente?: { id: string }; error?: string } | null;
+          cliente = r?.cliente;
+          if (r?.error === "vencido") {
+            aviso = "Código vencido. Pide al cliente que abra su tarjeta otra vez.";
+          } else if (r?.error === "formato") {
+            aviso = "Ese QR ya no sirve. Pide al cliente que abra su tarjeta en la app, o búscalo por nombre o número.";
+          }
+        }
       } catch {
         /* red caída: se trata como no reconocido */
       }
@@ -51,7 +66,7 @@ export function QrScanner() {
         router.push(`/admin/venta/${cliente.id}`);
         return true;
       }
-      setMensaje("QR no reconocido. Intenta de nuevo o busca al cliente.");
+      setMensaje(aviso);
       setEstado("escaneando");
       return false;
     }

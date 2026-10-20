@@ -67,7 +67,7 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
     setQrMsg(null);
     startQr(async () => {
       const r = await regenerarQrCliente(ficha.cliente.id);
-      setQrMsg(r.ok ? "QR regenerado. El anterior ya no sirve; el cliente ve el nuevo al reingresar." : r.error ?? "Error");
+      setQrMsg(r.ok ? "Sesiones cerradas. El cliente vuelve a entrar con su teléfono y PIN." : r.error ?? "Error");
       setConfirmar(null);
     });
   };
@@ -117,7 +117,7 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
         )}
         {puedeResetPin && puedeGestionar && (
           <button onClick={() => setConfirmar("qr")} disabled={qrPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
-            {qrPend ? "Regenerando…" : "Regenerar QR"}
+            {qrPend ? "Cerrando…" : "Cerrar sesiones"}
           </button>
         )}
       </div>
@@ -150,12 +150,12 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
       )}
       {confirmar === "qr" && (
         <ConfirmDialog
-          title="¿Regenerar el QR?"
-          message={`El QR anterior de ${ficha.cliente.nombre} dejará de funcionar; deberá reingresar con su teléfono y PIN.`}
-          confirmLabel="Sí, regenerar"
+          title="¿Cerrar sus sesiones?"
+          message={`${ficha.cliente.nombre} saldrá de la app en todos sus teléfonos y deberá entrar de nuevo con su teléfono y PIN. Úsalo si perdió el teléfono o alguien más entró a su cuenta.`}
+          confirmLabel="Sí, cerrar sesiones"
           danger
           pending={qrPend}
-          pendingLabel="Regenerando…"
+          pendingLabel="Cerrando…"
           onConfirm={regenerarQr}
           onCancel={() => setConfirmar(null)}
         />

@@ -130,7 +130,8 @@ const ESTADO_CLS: Record<CitaEstado, string> = {
 };
 
 function CitaFila({ cita, onEdit }: { cita: CitaRow; onEdit: () => void }) {
-  const { pending, run } = useAction();
+  // error: p. ej. reactivar una cita cancelada cuya hora ya tomó otra (0042).
+  const { pending, error, run } = useAction();
   const nombre = cita.cliente?.nombre ?? cita.cliente_nombre ?? "Cliente";
   const cancelada = cita.estado === "cancelada";
   return (
@@ -153,6 +154,7 @@ function CitaFila({ cita, onEdit }: { cita: CitaRow; onEdit: () => void }) {
           )}
         </p>
         {cita.nota && <p className="mt-0.5 truncate text-[12px] text-subtle">“{cita.nota}”</p>}
+        {error && <p role="alert" className="mt-1 text-[12px] text-danger">{error}</p>}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         <select

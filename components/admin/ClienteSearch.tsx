@@ -59,7 +59,7 @@ export function ClienteSearch() {
             setLoading(activo);
             if (!activo) setHits([]);
           }}
-          placeholder="Nombre o teléfono…"
+          placeholder="Nombre, teléfono o #número…"
           aria-label="Buscar cliente"
           className="min-h-[52px] w-full bg-transparent text-base text-ink outline-none placeholder:text-muted"
         />

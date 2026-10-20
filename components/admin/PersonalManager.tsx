@@ -317,7 +317,7 @@ function ResetPassword({ staffId }: { staffId: string }) {
   const { pending, run } = useAction();
   const [abierto, setAbierto] = useState(false);
   const [pass, setPass] = useState("");
-  const [ok, setOk] = useState(false);
+  const [ok, setOk] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   if (!abierto) {
@@ -330,18 +330,18 @@ function ResetPassword({ staffId }: { staffId: string }) {
   return (
     <div className="rounded-lg border border-line bg-elevated p-3">
       <p className="mb-2 text-[13px] font-medium text-muted">Nueva contraseña</p>
-      <PasswordInput value={pass} onChange={(v) => { setPass(v); setOk(false); setErr(null); }} placeholder="Mínimo 8 caracteres" />
+      <PasswordInput value={pass} onChange={(v) => { setPass(v); setOk(null); setErr(null); }} placeholder="Mínimo 8 caracteres" />
       {err && <p role="alert" className="mt-2 text-[13px] text-danger">{err}</p>}
-      {ok && <p className="mt-2 text-[13px] text-success">Contraseña actualizada ✓</p>}
+      {ok && <p role="status" className="mt-2 text-[13px] text-success">{ok}</p>}
       <div className="mt-2.5 flex gap-2">
-        <button type="button" onClick={() => { setAbierto(false); setPass(""); setErr(null); setOk(false); }} className="min-h-10 flex-1 rounded-full border border-line text-[13px] text-muted hover:text-ink">Cancelar</button>
+        <button type="button" onClick={() => { setAbierto(false); setPass(""); setErr(null); setOk(null); }} className="min-h-10 flex-1 rounded-full border border-line text-[13px] text-muted hover:text-ink">Cancelar</button>
         <button
           type="button"
           disabled={pending}
           onClick={() => run(
             async () => {
               const r = await resetPasswordStaff(staffId, pass);
-              if (r.ok) { setOk(true); setPass(""); }
+              if (r.ok) { setOk(r.aviso ?? "Contraseña actualizada ✓"); setPass(""); }
               else setErr(r.error ?? "Error");
               return { ok: true }; // el estado local ya refleja el resultado
             },

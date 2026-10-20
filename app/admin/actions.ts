@@ -302,8 +302,9 @@ export async function resetPinCliente(clienteId: string): Promise<ActionResult &
   return { ok: true };
 }
 
-/** Regenera el QR (qr_token) del cliente (dueño/admin). El QR anterior deja de
- *  servir y la sesión PWA del cliente se invalida: vuelve a entrar con tel + PIN. */
+/** Cierra las sesiones del cliente en todos sus teléfonos (dueño/admin): rota
+ *  el token de sesión (qr_token). Vuelve a entrar con tel + PIN. El QR de la
+ *  tarjeta ya es rotativo (0040), así que no hay QR que "regenerar". */
 export async function regenerarQrCliente(clienteId: string): Promise<ActionResult> {
   const staff = await getStaff();
   if (staff?.rol !== "dueno" && staff?.rol !== "admin") {
@@ -311,7 +312,7 @@ export async function regenerarQrCliente(clienteId: string): Promise<ActionResul
   }
   const sb = await createClient();
   const { error } = await sb.rpc("regenerar_qr_cliente", { p_cliente_id: clienteId });
-  if (error) return { ok: false, error: "No se pudo regenerar el QR." };
+  if (error) return { ok: false, error: "No se pudieron cerrar las sesiones." };
   revalidatePath(`/admin/clientes/${clienteId}`);
   return { ok: true };
 }
@@ -772,6 +773,11 @@ function citaDeMiSucursal(
   return q;
 }
 
+/** 23P01 = el barbero ya tiene otra cita a esa hora (0042): el mensaje viene listo. */
+function citaError(error: { code?: string; message: string }): string {
+  return error.code === "23P01" ? error.message : catalogoError(error.message);
+}
+
 export async function saveCita(input: {
   id?: string;
   clienteId: string | null;
@@ -826,7 +832,7 @@ export async function saveCita(input: {
       .from("citas")
       .insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) }));
   }
-  if (error) return { ok: false, error: catalogoError(error.message) };
+  if (error) return { ok: false, error: citaError(error) };
 
   // Aviso al cliente registrado cuando se agenda una cita nueva.
   if (!input.id && input.clienteId) await pushCitaCliente(input.clienteId, "creada", inicia.toISOString());
@@ -842,7 +848,7 @@ export async function updateEstadoCita(
   const sb = await createClient();
   const staff = await getStaff();
   const { data: tocadas, error } = await citaDeMiSucursal(sb, staff, id, { estado }).select("id");
-  if (error) return { ok: false, error: catalogoError(error.message) };
+  if (error) return { ok: false, error: citaError(error) };
   if (!tocadas?.length) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
 
   // Aviso al cliente registrado cuando su cita se confirma o cancela.

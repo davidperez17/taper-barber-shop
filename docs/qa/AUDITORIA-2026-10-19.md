@@ -141,12 +141,12 @@ Todo el código nuevo tiene fallback si la migración aún no está aplicada (PG
 
 ## Pendiente (decisión o fuera de código)
 
-- QR = credencial permanente (foto del QR = sesión): requiere token rotativo separado de la sesión. Diseño mayor.
-- Realtime `cliente:<uuid>` público: migrar a canales privados con RLS en `realtime.messages`.
+- ~~QR = credencial permanente (foto del QR = sesión)~~ → rama `seguridad`, migración `0040_qr_rotativo.sql`: QR rotativo firmado (30 s), token de sesión que ya no se muestra y rotación de tokens viejos al abrir la app. `/offline` muestra el número de cliente.
+- ~~Realtime `cliente:<uuid>` público~~ → rama `seguridad`: el canal es `cliente:<HMAC del id>` (lib/realtime.ts), solo lo conocen el servidor y la tarjeta del cliente. Canales privados de Supabase no aplican: exigen JWT de Supabase y la PWA cliente no lo tiene.
 - Rate limit por IP (Upstash/Vercel) en login/registro: el bloqueo escalonado cubre fuerza bruta por cuenta, no enumeración masiva.
-- CSP: no se agregó (scripts inline de Next y de `/offline`).
-- `resetPasswordStaff` no revoca sesiones abiertas.
-- Agenda sin validación de traslape por barbero.
+- ~~CSP: no se agregó~~ → rama `seguridad`: CSP con nonce por request (`lib/csp.ts`, `proxy.ts`), páginas dinámicas, reportes a `/api/csp` (logs de Vercel). `CSP_REPORT_ONLY=1` en Vercel la pasa a solo-reporte si algo se rompe. De paso: `/offline` mostraba vacío el número por un error de hidratación (#418); el bloque ya no lo maneja React.
+- ~~`resetPasswordStaff` no revoca sesiones abiertas~~ → rama `seguridad`, migración `0041_sesiones_staff.sql`: cambiar contraseña o desactivar borra sus sesiones de `auth.sessions` y pone `staff.sesiones_desde`; `is_active_staff`/`is_owner_admin`/`is_owner` y `getStaff` rechazan sesiones iniciadas antes del corte. En la cuenta propia conserva la sesión actual.
+- ~~Agenda sin validación de traslape por barbero~~ → rama `seguridad`, migración `0042_agenda_sin_traslapes.sql`: trigger que rechaza citas encimadas del mismo barbero (no canceladas, todas las sucursales) con mensaje listo para mostrar.
 - `safe-area-inset` en iPhone: verificar en dispositivo.
 - Permiso de giroscopio iOS al primer toque del QR.
 - Archivos viejos en git (`app-anterior/`, `qr-taperbarbershop.png`, `plan.md`): decidir si se borran.
