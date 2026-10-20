@@ -14,9 +14,9 @@ export async function getClienteParaVenta(
 }
 
 /**
- * Dashboard de un cliente por id para el staff. Usa get_cliente_by_id (0033),
+ * Dashboard de un cliente por id para el staff. Usa get_cliente_by_id (0035),
  * que no expone qr_token; si la base aún no la tiene, cae al camino viejo
- * (leer qr_token → get_cliente_by_qr), que 0033 deja de permitir.
+ * (leer qr_token → get_cliente_by_qr), que 0035 deja de permitir.
  */
 export async function clientePorId(
   sb: Awaited<ReturnType<typeof createClient>>,

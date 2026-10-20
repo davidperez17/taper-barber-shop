@@ -165,6 +165,9 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
     if (/cup[oó]n no encontrado/i.test(error.message)) {
       return { ok: false, error: "El cupón ya no existe. Quítalo e intenta de nuevo." };
     }
+    // 22023 = validación de negocio con mensaje ya legible (cupón vencido o
+    // agotado, ítem fuera del catálogo, sucursal desactivada…).
+    if (error.code === "22023") return { ok: false, error: error.message };
     if (/no autorizado/i.test(error.message)) {
       return { ok: false, error: "Tu usuario no tiene permiso para registrar ventas. Vuelve a iniciar sesión." };
     }
@@ -273,14 +276,28 @@ export interface ActionResult {
 }
 
 /** Reset del PIN del cliente (dueño/admin). El cliente crea uno nuevo al ingresar. */
-export async function resetPinCliente(clienteId: string): Promise<ActionResult> {
+export async function resetPinCliente(clienteId: string): Promise<ActionResult & { codigo?: string }> {
   const staff = await getStaff();
-  if (staff?.rol !== "dueno" && staff?.rol !== "admin") {
-    return { ok: false, error: "No autorizado." };
-  }
+  if (!staff) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
-  const { error } = await sb.rpc("reset_cliente_pin", { p_cliente_id: clienteId });
-  if (error) return { ok: false, error: "No se pudo reiniciar el PIN." };
+
+  // 0038: genera un código de activación (y deja la cuenta sin PIN). El
+  // cliente lo necesita para crear su PIN: sin él, cualquiera con el
+  // teléfono podía reclamar una cuenta sin PIN. La DB decide permisos
+  // (cuenta sin PIN: cualquier staff; con PIN: solo admin/dueño).
+  const { data, error } = await sb.rpc("generar_codigo_pin", { p_cliente_id: clienteId });
+  if (!error) {
+    revalidatePath(`/admin/clientes/${clienteId}`);
+    return { ok: true, codigo: data as string };
+  }
+  if (error.code !== "PGRST202") {
+    return { ok: false, error: error.code === "42501" ? "Solo un admin puede reiniciar el PIN de esta cuenta." : "No se pudo generar el código." };
+  }
+
+  // Base sin 0038: reset clásico (solo admin/dueño).
+  if (staff.rol !== "dueno" && staff.rol !== "admin") return { ok: false, error: "No autorizado." };
+  const { error: errReset } = await sb.rpc("reset_cliente_pin", { p_cliente_id: clienteId });
+  if (errReset) return { ok: false, error: "No se pudo reiniciar el PIN." };
   revalidatePath(`/admin/clientes/${clienteId}`);
   return { ok: true };
 }

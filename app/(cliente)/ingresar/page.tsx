@@ -109,10 +109,21 @@ export default function IngresarPage() {
             </button>
           </div>
           <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-0.01em] text-ink">Protege tu cuenta</h1>
-          <p className="mb-7 mt-1.5 text-sm text-muted">Crea un PIN de 6 dígitos para tu próximo ingreso</p>
+          <p className="mb-7 mt-1.5 text-sm text-muted">
+            Pide tu código de activación en la barbería y crea un PIN de 6 dígitos.
+          </p>
 
           <form action={setupAction}>
             <input type="hidden" name="telefono" value={telefono} />
+            <Input
+              label="Código de activación"
+              hint="· te lo da el cajero"
+              name="codigo"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="000000"
+            />
             <div className="mb-4"><PinInput value={pin} onChange={setPin} name="pin" label="Nuevo PIN" autoFocus /></div>
             <div className="mb-5"><PinInput value={pin2} onChange={setPin2} name="pin2" label="Confirma tu PIN" /></div>
             {errSetup && <p role="alert" className="mb-4 text-sm text-danger">{errSetup}</p>}

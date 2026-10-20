@@ -72,10 +72,9 @@ export default async function RecuperacionPage({
               <Link href={`/admin/clientes/${r.id}`} className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-ink">{r.nombre}</p>
                 <p className="text-[13px] text-muted">
-                  {/* clientes_inactivos hace JOIN con cliente_loyalty: quien nunca vino
-                      NO aparece. Solo llega dias_inactivo null si el cliente tiene
-                      ajustes manuales de sellos pero ninguna venta. */}
-                  {r.dias_inactivo == null ? "Sin visitas (solo ajustes de sellos)" : `Hace ${r.dias_inactivo} días`}
+                  {/* dias_inactivo null = nunca registró una venta (con 0039 incluye a
+                      quien se registró y no volvió). */}
+                  {r.dias_inactivo == null ? "Nunca registró visita" : `Hace ${r.dias_inactivo} días`}
                   {r.ultima_visita ? ` · últ. ${fmtDiaMes(r.ultima_visita)}` : ""} · {r.telefono}
                 </p>
               </Link>

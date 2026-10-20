@@ -112,12 +112,29 @@ export async function crearPin(
   const telefono = String(formData.get("telefono") ?? "").trim();
   const pin = String(formData.get("pin") ?? "");
   const pin2 = String(formData.get("pin2") ?? "");
+  const codigo = String(formData.get("codigo") ?? "").replace(/\D/g, "");
   if (!esPinValido(pin)) return { error: "El PIN debe ser de 6 dígitos." };
   if (pin !== pin2) return { error: "Los PIN no coinciden." };
 
   const sb = await createClient();
-  const { data, error } = await sb.rpc("set_cliente_pin", { p_telefono: telefono, p_pin: pin });
-  if (error || !data) return { error: "No pudimos configurar tu PIN. Intenta de nuevo." };
+  // 0038: crear el PIN exige el código de activación que genera el staff.
+  let { data, error } = await sb.rpc("set_cliente_pin", { p_telefono: telefono, p_pin: pin, p_codigo: codigo });
+  if (error?.code === "PGRST202") {
+    ({ data, error } = await sb.rpc("set_cliente_pin", { p_telefono: telefono, p_pin: pin }));
+  }
+  if (error) {
+    if (/vencido|inexistente/i.test(error.message)) {
+      return { error: "Tu código venció o ya no es válido. Pide uno nuevo en la barbería." };
+    }
+    return { error: "No pudimos configurar tu PIN. Intenta de nuevo." };
+  }
+  if (!data) {
+    return {
+      error: codigo
+        ? "Código de activación incorrecto."
+        : "Escribe el código de activación de 6 dígitos que te dio la barbería.",
+    };
+  }
 
   await setQrToken(data as string);
   redirect("/tarjeta");

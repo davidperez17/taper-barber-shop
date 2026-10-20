@@ -37,17 +37,28 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
   const [ajustando, setAjustando] = useState(false);
   const [pinPend, startPin] = useTransition();
   const [pinMsg, setPinMsg] = useState<string | null>(null);
+  const [codigoPin, setCodigoPin] = useState<string | null>(null);
   const [qrPend, startQr] = useTransition();
   const [qrMsg, setQrMsg] = useState<string | null>(null);
   const [confirmar, setConfirmar] = useState<null | "pin" | "qr">(null);
   const loyalty = computeLoyalty(ficha.loyalty);
-  const invertido = ficha.historial.reduce((s, v) => s + Number(v.total), 0);
+  // total_invertido (0035) cubre todo el historial; la suma local solo ve las últimas 50.
+  const invertido = ficha.totalInvertido ?? ficha.historial.reduce((s, v) => s + Number(v.total), 0);
+  // Sin PIN → "Código de activación" (cualquier staff). Con PIN → "Reiniciar PIN" (admin).
+  const sinPin = ficha.tienePin === false;
 
   const reiniciarPin = () => {
     setPinMsg(null);
     startPin(async () => {
       const r = await resetPinCliente(ficha.cliente.id);
-      setPinMsg(r.ok ? "PIN reiniciado. El cliente lo configura al ingresar." : r.error ?? "Error");
+      setCodigoPin(r.ok && r.codigo ? r.codigo : null);
+      setPinMsg(
+        r.ok
+          ? r.codigo
+            ? null
+            : "PIN reiniciado. El cliente lo configura al ingresar."
+          : r.error ?? "Error",
+      );
       setConfirmar(null);
     });
   };
@@ -99,27 +110,40 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
         <button onClick={() => setEditando(true)} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-ink hover:border-line-strong">
           Editar datos
         </button>
-        {puedeResetPin && (
+        {(sinPin || puedeGestionar) && (
           <button onClick={() => setConfirmar("pin")} disabled={pinPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
-            {pinPend ? "Reiniciando…" : "Reiniciar PIN"}
+            {pinPend ? "Generando…" : sinPin ? "Código de activación" : "Reiniciar PIN"}
           </button>
         )}
-        {puedeResetPin && (
+        {puedeResetPin && puedeGestionar && (
           <button onClick={() => setConfirmar("qr")} disabled={qrPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
             {qrPend ? "Regenerando…" : "Regenerar QR"}
           </button>
         )}
       </div>
       {pinMsg && <p role="status" className="mt-2 text-sm text-muted">{pinMsg}</p>}
+      {codigoPin && (
+        <div role="status" className="mt-3 rounded-xl border border-accent/50 bg-elevated p-4">
+          <p className="text-[13px] font-medium text-muted">Código de activación</p>
+          <p className="mt-1 font-display text-3xl font-extrabold tracking-[0.2em] tabular-nums text-accent">{codigoPin}</p>
+          <p className="mt-1 text-xs text-muted">
+            Dáselo a {ficha.cliente.nombre.split(" ")[0]} en persona. Lo usa en “Ingresar” para crear su PIN. Vence en 30 min.
+          </p>
+        </div>
+      )}
       {qrMsg && <p role="status" className="mt-2 text-sm text-muted">{qrMsg}</p>}
 
       {confirmar === "pin" && (
         <ConfirmDialog
-          title="¿Reiniciar el PIN?"
-          message={`${ficha.cliente.nombre} configurará un PIN nuevo la próxima vez que ingrese.`}
-          confirmLabel="Sí, reiniciar"
+          title={sinPin ? "¿Generar código de activación?" : "¿Reiniciar el PIN?"}
+          message={
+            sinPin
+              ? `Verás un código de 6 dígitos para que ${ficha.cliente.nombre} cree su PIN. Dáselo solo a la persona en el mostrador.`
+              : `El PIN actual de ${ficha.cliente.nombre} deja de servir. Verás un código para que cree uno nuevo.`
+          }
+          confirmLabel={sinPin ? "Generar código" : "Sí, reiniciar"}
           pending={pinPend}
-          pendingLabel="Reiniciando…"
+          pendingLabel="Generando…"
           onConfirm={reiniciarPin}
           onCancel={() => setConfirmar(null)}
         />

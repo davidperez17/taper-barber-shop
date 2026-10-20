@@ -9,7 +9,9 @@
 export function filtroClientes(termino: string): string | null {
   const term = termino.replace(/[,()*\\%"]/g, " ").replace(/\s+/g, " ").trim();
   if (term.length < 2) return null;
-  const digits = term.replace(/\D/g, "");
+  // Teléfonos se guardan como 8 dígitos sin +502 (0037): quitar el prefijo.
+  let digits = term.replace(/\D/g, "");
+  if (digits.length > 8 && digits.startsWith("502")) digits = digits.slice(3);
   return digits.length >= 3
     ? `telefono.ilike.%${digits}%,nombre.ilike.%${term}%`
     : `nombre.ilike.%${term}%`;

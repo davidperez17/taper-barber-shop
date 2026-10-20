@@ -89,6 +89,9 @@ export interface ClienteFicha {
   // Contexto para gestión (editar venta / ajustar sellos) desde el panel.
   sucursalId: string | null;
   barberos: { id: string; nombre: string }[];
+  // De get_cliente_by_id (0035); undefined si la base aún no la tiene.
+  totalInvertido?: number;
+  tienePin?: boolean;
 }
 
 // ── Catálogo (panel admin) ──────────────────────────────────────

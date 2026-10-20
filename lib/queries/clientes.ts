@@ -70,7 +70,12 @@ export async function getClienteFicha(id: string, sucursalId: string | null): Pr
     barberosQ.order("nombre"),
   ]);
 
-  const d = dash as { loyalty: LoyaltyRawData; historial: ClienteFicha["historial"] } | null;
+  const d = dash as {
+    loyalty: LoyaltyRawData;
+    historial: ClienteFicha["historial"];
+    total_invertido?: number;
+    tiene_pin?: boolean;
+  } | null;
   const metaMap = new Map((ventasMeta.data ?? []).map((v) => [v.id, v as { id: string; metodo_pago: "efectivo" | "tarjeta" | "transferencia"; barbero_id: string | null }]));
 
   return {
@@ -84,5 +89,7 @@ export async function getClienteFicha(id: string, sucursalId: string | null): Pr
     etiquetas: (etiquetas.data ?? []).map((e) => e.etiqueta),
     sucursalId,
     barberos: (barberos.data ?? []) as { id: string; nombre: string }[],
+    totalInvertido: d?.total_invertido != null ? Number(d.total_invertido) : undefined,
+    tienePin: d?.tiene_pin,
   };
 }
