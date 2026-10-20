@@ -11,7 +11,7 @@ import {
   updateConfigLealtad,
   type ActionResult,
 } from "@/app/admin/actions";
-import { fmtQ } from "@/lib/format";
+import { fmtQ, parseMonto } from "@/lib/format";
 import type { CatalogoAdmin } from "@/lib/queries/catalogo";
 import type { Servicio, Producto, Barbero } from "@/lib/types";
 import { IconPlus, IconPencil } from "@/components/icons";
@@ -207,7 +207,7 @@ function ServicioSheet({ servicio, onClose }: { servicio: Servicio | null; onClo
     <Sheet title={servicio ? "Editar servicio" : "Nuevo servicio"} onClose={onClose} pending={pending} error={error}
       onSave={() => run(() => saveServicio({
         id: servicio?.id,
-        nombre, precio: Number(precio) || 0, categoria,
+        nombre, precio: parseMonto(precio) ?? NaN, categoria,
         duracion_min: duracion ? Number(duracion) : null,
         puntos: Math.max(0, Math.round(Number(puntos) || 0)), orden: Number(orden) || 0,
         imagen_url: imagen,
@@ -283,7 +283,7 @@ function ProductoSheet({ producto, onClose }: { producto: Producto | null; onClo
   return (
     <Sheet title={producto ? "Editar producto" : "Nuevo producto"} onClose={onClose} pending={pending} error={error}
       onSave={() => run(() => saveProducto({
-        id: producto?.id, nombre, precio: Number(precio) || 0, categoria, imagen_url: imagen,
+        id: producto?.id, nombre, precio: parseMonto(precio) ?? NaN, categoria, imagen_url: imagen,
         controla_stock: controlaStock, stock_min: Number(stockMin) || 0,
         puntos: Math.max(0, Math.round(Number(puntos) || 0)),
         stock_inicial: producto ? undefined : Number(stockInicial) || 0,

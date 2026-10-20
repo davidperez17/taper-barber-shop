@@ -4,7 +4,7 @@ import { useState, useTransition, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { saveCupon, toggleCuponActivo, deleteCupon, type ActionResult } from "@/app/admin/actions";
-import { fmtQ } from "@/lib/format";
+import { fmtQ, parseMonto } from "@/lib/format";
 import type { Cupon, CuponTipo } from "@/lib/types";
 import { IconPlus, IconPencil } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
@@ -146,11 +146,11 @@ function CuponSheet({ cupon, onClose }: { cupon: Cupon | null; onClose: () => vo
       id: cupon?.id,
       codigo,
       tipo,
-      valor: Number(valor) || 0,
-      min_compra: Number(minCompra) || 0,
+      valor: parseMonto(valor) ?? NaN,
+      min_compra: minCompra.trim() ? parseMonto(minCompra) ?? NaN : 0,
       vigencia_desde: desde || null,
       vigencia_hasta: hasta || null,
-      usos_max: usosMax ? Number(usosMax) : null,
+      usos_max: usosMax.trim() ? Number(usosMax.trim()) : null,
       activo,
     }), onClose);
 

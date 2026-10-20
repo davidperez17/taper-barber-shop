@@ -54,7 +54,31 @@ export function fmtFechaLarga(iso: string | null): string {
   return `${d} de ${MESES_LARGO[m - 1].toLowerCase()} de ${y}`;
 }
 
-/** "Q1,250" */
+/** "Q1,250" · "Q72.25" · "-Q0.40" — centavos solo si los hay. */
 export function fmtQ(n: number): string {
-  return `Q${Math.round(n).toLocaleString("es-GT")}`;
+  const c = Math.round(n * 100) / 100;
+  const abs = Math.abs(c);
+  const dec = Number.isInteger(abs) ? 0 : 2;
+  const txt = abs.toLocaleString("es-GT", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  return `${c < 0 ? "-" : ""}Q${txt}`;
+}
+
+/** true si dos montos son iguales al centavo (evita 0.1+0.2 !== 0.3). */
+export function mismoMonto(a: number, b: number): boolean {
+  return Math.abs(a - b) < 0.005;
+}
+
+/**
+ * Monto escrito a mano → número, o null si no es válido.
+ * Acepta "150", "150.50", "150,50" (coma decimal) y "1,250" / "1,250.50"
+ * (coma de miles, formato es-GT).
+ */
+export function parseMonto(s: string): number | null {
+  let t = s.trim().replace(/^Q\s*/i, "").replace(/\s/g, "");
+  if (!t) return null;
+  if (t.includes(".") || /^\d{1,3}(,\d{3})+$/.test(t)) t = t.replace(/,/g, "");
+  else t = t.replace(",", ".");
+  if (!/^-?\d+(\.\d+)?$/.test(t)) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
 }

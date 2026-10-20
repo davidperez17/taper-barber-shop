@@ -200,7 +200,23 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
       return;
     }
 
-    const res = await recordVenta(payload);
+    let res: Awaited<ReturnType<typeof recordVenta>>;
+    try {
+      res = await recordVenta(payload);
+    } catch {
+      // La action lanzó (red caída a medio camino). Si el navegador ya se sabe
+      // offline, el request no salió: encolar es seguro. Si no, el server pudo
+      // haberla guardado y reintentar a ciegas la duplicaría.
+      setSubmitting(false);
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        enqueueVenta(payload);
+        setPendiente(true);
+        setDone(totalFinal);
+        return;
+      }
+      setError("Se perdió la conexión al confirmar. Revisa el historial del cliente antes de cobrar de nuevo.");
+      return;
+    }
     setSubmitting(false);
     if (!res.ok) {
       // Falla de red tras el intento: guardar local en vez de perder la venta.
@@ -384,9 +400,9 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
             )}
             <p className="text-[13px] font-medium text-muted">Total</p>
             <p className="font-display text-2xl font-bold tabular-nums text-ink">{fmtQ(totalFinal)}</p>
-            {puntosCarrito > 0 && (
+            {puntosNetos > 0 && (
               <p className="text-[13px] font-semibold tabular-nums text-accent">
-                +{puntosCarrito} sello{puntosCarrito > 1 ? "s" : ""}
+                +{puntosNetos} sello{puntosNetos > 1 ? "s" : ""}
               </p>
             )}
           </div>

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { crearMovimientoCaja, borrarMovimientoCaja, cerrarCaja } from "@/app/admin/actions";
-import { fmtQ } from "@/lib/format";
+import { fmtQ, mismoMonto, parseMonto } from "@/lib/format";
 import type { CajaResumen } from "@/lib/queries/caja";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
@@ -31,29 +31,44 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
   const [movMonto, setMovMonto] = useState("");
   const [movMotivo, setMovMotivo] = useState("");
 
+  // "1,250" o "150,50" antes daban NaN → 0 y descuadraban el arqueo.
+  const fondoN = parseMonto(fondo);
+  const contadoN = parseMonto(contado);
   const esperado = useMemo(
-    () => (Number(fondo) || 0) + efectivoVentas + ingresos - egresos,
-    [fondo, efectivoVentas, ingresos, egresos],
+    () => (fondoN ?? 0) + efectivoVentas + ingresos - egresos,
+    [fondoN, efectivoVentas, ingresos, egresos],
   );
-  const diferencia = (Number(contado) || 0) - esperado;
+  const diferencia = (contadoN ?? 0) - esperado;
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, after?: () => void) =>
     start(async () => {
       setError(null);
-      const r = await fn();
-      if (!r.ok) { setError(r.error ?? "Error"); return; }
+      try {
+        const r = await fn();
+        if (!r.ok) { setError(r.error ?? "Error"); return; }
+      } catch {
+        setError("Sin conexión. Revisa la red e intenta de nuevo.");
+        return;
+      }
       after?.();
       router.refresh();
     });
 
   const agregarMov = () => {
-    const monto = Number(movMonto);
-    if (!(monto > 0)) { setError("Monto inválido."); return; }
+    const monto = parseMonto(movMonto);
+    if (monto === null || !(monto > 0)) { setError("Monto inválido."); return; }
     run(() => crearMovimientoCaja(movTipo, monto, movMotivo), () => { setMovMonto(""); setMovMotivo(""); });
   };
 
+  const pedirCierre = () => {
+    if (fondoN === null || fondoN < 0) { setError("Fondo inicial inválido."); return; }
+    if (contadoN === null || contadoN < 0) { setError("Efectivo contado inválido."); return; }
+    setError(null);
+    setConfCerrar(true);
+  };
+
   const cerrar = () => {
-    run(() => cerrarCaja(resumen.fecha, Number(fondo) || 0, Number(contado) || 0, notas), () => setConfCerrar(false));
+    run(() => cerrarCaja(resumen.fecha, fondoN ?? 0, contadoN ?? 0, notas), () => setConfCerrar(false));
   };
 
   // ── Día ya cerrado ─────────────────────────────────────────────
@@ -74,7 +89,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
           <Fila k="Efectivo esperado" v={fmtQ(Number(c.efectivo_esperado))} bold />
           <Fila k="Efectivo contado" v={fmtQ(Number(c.efectivo_contado))} bold />
           <div className="mt-1 border-t border-line pt-2">
-            <Fila k="Diferencia" v={`${dif > 0 ? "+" : ""}${fmtQ(dif)}`} tone={dif === 0 ? "ok" : "warn"} bold />
+            <Fila k="Diferencia" v={`${dif >= 0.005 ? "+" : ""}${fmtQ(dif)}`} tone={mismoMonto(dif, 0) ? "ok" : "warn"} bold />
           </div>
           {c.notas && <p className="mt-3 whitespace-pre-wrap text-sm text-muted">{c.notas}</p>}
         </div>
@@ -137,7 +152,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
         </label>
         {contado !== "" && (
           <div className="mt-3 border-t border-line pt-2">
-            <Fila k="Diferencia" v={`${diferencia > 0 ? "+" : ""}${fmtQ(diferencia)}`} tone={diferencia === 0 ? "ok" : "warn"} bold />
+            <Fila k="Diferencia" v={`${diferencia >= 0.005 ? "+" : ""}${fmtQ(diferencia)}`} tone={mismoMonto(diferencia, 0) ? "ok" : "warn"} bold />
           </div>
         )}
       </section>
@@ -147,7 +162,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
 
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
-      <button onClick={() => setConfCerrar(true)} disabled={pending || contado === ""} className="min-h-[52px] rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] disabled:opacity-40">
+      <button onClick={pedirCierre} disabled={pending || contado === ""} className="min-h-[52px] rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] disabled:opacity-40">
         {pending ? "Cerrando…" : "Cerrar caja del día"}
       </button>
 
