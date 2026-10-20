@@ -142,7 +142,7 @@ Todo el código nuevo tiene fallback si la migración aún no está aplicada (PG
 ## Pendiente (decisión o fuera de código)
 
 - ~~QR = credencial permanente (foto del QR = sesión)~~ → rama `seguridad`, migración `0040_qr_rotativo.sql`: QR rotativo firmado (30 s), token de sesión que ya no se muestra y rotación de tokens viejos al abrir la app. `/offline` muestra el número de cliente.
-- Realtime `cliente:<uuid>` público: migrar a canales privados con RLS en `realtime.messages`.
+- ~~Realtime `cliente:<uuid>` público~~ → rama `seguridad`: el canal es `cliente:<HMAC del id>` (lib/realtime.ts), solo lo conocen el servidor y la tarjeta del cliente. Canales privados de Supabase no aplican: exigen JWT de Supabase y la PWA cliente no lo tiene.
 - Rate limit por IP (Upstash/Vercel) en login/registro: el bloqueo escalonado cubre fuerza bruta por cuenta, no enumeración masiva.
 - CSP: no se agregó (scripts inline de Next y de `/offline`).
 - `resetPasswordStaff` no revoca sesiones abiertas.

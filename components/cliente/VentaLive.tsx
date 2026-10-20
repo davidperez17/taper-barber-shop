@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Escucha el canal realtime del cliente: cuando el cajero registra una venta,
+ * Escucha el canal realtime del cliente (nombre secreto, ver canalCliente en
+ * lib/realtime.ts): cuando el cajero registra una venta,
  * refresca la tarjeta al instante (el sello nuevo hace su pop) y suena un
  * "ding" de logro. Sin polling; websocket de Supabase Realtime.
  *
@@ -13,7 +14,7 @@ import { createClient } from "@/lib/supabase/client";
  * desbloquea con el primer toque en la página (abrir la app ya lo es en la
  * práctica: el usuario navega). Si aún está bloqueado, vibra como fallback.
  */
-export function VentaLive({ clienteId }: { clienteId: string }) {
+export function VentaLive({ canal: topic }: { canal: string }) {
   const router = useRouter();
   const ctxRef = useRef<AudioContext | null>(null);
 
@@ -61,7 +62,7 @@ export function VentaLive({ clienteId }: { clienteId: string }) {
 
     const sb = createClient();
     const canal = sb
-      .channel(`cliente:${clienteId}`)
+      .channel(topic)
       .on("broadcast", { event: "venta" }, () => {
         ding();
         router.refresh(); // trae el progreso nuevo → stamp-pop del sello
@@ -74,7 +75,7 @@ export function VentaLive({ clienteId }: { clienteId: string }) {
       void ctxRef.current?.close();
       ctxRef.current = null;
     };
-  }, [clienteId, router]);
+  }, [topic, router]);
 
   return null;
 }
