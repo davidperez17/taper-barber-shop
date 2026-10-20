@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { claimsSesion } from "@/lib/supabase/jwt";
 
 export type RolStaff = "cajero" | "barbero" | "admin" | "dueno";
 
@@ -28,12 +29,25 @@ export const getStaff = cache(async (): Promise<StaffSession | null> => {
   }
   if (!user) return null;
 
-  const { data } = await sb
+  const COLS = "id, nombre, rol, activo, sucursal_id, barbero_id";
+  const conCorte = await sb
     .from("staff")
-    .select("id, nombre, rol, activo, sucursal_id, barbero_id")
+    .select(`${COLS}, sesiones_desde`)
     .eq("user_id", user.id)
     .single();
+  // Base sin 0041 (columna inexistente): leer sin el corte.
+  const data =
+    conCorte.error?.code === "42703"
+      ? (await sb.from("staff").select(COLS).eq("user_id", user.id).single()).data
+      : conCorte.data;
 
   if (!data || !data.activo) return null;
+  // Sesiones cerradas por el dueño (0041): una sesión iniciada antes del
+  // corte ya no es staff aunque su token siga siendo válido.
+  const corte = (data as { sesiones_desde?: string | null }).sesiones_desde;
+  if (corte) {
+    const claims = await claimsSesion(sb);
+    if (!claims || claims.horaLogin < Math.floor(Date.parse(corte) / 1000)) return null;
+  }
   return { id: data.id, nombre: data.nombre, rol: data.rol as RolStaff, sucursal_id: data.sucursal_id ?? null, barbero_id: data.barbero_id ?? null };
 });

@@ -3,10 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { getStaff, type RolStaff } from "@/lib/queries/staff";
 import { createAdmin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { claimsSesion } from "@/lib/supabase/jwt";
 
 export interface PersonalResult {
   ok: boolean;
   error?: string;
+  /** Mensaje de éxito con detalle (p. ej. sesiones cerradas). */
+  aviso?: string;
 }
 
 const ROLES: RolStaff[] = ["cajero", "barbero", "admin", "dueno"];
@@ -122,13 +126,18 @@ export async function cambiarActivoStaff(id: string, activo: boolean): Promise<P
       .updateUserById(fila.user_id as string, { ban_duration: activo ? "none" : "876000h" })
       .catch(() => {});
   }
-  if (!activo) await admin.from("push_subscriptions").delete().eq("owner_type", "staff").eq("owner_id", id);
+  if (!activo) {
+    await admin.from("push_subscriptions").delete().eq("owner_type", "staff").eq("owner_id", id);
+    // Corte de sesiones (0041): el ban frena el refresh, esto el token vigente.
+    await admin.rpc("cerrar_sesiones_staff", { p_staff_id: id });
+  }
   revalidatePath("/admin/personal");
   return { ok: true };
 }
 
 export async function resetPasswordStaff(id: string, password: string): Promise<PersonalResult> {
-  if (!(await soloDueno())) return { ok: false, error: "Solo el dueño puede gestionar el personal." };
+  const yo = await soloDueno();
+  if (!yo) return { ok: false, error: "Solo el dueño puede gestionar el personal." };
   if (password.length < MIN_PASS) return { ok: false, error: `La contraseña debe tener al menos ${MIN_PASS} caracteres.` };
 
   const admin = createAdmin();
@@ -137,5 +146,27 @@ export async function resetPasswordStaff(id: string, password: string): Promise<
 
   const { error } = await admin.auth.admin.updateUserById(fila.user_id, { password });
   if (error) return { ok: false, error: "No se pudo cambiar la contraseña." };
-  return { ok: true };
+
+  // La API admin no cierra sesiones al cambiar la contraseña: un teléfono
+  // perdido seguía entrando. 0041 las cierra todas; si es la cuenta propia,
+  // conserva la sesión desde la que el dueño hizo el cambio.
+  const propia = id === yo.id;
+  const conservar = propia ? (await claimsSesion(await createClient()))?.sessionId ?? null : null;
+  const { data: cerradas, error: errSes } = await admin.rpc("cerrar_sesiones_staff", {
+    p_staff_id: id,
+    p_conservar: conservar,
+  });
+  if (errSes) {
+    // Base sin 0041: la contraseña sí cambió.
+    return { ok: true, aviso: "Contraseña actualizada. Las sesiones abiertas siguen activas hasta que salgan." };
+  }
+  if (cerradas === null && propia) {
+    return { ok: true, aviso: "Contraseña actualizada. No se pudieron cerrar tus otras sesiones." };
+  }
+  return {
+    ok: true,
+    aviso: propia
+      ? "Contraseña actualizada. Se cerraron tus sesiones en otros dispositivos."
+      : "Contraseña actualizada. Se cerraron sus sesiones abiertas.",
+  };
 }

@@ -145,7 +145,7 @@ Todo el código nuevo tiene fallback si la migración aún no está aplicada (PG
 - ~~Realtime `cliente:<uuid>` público~~ → rama `seguridad`: el canal es `cliente:<HMAC del id>` (lib/realtime.ts), solo lo conocen el servidor y la tarjeta del cliente. Canales privados de Supabase no aplican: exigen JWT de Supabase y la PWA cliente no lo tiene.
 - Rate limit por IP (Upstash/Vercel) en login/registro: el bloqueo escalonado cubre fuerza bruta por cuenta, no enumeración masiva.
 - CSP: no se agregó (scripts inline de Next y de `/offline`).
-- `resetPasswordStaff` no revoca sesiones abiertas.
+- ~~`resetPasswordStaff` no revoca sesiones abiertas~~ → rama `seguridad`, migración `0041_sesiones_staff.sql`: cambiar contraseña o desactivar borra sus sesiones de `auth.sessions` y pone `staff.sesiones_desde`; `is_active_staff`/`is_owner_admin`/`is_owner` y `getStaff` rechazan sesiones iniciadas antes del corte. En la cuenta propia conserva la sesión actual.
 - Agenda sin validación de traslape por barbero.
 - `safe-area-inset` en iPhone: verificar en dispositivo.
 - Permiso de giroscopio iOS al primer toque del QR.
