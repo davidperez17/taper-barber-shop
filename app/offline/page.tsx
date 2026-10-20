@@ -3,16 +3,18 @@ import { QR_OFFLINE_KEY } from "@/lib/qr-offline";
 
 // El SW sirve esta página (precacheada) cuando una navegación falla sin red.
 // Sus chunks JS pueden no estar en caché, así que todo lo dinámico va en un
-// script inline: muestra el QR guardado por la tarjeta y cablea "Reintentar".
+// script inline: muestra el número de cliente guardado por la tarjeta (el QR
+// rotativo no sirve sin red) y cablea "Reintentar".
 const SCRIPT = `(function(){
   var b=document.getElementById("offline-retry");
   if(b)b.onclick=function(){location.reload()};
   try{
-    var d=JSON.parse(localStorage.getItem(${JSON.stringify(QR_OFFLINE_KEY)})||"null");
-    if(!d||!d.qrSvg)return;
-    document.getElementById("offline-qr-svg").innerHTML=d.qrSvg;
+    var k=${JSON.stringify(QR_OFFLINE_KEY)};
+    var d=JSON.parse(localStorage.getItem(k)||"null");
+    if(!d||!d.memberId)return;
+    if(d.qrSvg)localStorage.setItem(k,JSON.stringify({nombre:d.nombre,memberId:d.memberId}));
     document.getElementById("offline-qr-nombre").textContent=d.nombre||"";
-    document.getElementById("offline-qr-id").textContent=d.memberId||"";
+    document.getElementById("offline-qr-id").textContent=d.memberId;
     document.getElementById("offline-qr").hidden=false;
   }catch(e){}
 })();`;
@@ -29,12 +31,12 @@ export default function OfflinePage() {
       </p>
 
       <div id="offline-qr" hidden className="mt-6 w-full max-w-[260px]">
-        <div className="rounded-2xl border border-line bg-elevated p-4">
-          <div id="offline-qr-svg" className="qr-tile mx-auto aspect-square w-full overflow-hidden rounded-xl bg-white" />
-          <p id="offline-qr-nombre" className="mt-3 font-display text-base font-semibold text-ink" />
-          <p id="offline-qr-id" className="mt-0.5 text-xs font-medium tabular-nums text-accent" />
+        <div className="rounded-2xl border border-line bg-elevated p-5">
+          <p className="text-xs text-muted">Tu número de cliente</p>
+          <p id="offline-qr-id" className="mt-1 font-display text-4xl font-bold tabular-nums text-accent" />
+          <p id="offline-qr-nombre" className="mt-2 font-display text-base font-semibold text-ink" />
         </div>
-        <p className="mt-2 text-xs text-muted">Muéstraselo al cajero: tu QR funciona sin internet.</p>
+        <p className="mt-2 text-xs text-muted">Sin internet tu QR no se actualiza. Dile este número al cajero.</p>
       </div>
 
       <button

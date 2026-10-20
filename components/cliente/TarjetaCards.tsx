@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { Tier } from "@/lib/loyalty";
 import { LoyaltyCard } from "./LoyaltyCard";
 import { Isotipo } from "@/components/Isotipo";
+import type { QrVigente } from "@/lib/qr";
+import { useQrVigente } from "./useQrVigente";
 
 /** Datos ya interpretados de la tarjeta de una sucursal. */
 export interface TarjetaVM {
@@ -19,22 +21,23 @@ export interface TarjetaVM {
 
 /**
  * La lealtad es POR SUCURSAL: cada sucursal tiene su propia tarjeta (sellos y
- * tier independientes). El QR (identidad del cliente) es el mismo en todas, así
- * que se genera una vez y solo cambian los datos de progreso al elegir sucursal.
+ * tier independientes). El QR (identidad del cliente) es el mismo en todas: se
+ * renueva aquí cada 30 s (0040) y solo cambian los datos al elegir sucursal.
  */
 export function TarjetaCards({
   cards,
   defaultSucursalId,
   name,
   memberId,
-  qrSvg,
+  qrInicial,
 }: {
   cards: TarjetaVM[];
   defaultSucursalId: string;
   name: string;
   memberId: string;
-  qrSvg: string;
+  qrInicial: QrVigente;
 }) {
+  const { svg: qrSvg, vencido: qrVencido } = useQrVigente(qrInicial);
   const inicial = Math.max(0, cards.findIndex((c) => c.sucursalId === defaultSucursalId));
   const [sel, setSel] = useState(inicial);
   const card = cards[sel] ?? cards[0];
@@ -62,13 +65,15 @@ export function TarjetaCards({
           </div>
           <div
             className="qr-tile"
-            style={{ boxSizing: "border-box", background: "#fff", borderRadius: 14, padding: 8, height: "60%", aspectRatio: "1", boxShadow: "0 0 0 1.5px rgba(245,200,0,0.5),0 10px 26px rgba(0,0,0,0.5)" }}
+            style={{ boxSizing: "border-box", background: "#fff", borderRadius: 14, padding: 8, height: "60%", aspectRatio: "1", boxShadow: "0 0 0 1.5px rgba(245,200,0,0.5),0 10px 26px rgba(0,0,0,0.5)", opacity: qrVencido ? 0.15 : 1 }}
             dangerouslySetInnerHTML={{ __html: qrSvg }}
           />
           <div>
             <p className="font-display text-lg font-bold leading-tight">Tu Club arranca hoy</p>
-            <p className="mt-1 text-[13px] opacity-85">
-              Muéstrale este código al cajero en tu próxima visita y suma tu primer sello.
+            <p className="mt-1 text-[13px] opacity-85" role={qrVencido ? "status" : undefined}>
+              {qrVencido
+                ? `Sin conexión, tu código no se puede actualizar. Dile al cajero tu número: ${memberId}.`
+                : "Muéstrale este código al cajero en tu próxima visita y suma tu primer sello."}
             </p>
           </div>
         </div>
@@ -117,6 +122,7 @@ export function TarjetaCards({
         motiv={card.motiv}
         recompensaDisponible={card.recompensaDisponible}
         qrSvg={qrSvg}
+        qrVencido={qrVencido}
       />
     </div>
   );

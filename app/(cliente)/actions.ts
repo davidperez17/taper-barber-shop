@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdmin } from "@/lib/supabase/admin";
 import { setQrToken, clearQrToken, getQrToken } from "@/lib/session";
 import { pushNuevoClienteStaff } from "@/lib/push/eventos";
+import { qrVigente, type QrVigente } from "@/lib/qr";
 import type { ClienteInfo } from "@/lib/types";
 
 export interface FormState {
@@ -138,6 +139,12 @@ export async function crearPin(
 
   await setQrToken(data as string);
   redirect("/tarjeta");
+}
+
+/** Siguiente QR rotativo de la tarjeta (la tarjeta lo pide cada ~30 s). */
+export async function refrescarQr(): Promise<QrVigente | null> {
+  const token = await getQrToken();
+  return token ? qrVigente(token) : null;
 }
 
 /** endpoint: suscripción push de este teléfono, para que deje de ser de este cliente. */

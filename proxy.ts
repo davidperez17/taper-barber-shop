@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
+import { aplicarSesionRenovada, renovarSesionCliente } from "@/lib/sesion-cliente";
 
 // URL de admin oculta: solo se accede visitando el slug secreto (env), que
 // setea una cookie de "puerta". Sin ella, /admin responde 404. Es oscuridad;
@@ -69,7 +70,12 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return updateSession(request);
+  // Antes de updateSession: si rota el token, la página de este request ya
+  // lee el nuevo (NextResponse.next({ request }) reenvía las cookies).
+  const sesionNueva = await renovarSesionCliente(request);
+  const response = await updateSession(request);
+  if (sesionNueva) aplicarSesionRenovada(response, sesionNueva);
+  return response;
 }
 
 export const config = {

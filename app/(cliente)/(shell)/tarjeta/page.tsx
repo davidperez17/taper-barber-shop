@@ -1,6 +1,7 @@
 import Link from "next/link";
-import QRCode from "qrcode";
 import { requireDashboard } from "@/lib/queries/cliente";
+import { getQrToken } from "@/lib/session";
+import { qrVigente } from "@/lib/qr";
 import { computeLoyalty, copyMotivacional, memberId, TIER_LABEL } from "@/lib/loyalty";
 import { fmtMesAnio } from "@/lib/format";
 import { CANJE_HORARIO } from "@/lib/horario";
@@ -41,22 +42,14 @@ export default async function TarjetaPage() {
   const algunaRecompensa = cards.some((c) => c.recompensaDisponible);
   const halloween = faseHalloween();
 
-  // Sin width/height fijos en el <svg> → escala al contenedor (tile responsive en la card).
-  const qrSvg = (
-    await QRCode.toString(dash.cliente.qr_token, {
-      type: "svg",
-      margin: 1,
-      color: { dark: "#000000", light: "#ffffff" },
-      errorCorrectionLevel: "M",
-    })
-  )
-    .replace(/(<svg[^>]*?)\s+width="[^"]*"/, "$1")
-    .replace(/(<svg[^>]*?)\s+height="[^"]*"/, "$1");
+  // QR rotativo (0040): sin red, la tarjeta avisa y /offline muestra el número.
+  const token = await getQrToken();
+  const qrInicial = (token && (await qrVigente(token))) || { svg: "", venceEn: 0 };
 
   return (
     <div className="px-5 pb-6 pt-14">
       <VentaLive clienteId={dash.cliente.id} />
-      <QrOfflineCache nombre={dash.cliente.nombre} memberId={memberId(dash.cliente.numero)} qrSvg={qrSvg} />
+      <QrOfflineCache nombre={dash.cliente.nombre} memberId={memberId(dash.cliente.numero)} />
       {loyalty.recompensaDisponible && <RewardCelebration nombre={dash.cliente.nombre} />}
       <TierUpCelebration clienteId={dash.cliente.id} tiers={[loyalty.tier, ...cards.map((c) => c.tier)]} />
 
@@ -78,7 +71,7 @@ export default async function TarjetaPage() {
         defaultSucursalId={dash.loyalty.sucursal_id}
         name={dash.cliente.nombre}
         memberId={memberId(dash.cliente.numero)}
-        qrSvg={qrSvg}
+        qrInicial={qrInicial}
       />
 
       {/* El canje tiene ventana (0032); el sello se gana a cualquier hora. */}

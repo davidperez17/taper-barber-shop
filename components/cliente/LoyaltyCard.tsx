@@ -26,6 +26,8 @@ interface Props {
   recompensaDisponible: boolean;
   /** SVG del QR ya renderizado en el servidor. */
   qrSvg: string;
+  /** Sin red el tiempo suficiente para que el código rotativo ya no sirva. */
+  qrVencido?: boolean;
 }
 
 export function LoyaltyCard({
@@ -38,6 +40,7 @@ export function LoyaltyCard({
   motiv,
   recompensaDisponible,
   qrSvg,
+  qrVencido = false,
 }: Props) {
   const [flipped, setFlipped] = useState(false);
   const [flippedOnce, setFlippedOnce] = useState(false);
@@ -262,7 +265,7 @@ export function LoyaltyCard({
                 El aro dorado lo define sobre el fondo oscuro; padding chico porque el svg ya trae quiet zone. */}
             <div
               className="qr-tile"
-              style={{ boxSizing: "border-box", background: "#fff", borderRadius: 14, padding: 8, height: "72%", aspectRatio: "1", boxShadow: "0 0 0 1.5px rgba(245,200,0,0.5),0 10px 26px rgba(0,0,0,0.5)" }}
+              style={{ boxSizing: "border-box", background: "#fff", borderRadius: 14, padding: 8, height: "72%", aspectRatio: "1", boxShadow: "0 0 0 1.5px rgba(245,200,0,0.5),0 10px 26px rgba(0,0,0,0.5)", opacity: qrVencido ? 0.15 : 1 }}
               // QR generado en servidor (alto contraste, negro sobre blanco).
               dangerouslySetInnerHTML={{ __html: qrSvg }}
             />
@@ -280,8 +283,18 @@ export function LoyaltyCard({
 
       {/* Siempre presente con altura reservada: así el texto aparece/cambia sin
           empujar el contenido de abajo (evita el salto al voltear). */}
-      <p className="mt-3.5 text-center" style={{ fontSize: 12, lineHeight: 1.5, minHeight: "1.5em", color: "var(--subtle)" }}>
-        {flipped ? "Muéstrale el código al cajero · toca para volver" : !flippedOnce ? "Toca la tarjeta para ver tu QR" : ""}
+      <p
+        className="mt-3.5 text-center"
+        role={flipped && qrVencido ? "status" : undefined}
+        style={{ fontSize: 12, lineHeight: 1.5, minHeight: "1.5em", color: flipped && qrVencido ? "var(--danger)" : "var(--subtle)" }}
+      >
+        {flipped && qrVencido
+          ? `Sin conexión, tu código no se puede actualizar. Dile al cajero tu número: ${memberId}`
+          : flipped
+            ? "Muéstrale el código al cajero · toca para volver"
+            : !flippedOnce
+              ? "Toca la tarjeta para ver tu QR"
+              : ""}
       </p>
     </div>
   );

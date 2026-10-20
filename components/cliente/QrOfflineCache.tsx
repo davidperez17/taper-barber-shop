@@ -3,13 +3,15 @@
 import { useEffect } from "react";
 import { QR_OFFLINE_KEY, type QrOffline } from "@/lib/qr-offline";
 
-/** Guarda el QR vigente para que /offline pueda mostrarlo sin red. */
-export function QrOfflineCache(props: QrOffline) {
-  const { nombre, memberId, qrSvg } = props;
+/**
+ * Guarda nombre y número para /offline. Sobrescribe la copia vieja, que
+ * traía el SVG del QR con el token de sesión (antes de 0040).
+ */
+export function QrOfflineCache({ nombre, memberId }: QrOffline) {
   useEffect(() => {
     try {
-      localStorage.setItem(QR_OFFLINE_KEY, JSON.stringify({ nombre, memberId, qrSvg }));
+      localStorage.setItem(QR_OFFLINE_KEY, JSON.stringify({ nombre, memberId }));
     } catch {}
-  }, [nombre, memberId, qrSvg]);
+  }, [nombre, memberId]);
   return null;
 }
