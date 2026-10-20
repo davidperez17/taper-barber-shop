@@ -14,6 +14,19 @@ export default function RegistroPage() {
   const [state, action, pending] = useActionState(registerCliente, initial);
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
+  // Validación local (PIN distinto) antes de ir al servidor.
+  const [errLocal, setErrLocal] = useState<string | null>(null);
+
+  const validar = (e: React.FormEvent<HTMLFormElement>) => {
+    // preventDefault en onSubmit cancela la action (no hay viaje al servidor).
+    if (pin !== pin2) {
+      e.preventDefault();
+      setErrLocal("Los PIN no coinciden.");
+      return;
+    }
+    setErrLocal(null);
+  };
+  const error = errLocal ?? state.error;
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-[440px] animate-fade-up overflow-auto px-6 pb-8 pt-16 sm:pt-24">
@@ -24,16 +37,18 @@ export default function RegistroPage() {
       <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-0.01em] text-ink">Crea tu cuenta</h1>
       <p className="mb-7 mt-1.5 text-sm text-muted">Tarda menos de 1 minuto</p>
 
-      <form action={action}>
-        <Input label="Nombre completo" name="nombre" placeholder="Tu nombre" autoComplete="name" required />
-        <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" required />
-        <Input label="Correo" hint="· opcional" name="correo" placeholder="tu@correo.com" inputMode="email" autoComplete="email" />
+      {/* key: remonta los inputs con los valores devueltos tras un error
+          (React 19 resetea el form tras cada submit). */}
+      <form action={action} onSubmit={validar} key={state.error ?? ""}>
+        <Input label="Nombre completo" name="nombre" placeholder="Tu nombre" autoComplete="name" maxLength={60} required defaultValue={state.valores?.nombre} />
+        <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" required defaultValue={state.valores?.telefono} />
+        <Input label="Correo" hint="· opcional" name="correo" type="email" placeholder="tu@correo.com" inputMode="email" autoComplete="email" defaultValue={state.valores?.correo} />
 
-        <div className="mb-4"><PinInput value={pin} onChange={setPin} name="pin" label="Crea un PIN (6 dígitos)" /></div>
-        <div className="mb-5"><PinInput value={pin2} onChange={setPin2} name="pin2" label="Confirma tu PIN" /></div>
+        <div className="mb-4"><PinInput value={pin} onChange={(v) => { setPin(v); setErrLocal(null); }} name="pin" label="Crea un PIN (6 dígitos)" /></div>
+        <div className="mb-5"><PinInput value={pin2} onChange={(v) => { setPin2(v); setErrLocal(null); }} name="pin2" label="Confirma tu PIN" /></div>
 
-        {state.error && (
-          <p role="alert" className="mb-4 text-sm text-danger">{state.error}</p>
+        {error && (
+          <p role="alert" className="mb-4 text-sm text-danger">{error}</p>
         )}
 
         <Button type="submit" loading={pending} disabled={pin.length < 6 || pin2.length < 6}>Crear mi cuenta</Button>

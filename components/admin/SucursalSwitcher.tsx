@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { setSucursalActiva } from "@/app/admin/actions";
 import { IconStore, IconCheck } from "@/components/icons";
 
@@ -15,6 +15,18 @@ export function SucursalSwitcher({
 }) {
   const [abierto, setAbierto] = useState(false);
   const [pending, start] = useTransition();
+  const botonRef = useRef<HTMLButtonElement>(null);
+  const listaRef = useRef<HTMLUListElement>(null);
+
+  // Al abrir, el foco pasa a la opción seleccionada (o la primera) para poder
+  // navegar con teclado.
+  useEffect(() => {
+    if (!abierto) return;
+    const ops = listaRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]');
+    const sel = listaRef.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]');
+    (sel ?? ops?.[0])?.focus();
+  }, [abierto]);
+
   const actual = sucursales.find((s) => s.id === activeId) ?? sucursales[0];
   if (!actual) return null;
 
@@ -28,8 +40,36 @@ export function SucursalSwitcher({
     );
   }
 
-  const elegir = (id: string) => {
+  // Cierra el menú y devuelve el foco al botón que lo abrió.
+  const cerrar = () => {
     setAbierto(false);
+    botonRef.current?.focus();
+  };
+
+  // Teclado dentro del menú: Escape cierra, flechas/Home/End mueven el foco.
+  // Enter/Espacio sobre una opción ya disparan su onClick (son <button>).
+  const onKeyLista = (e: KeyboardEvent<HTMLUListElement>) => {
+    if (e.key === "Escape" || e.key === "Tab") {
+      if (e.key === "Escape") e.preventDefault();
+      cerrar();
+      return;
+    }
+    const ops = Array.from(listaRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? []);
+    if (ops.length === 0) return;
+    const i = ops.indexOf(document.activeElement as HTMLButtonElement);
+    let sig: number | null = null;
+    if (e.key === "ArrowDown") sig = (i + 1) % ops.length;
+    else if (e.key === "ArrowUp") sig = (i - 1 + ops.length) % ops.length;
+    else if (e.key === "Home") sig = 0;
+    else if (e.key === "End") sig = ops.length - 1;
+    if (sig !== null) {
+      e.preventDefault();
+      ops[sig].focus();
+    }
+  };
+
+  const elegir = (id: string) => {
+    cerrar();
     if (id === actual.id) return;
     start(async () => {
       await setSucursalActiva(id);
@@ -43,8 +83,20 @@ export function SucursalSwitcher({
   return (
     <div className="relative">
       <button
+        ref={botonRef}
         type="button"
         onClick={() => setAbierto((v) => !v)}
+        onKeyDown={(e) => {
+          // Flecha abajo también abre (patrón listbox); Enter/Espacio ya los
+          // maneja el <button> nativo vía onClick.
+          if (e.key === "ArrowDown" && !abierto) {
+            e.preventDefault();
+            setAbierto(true);
+          } else if (e.key === "Escape" && abierto) {
+            e.preventDefault();
+            setAbierto(false);
+          }
+        }}
         disabled={pending}
         aria-haspopup="listbox"
         aria-expanded={abierto}
@@ -57,8 +109,8 @@ export function SucursalSwitcher({
 
       {abierto && (
         <>
-          <button aria-label="Cerrar" tabIndex={-1} className="fixed inset-0 z-[var(--z-sticky)] cursor-default" onClick={() => setAbierto(false)} />
-          <ul role="listbox" className="absolute left-0 right-0 z-[var(--z-modal)] mt-1 overflow-hidden rounded-lg border border-line bg-bg shadow-lg">
+          <button aria-label="Cerrar" tabIndex={-1} className="fixed inset-0 z-[var(--z-sticky)] cursor-default" onClick={cerrar} />
+          <ul ref={listaRef} role="listbox" onKeyDown={onKeyLista} className="absolute left-0 right-0 z-[var(--z-modal)] mt-1 overflow-hidden rounded-lg border border-line bg-bg shadow-lg">
             {sucursales.map((s) => (
               <li key={s.id}>
                 <button

@@ -110,11 +110,19 @@ export async function cambiarActivoStaff(id: string, activo: boolean): Promise<P
   if (id === yo.id && !activo) return { ok: false, error: "No puedes desactivar tu propia cuenta." };
 
   const admin = createAdmin();
-  const { error } = await admin.from("staff").update({ activo }).eq("id", id);
+  const { data: fila, error } = await admin.from("staff").update({ activo }).eq("id", id).select("user_id").single();
   if (error) {
     if (error.message.includes("dueño")) return { ok: false, error: "Debe quedar al menos un dueño activo." };
     return { ok: false, error: "No se pudo actualizar." };
   }
+  // Desactivar = cortar acceso ya: sin ban, su refresh token seguía vivo y
+  // podía operar por API; y sus dispositivos seguían recibiendo push.
+  if (fila?.user_id) {
+    await admin.auth.admin
+      .updateUserById(fila.user_id as string, { ban_duration: activo ? "none" : "876000h" })
+      .catch(() => {});
+  }
+  if (!activo) await admin.from("push_subscriptions").delete().eq("owner_type", "staff").eq("owner_id", id);
   revalidatePath("/admin/personal");
   return { ok: true };
 }

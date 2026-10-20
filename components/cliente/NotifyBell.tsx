@@ -36,6 +36,14 @@ export function NotifyBell({
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [notis, setNotis] = useState<Noti[]>(notisInicial);
+  // Tras router.refresh (venta en vivo, etc.) llegan props nuevas: se adopta
+  // la bandeja del server. Se ajusta en render comparando con la prop previa
+  // (patrón React; sin useEffect + setState).
+  const [notisPrev, setNotisPrev] = useState(notisInicial);
+  if (notisInicial !== notisPrev) {
+    setNotisPrev(notisInicial);
+    setNotis(notisInicial);
+  }
 
   // Badge: hay no leídas entre las cargadas, o el server contó más de las traídas.
   const extraNoLeidas = noLeidasInicial - notisInicial.filter((x) => !x.leida).length;
@@ -43,8 +51,12 @@ export function NotifyBell({
 
   const abrir = async () => {
     setAbierto(true);
-    const { notis: frescas } = await cargarBandeja();
-    setNotis(frescas);
+    try {
+      const { notis: frescas } = await cargarBandeja();
+      setNotis(frescas);
+    } catch {
+      // Sin red / server caído: se queda con la bandeja que ya tenía.
+    }
   };
 
   const cerrar = useCallback(() => setAbierto(false), []);

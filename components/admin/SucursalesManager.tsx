@@ -101,8 +101,11 @@ function SucursalFila({ sucursal, onEdit }: { sucursal: Sucursal; onEdit: () => 
   );
 }
 
+// Antes "Solicitar ampliación" solo cambiaba un estado local (no llegaba a nadie).
+// Ahora abre WhatsApp con el mensaje pre-armado para enviarlo al proveedor.
+const WA_AMPLIACION = `https://wa.me/?text=${encodeURIComponent("Quiero ampliar mi plan Taper a más sucursales")}`;
+
 function UpsellCard({ max }: { max: number }) {
-  const [enviado, setEnviado] = useState(false);
   return (
     <div className="mt-1 flex flex-col items-start gap-3 rounded-xl border border-dashed border-accent/40 bg-accent-dim/40 p-5 sm:flex-row sm:items-center">
       <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
@@ -114,13 +117,14 @@ function UpsellCard({ max }: { max: number }) {
           Tu plan actual incluye {max} sucursales. Amplía tu plan para abrir más ubicaciones — próximamente.
         </p>
       </div>
-      <button
-        onClick={() => setEnviado(true)}
-        disabled={enviado}
-        className="min-h-10 shrink-0 rounded-full bg-accent px-4 text-sm font-semibold text-accent-ink disabled:opacity-60"
+      <a
+        href={WA_AMPLIACION}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex min-h-10 shrink-0 items-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-ink"
       >
-        {enviado ? "Solicitud enviada ✓" : "Solicitar ampliación"}
-      </button>
+        Solicitar ampliación
+      </a>
     </div>
   );
 }

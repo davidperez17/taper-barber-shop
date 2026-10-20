@@ -10,18 +10,32 @@ export async function getClienteParaVenta(
   sucursalId: string | null,
 ): Promise<ClienteDashboard | null> {
   const sb = await createClient();
-  const { data: cliente } = await sb
-    .from("clientes")
-    .select("qr_token")
-    .eq("id", clienteId)
-    .single();
-  if (!cliente) return null;
+  return (await clientePorId(sb, clienteId, sucursalId)) as ClienteDashboard | null;
+}
 
-  const { data } = await sb.rpc("get_cliente_by_qr", {
-    p_qr_token: cliente.qr_token,
-    p_sucursal_id: sucursalId,
-  });
-  return (data as ClienteDashboard | null) ?? null;
+/**
+ * Dashboard de un cliente por id para el staff. Usa get_cliente_by_id (0033),
+ * que no expone qr_token; si la base aún no la tiene, cae al camino viejo
+ * (leer qr_token → get_cliente_by_qr), que 0033 deja de permitir.
+ */
+export async function clientePorId(
+  sb: Awaited<ReturnType<typeof createClient>>,
+  clienteId: string,
+  sucursalId: string | null,
+): Promise<Record<string, unknown> | null> {
+  const nuevo = await sb.rpc("get_cliente_by_id", { p_cliente_id: clienteId, p_sucursal_id: sucursalId });
+  if (!nuevo.error) return (nuevo.data as Record<string, unknown> | null) ?? null;
+  if (nuevo.error.code !== "PGRST202") return null;
+
+  const { data: cliente } = await sb.from("clientes").select("qr_token").eq("id", clienteId).single();
+  if (!cliente) return null;
+  const { data } = await sb.rpc("get_cliente_by_qr", { p_qr_token: cliente.qr_token, p_sucursal_id: sucursalId });
+  if (!data) return null;
+  // Nunca mandar el token al navegador (es la sesión del cliente en la PWA).
+  const d = data as { cliente: Record<string, unknown> };
+  const { qr_token: _omit, ...resto } = d.cliente;
+  void _omit;
+  return { ...d, cliente: resto };
 }
 
 export interface Catalogo {

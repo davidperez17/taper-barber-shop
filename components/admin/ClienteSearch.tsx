@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { IconSearch } from "@/components/icons";
+import { filtroClientes } from "@/components/admin/filtroClientes";
 
 interface Hit {
   id: string;
@@ -19,21 +20,26 @@ export function ClienteSearch() {
   const router = useRouter();
   const sb = useRef(createClient());
 
+  // Contador de búsquedas: solo se aplica la respuesta de la más reciente
+  // (una lenta que llega tarde no pisa los resultados actuales).
+  const reqId = useRef(0);
+
   // loading/hits se resetean en el onChange (no setState síncrono en el effect);
   // aquí solo vive el fetch debounced.
   useEffect(() => {
+    const id = ++reqId.current;
     const term = q.trim();
     if (term.length < 2) return;
     const t = setTimeout(async () => {
-      const digits = term.replace(/\D/g, "");
-      const filter = digits.length >= 3
-        ? `telefono.ilike.%${digits}%,nombre.ilike.%${term}%`
-        : `nombre.ilike.%${term}%`;
-      const { data } = await sb.current
-        .from("clientes")
-        .select("id, numero, nombre, telefono")
-        .or(filter)
-        .limit(8);
+      const filter = filtroClientes(term);
+      const { data } = filter
+        ? await sb.current
+            .from("clientes")
+            .select("id, numero, nombre, telefono")
+            .or(filter)
+            .limit(8)
+        : { data: [] };
+      if (id !== reqId.current) return;
       setHits((data as Hit[]) ?? []);
       setLoading(false);
     }, 250);

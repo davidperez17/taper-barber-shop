@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -142,6 +143,7 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
           <button
             key={t}
             onClick={() => setTab(t)}
+            aria-pressed={tab === t}
             className={`-mb-px min-h-10 border-b-2 text-sm font-medium capitalize transition-colors ${tab === t ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"}`}
           >
             {t === "notas" ? "Notas y etiquetas" : t}
@@ -322,7 +324,12 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
     if (!nuevaNota.trim()) return;
     start(async () => { await addNota(clienteId, nuevaNota); setNuevaNota(""); router.refresh(); });
   };
-  const borrarNota = (id: string) => start(async () => { await deleteNota(id, clienteId); router.refresh(); });
+  // Borrar una nota no se puede deshacer → se confirma antes (id de la nota a borrar).
+  const [notaABorrar, setNotaABorrar] = useState<string | null>(null);
+  const borrarNota = (id: string) => {
+    setNotaABorrar(null);
+    start(async () => { await deleteNota(id, clienteId); router.refresh(); });
+  };
 
   const sugeridas = ETIQUETAS_SUGERIDAS.filter((s) => !etiquetas.includes(s));
 
@@ -377,13 +384,23 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
             <div key={n.id} className="rounded-xl border border-line bg-elevated p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <p className="whitespace-pre-wrap text-sm text-ink">{n.texto}</p>
-                <button onClick={() => borrarNota(n.id)} aria-label="Borrar nota" className="-mr-1 -mt-1 flex size-9 shrink-0 items-center justify-center text-base text-subtle hover:text-danger">×</button>
+                <button onClick={() => setNotaABorrar(n.id)} disabled={pending} aria-label="Borrar nota" className="-mr-1 -mt-1 flex size-9 shrink-0 items-center justify-center text-base text-subtle hover:text-danger">×</button>
               </div>
               <p className="mt-1.5 text-[11px] text-subtle">{fmtDiaMes(n.created_at)}{n.autor_nombre ? ` · ${n.autor_nombre}` : ""}</p>
             </div>
           ))}
           {notas.length === 0 && <p className="text-[13px] text-subtle">Sin notas todavía.</p>}
         </div>
+        {notaABorrar && (
+          <ConfirmDialog
+            title="¿Borrar esta nota?"
+            message="La nota se eliminará para todo el equipo. No se puede deshacer."
+            confirmLabel="Borrar"
+            danger
+            onConfirm={() => borrarNota(notaABorrar)}
+            onCancel={() => setNotaABorrar(null)}
+          />
+        )}
       </section>
     </div>
   );
@@ -409,7 +426,8 @@ function EditarSheet({ cliente, onClose }: { cliente: Ficha["cliente"]; onClose:
     });
   };
 
-  return (
+  // Portal a body: animate-fade-up de un ancestro atrapa position:fixed.
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Editar cliente">
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
@@ -427,7 +445,8 @@ function EditarSheet({ cliente, onClose }: { cliente: Ficha["cliente"]; onClose:
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -477,7 +496,8 @@ function EditarVentaSheet({
     });
   };
 
-  return (
+  // Portal a body: animate-fade-up de un ancestro atrapa position:fixed.
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Editar venta">
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
@@ -494,6 +514,7 @@ function EditarVentaSheet({
                 <button
                   key={m}
                   onClick={() => setMetodo(m)}
+                  aria-pressed={metodo === m}
                   className={`min-h-10 rounded-full border px-4 text-sm font-medium capitalize transition-colors ${metodo === m ? "border-accent bg-accent text-accent-ink" : "border-line bg-elevated text-muted hover:text-ink"}`}
                 >
                   {m}
@@ -527,7 +548,8 @@ function EditarVentaSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -559,7 +581,8 @@ function AjustarSellosSheet({
     });
   };
 
-  return (
+  // Portal a body: animate-fade-up de un ancestro atrapa position:fixed.
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Ajustar sellos">
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
@@ -590,6 +613,7 @@ function AjustarSellosSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

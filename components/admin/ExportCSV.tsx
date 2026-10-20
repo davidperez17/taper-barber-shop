@@ -4,7 +4,13 @@ import type { ReporteData } from "@/lib/queries/reportes";
 
 export function ExportCSV({ reporte, rangoLabel }: { reporte: ReporteData; rangoLabel: string }) {
   function descargar() {
-    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    // Celdas que empiezan con = + - @ se interpretan como fórmula en Excel/Sheets
+    // (inyección de fórmulas): se antepone ' para forzarlas a texto.
+    const esc = (v: string | number) => {
+      let s = String(v);
+      if (typeof v === "string" && /^[=+\-@]/.test(s)) s = `'${s}`;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
     const L: string[] = [];
     L.push(`Reporte Taper Barber,${esc(rangoLabel)}`);
     L.push("");
@@ -32,7 +38,8 @@ export function ExportCSV({ reporte, rangoLabel }: { reporte: ReporteData; rango
     a.href = url;
     a.download = `reporte-taper-${rangoLabel.toLowerCase().replace(/\s+/g, "-")}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
+    // Safari cancela la descarga si se revoca la URL en el mismo tick del click.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return (

@@ -115,6 +115,13 @@ export interface VentaInput {
   canjear: boolean;
   items: VentaItemInput[];
   cuponId?: string | null;
+  // Idempotencia (0034): UUID generado en el POS por venta. Un reintento
+  // (red caída, cola offline en dos pestañas) devuelve la venta ya guardada.
+  clientId?: string;
+  // Contexto capturado al cobrar, para la cola offline: sin esto la venta se
+  // registraba con la sucursal y la hora del momento de sincronizar.
+  sucursalId?: string | null;
+  creadoEn?: string;
 }
 
 export type VentaResult = { ok: true; total: number } | { ok: false; error: string };
@@ -123,7 +130,9 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
   if (input.items.length === 0) return { ok: false, error: "Agrega al menos un servicio o producto." };
 
   const sb = await createClient();
-  const sucursalId = await sucursalActiva();
+  // La sucursal capturada al cobrar manda (cola offline); record_venta (0034)
+  // la fuerza a la del staff si es cajero/barbero.
+  const sucursalId = input.sucursalId ?? (await sucursalActiva());
   const params: Record<string, unknown> = {
     p_cliente_id: input.clienteId,
     p_barbero_id: input.barberoId,
@@ -133,9 +142,17 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
     p_cupon_id: input.cuponId ?? null,
   };
   if (sucursalId) params.p_sucursal_id = sucursalId;
+  if (input.clientId) params.p_client_id = input.clientId;
+  if (input.creadoEn) params.p_creado_en = input.creadoEn;
 
   const recompensasAntes = await recompensasDisponibles(sb, input.clienteId, sucursalId);
-  const { data, error } = await sb.rpc("record_venta", params);
+  let { data, error } = await sb.rpc("record_venta", params);
+  // Base sin 0034 aún: PostgREST no encuentra la firma con los params nuevos.
+  if (error?.code === "PGRST202" && (params.p_client_id || params.p_creado_en)) {
+    delete params.p_client_id;
+    delete params.p_creado_en;
+    ({ data, error } = await sb.rpc("record_venta", params));
+  }
 
   if (error) {
     // Los candados de canje (record_venta) rebotan con P0001.
@@ -493,7 +510,11 @@ export async function cerrarCaja(
   };
   if (sucursalId) params.p_sucursal_id = sucursalId;
   const { error } = await sb.rpc("caja_cerrar", params);
-  if (error) return { ok: false, error: error.message.includes("cerrada") ? "La caja de ese día ya está cerrada." : "No se pudo cerrar la caja." };
+  if (error) {
+    // "cerrada" (RPC) o unique_violation (dos dispositivos cerrando a la vez).
+    const yaCerrada = error.message.includes("cerrada") || error.code === "23505";
+    return { ok: false, error: yaCerrada ? "La caja de ese día ya está cerrada." : "No se pudo cerrar la caja." };
+  }
   revalidatePath("/admin/caja");
   return { ok: true };
 }
@@ -536,10 +557,11 @@ export async function saveServicio(input: {
     const sucursalId = await sucursalActiva();
     if (sucursalId) fila.sucursal_id = sucursalId;
   }
-  const { error } = input.id
-    ? await sb.from("servicios").update(fila).eq("id", input.id)
-    : await sb.from("servicios").insert(fila);
+  const { data: tocadas, error } = input.id
+    ? await sb.from("servicios").update(fila).eq("id", input.id).select("id")
+    : await sb.from("servicios").insert(fila).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/catalogo");
   return { ok: true };
 }
@@ -578,10 +600,11 @@ export async function saveProducto(input: {
     if (sucursalId) fila.sucursal_id = sucursalId;
   }
 
-  const { error } = input.id
-    ? await sb.from("productos").update(fila).eq("id", input.id)
-    : await sb.from("productos").insert(fila);
+  const { data: tocadas, error } = input.id
+    ? await sb.from("productos").update(fila).eq("id", input.id).select("id")
+    : await sb.from("productos").insert(fila).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/catalogo");
   revalidatePath("/admin/inventario");
   return { ok: true };
@@ -636,8 +659,9 @@ export async function toggleActivo(
   activo: boolean,
 ): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from(tabla).update({ activo }).eq("id", id);
+  const { data: tocadas, error } = await sb.from(tabla).update({ activo }).eq("id", id).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/catalogo");
   return { ok: true };
 }
@@ -678,34 +702,59 @@ export async function saveCupon(input: {
     usos_max: input.usos_max,
     activo: input.activo,
   };
-  const { error } = input.id
-    ? await sb.from("cupones").update(fila).eq("id", input.id)
-    : await sb.from("cupones").insert(fila);
+  const { data: tocadas, error } = input.id
+    ? await sb.from("cupones").update(fila).eq("id", input.id).select("id")
+    : await sb.from("cupones").insert(fila).select("id");
   if (error) {
     if (error.message.includes("duplicate")) return { ok: false, error: "Ya existe un cupón con ese código." };
     return { ok: false, error: catalogoError(error.message) };
   }
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/cupones");
   return { ok: true };
 }
 
 export async function toggleCuponActivo(id: string, activo: boolean): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("cupones").update({ activo }).eq("id", id);
+  // RLS que bloquea un update no da error: afecta 0 filas. Sin este chequeo la UI decía "listo".
+  const { data: tocadas, error } = await sb.from("cupones").update({ activo }).eq("id", id).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/cupones");
   return { ok: true };
 }
 
 export async function deleteCupon(id: string): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("cupones").delete().eq("id", id);
+  const { data: tocadas, error } = await sb.from("cupones").delete().eq("id", id).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/cupones");
   return { ok: true };
 }
 
 // ── Agenda: citas (gestión del staff) ───────────────────────────
+/**
+ * Query sobre una cita por id, acotada a la sucursal del trabajador
+ * (cajero/barbero): antes bastaba el id para editar o borrar citas de otra
+ * sucursal. Dueño/admin operan sobre cualquiera.
+ * accion: undefined = select · objeto = update · "delete".
+ */
+function citaDeMiSucursal(
+  sb: Awaited<ReturnType<typeof createClient>>,
+  staff: Awaited<ReturnType<typeof getStaff>>,
+  id: string,
+  accion?: Record<string, unknown> | "delete",
+) {
+  const base = sb.from("citas");
+  let q = accion === "delete" ? base.delete() : accion ? base.update(accion) : base.select("*");
+  q = q.eq("id", id);
+  if (staff && (staff.rol === "cajero" || staff.rol === "barbero") && staff.sucursal_id) {
+    q = q.eq("sucursal_id", staff.sucursal_id);
+  }
+  return q;
+}
+
 export async function saveCita(input: {
   id?: string;
   clienteId: string | null;
@@ -745,9 +794,21 @@ export async function saveCita(input: {
     nota: input.nota.trim() || null,
   };
   const sucursalId = input.id ? null : await sucursalActiva();
-  const { error } = input.id
-    ? await sb.from("citas").update(fila).eq("id", input.id)
-    : await sb.from("citas").insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) });
+  let error;
+  if (input.id) {
+    // Si se reagenda, el recordatorio debe volver a salir para la hora nueva.
+    const { data: previa } = await citaDeMiSucursal(sb, staff, input.id).select("inicia_en").maybeSingle();
+    if (!previa) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
+    const reagendada = new Date(previa.inicia_en as string).getTime() !== inicia.getTime();
+    ({ error } = await sb
+      .from("citas")
+      .update({ ...fila, ...(reagendada ? { recordatorio_enviado: false } : {}) })
+      .eq("id", input.id));
+  } else {
+    ({ error } = await sb
+      .from("citas")
+      .insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) }));
+  }
   if (error) return { ok: false, error: catalogoError(error.message) };
 
   // Aviso al cliente registrado cuando se agenda una cita nueva.
@@ -762,8 +823,10 @@ export async function updateEstadoCita(
   estado: "pendiente" | "confirmada" | "completada" | "cancelada",
 ): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("citas").update({ estado }).eq("id", id);
+  const staff = await getStaff();
+  const { data: tocadas, error } = await citaDeMiSucursal(sb, staff, id, { estado }).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
 
   // Aviso al cliente registrado cuando su cita se confirma o cancela.
   if (estado === "confirmada" || estado === "cancelada") {
@@ -777,8 +840,10 @@ export async function updateEstadoCita(
 
 export async function deleteCita(id: string): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("citas").delete().eq("id", id);
+  const staff = await getStaff();
+  const { data: tocadas, error } = await citaDeMiSucursal(sb, staff, id, "delete").select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
   revalidatePath("/admin/agenda");
   return { ok: true };
 }
@@ -815,7 +880,11 @@ export async function enviarDifusion(input: {
   if (!titulo) return { ok: false, error: "Escribe un título." };
   if (!mensaje) return { ok: false, error: "Escribe el mensaje." };
 
+  // Solo rutas de la propia app: el SW abre esta URL al tocar la notificación.
   const url = input.url.trim() || "/";
+  if (!url.startsWith("/") || url.startsWith("//")) {
+    return { ok: false, error: "El enlace debe ser una ruta de la app (empieza con /)." };
+  }
 
   // A clientes: dejar registro en la bandeja de todos (promos), tengan push o no.
   if (input.audiencia === "clientes") {

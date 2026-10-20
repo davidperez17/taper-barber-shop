@@ -181,6 +181,7 @@ function CuponSheet({ cupon, onClose }: { cupon: Cupon | null; onClose: () => vo
                   key={t}
                   type="button"
                   onClick={() => setTipo(t)}
+                  aria-pressed={tipo === t}
                   className={`min-h-11 flex-1 rounded-lg border text-sm font-medium capitalize transition-colors ${tipo === t ? "border-accent bg-accent text-accent-ink" : "border-line bg-elevated text-muted hover:text-ink"}`}
                 >
                   {t === "porcentaje" ? "Porcentaje %" : "Monto Q"}

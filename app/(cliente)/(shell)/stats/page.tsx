@@ -8,15 +8,17 @@ export default async function StatsPage() {
   const dash = await requireDashboard();
   const loyalty = computeLoyalty(dash.loyalty);
   const visitas = dash.loyalty.visitas_12m;
+  // Igual que la Tarjeta: los cortes totales suman todas las sucursales.
+  const cortesGlobal = dash.loyalty_sucursales.reduce((sum, s) => sum + s.cortes_total, 0);
 
   return (
     <div className="px-5 pb-6 pt-14">
       <h1 className="mb-5 font-display text-[30px] font-bold tracking-[-0.01em] text-ink">Mis Stats</h1>
 
       <div className="grid grid-cols-2 gap-3.5">
-        <Stat value={String(dash.loyalty.cortes_total)} label="Cortes totales" accent />
+        <Stat value={String(cortesGlobal)} label="Cortes totales" accent />
         <Stat value={TIER_LABEL[loyalty.tier]} label="Nivel actual" />
-        <Stat value={fmtMesCorto(dash.cliente.created_at)} label="1ra visita" />
+        <Stat value={fmtMesCorto(dash.cliente.created_at)} label="Miembro desde" />
       </div>
 
       <h2 className="mb-3.5 mt-7 font-display text-xl font-bold text-ink">Mi progreso VIP</h2>

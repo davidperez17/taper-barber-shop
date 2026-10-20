@@ -58,7 +58,7 @@ export default async function TarjetaPage() {
       <VentaLive clienteId={dash.cliente.id} />
       <QrOfflineCache nombre={dash.cliente.nombre} memberId={memberId(dash.cliente.numero)} qrSvg={qrSvg} />
       {loyalty.recompensaDisponible && <RewardCelebration nombre={dash.cliente.nombre} />}
-      <TierUpCelebration tier={loyalty.tier} tierLabel={TIER_LABEL[loyalty.tier]} />
+      <TierUpCelebration clienteId={dash.cliente.id} tiers={[loyalty.tier, ...cards.map((c) => c.tier)]} />
 
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">

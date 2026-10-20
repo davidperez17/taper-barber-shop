@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { todasLasFilas } from "@/lib/supabase/paginar";
+import { clientePorId } from "@/lib/queries/admin";
 import type { ClienteRow, ClienteFicha, LoyaltyRawData } from "@/lib/types";
 
 const LOYALTY_VACIO: LoyaltyRawData = {
@@ -15,14 +17,28 @@ const LOYALTY_VACIO: LoyaltyRawData = {
  */
 export async function getClientesConLealtad(sucursalId: string | null): Promise<ClienteRow[]> {
   const sb = await createClient();
-  const loyaltyQuery = sb.from("cliente_loyalty").select("*");
+  // Paginado: con más de 1000 clientes la lista se cortaba sin aviso.
   const [clientes, loyalty] = await Promise.all([
-    sb.from("clientes").select("id, numero, nombre, telefono, correo, created_at").eq("activo", true).order("nombre"),
-    sucursalId ? loyaltyQuery.eq("sucursal_id", sucursalId) : loyaltyQuery,
+    todasLasFilas((desde, hasta) =>
+      sb
+        .from("clientes")
+        .select("id, numero, nombre, telefono, correo, created_at")
+        .eq("activo", true)
+        .order("nombre")
+        .order("id")
+        .range(desde, hasta),
+    ),
+    todasLasFilas((desde, hasta) => {
+      const q = sb.from("cliente_loyalty").select("*");
+      return (sucursalId ? q.eq("sucursal_id", sucursalId) : q)
+        .order("cliente_id")
+        .order("sucursal_id")
+        .range(desde, hasta);
+    }),
   ]);
 
-  const lmap = new Map((loyalty.data ?? []).map((l) => [l.cliente_id, l as LoyaltyRawData & { cliente_id: string }]));
-  return (clientes.data ?? []).map((c) => ({
+  const lmap = new Map(loyalty.map((l) => [l.cliente_id, l as LoyaltyRawData & { cliente_id: string }]));
+  return clientes.map((c) => ({
     ...c,
     loyalty: lmap.get(c.id) ?? LOYALTY_VACIO,
   })) as ClienteRow[];
@@ -36,7 +52,7 @@ export async function getClienteFicha(id: string, sucursalId: string | null): Pr
   const sb = await createClient();
   const { data: cliente } = await sb
     .from("clientes")
-    .select("id, numero, nombre, telefono, correo, qr_token, created_at, activo")
+    .select("id, numero, nombre, telefono, correo, created_at, activo")
     .eq("id", id)
     .single();
   if (!cliente) return null;
@@ -47,14 +63,14 @@ export async function getClienteFicha(id: string, sucursalId: string | null): Pr
   if (sucursalId) barberosQ = barberosQ.eq("sucursal_id", sucursalId);
 
   const [dash, notas, etiquetas, ventasMeta, barberos] = await Promise.all([
-    sb.rpc("get_cliente_by_qr", { p_qr_token: cliente.qr_token, p_sucursal_id: sucursalId }),
+    clientePorId(sb, id, sucursalId),
     sb.from("cliente_notas").select("id, texto, created_at, autor_nombre").eq("cliente_id", id).order("created_at", { ascending: false }),
     sb.from("cliente_etiquetas").select("etiqueta").eq("cliente_id", id).order("created_at"),
     sb.from("ventas").select("id, metodo_pago, barbero_id").eq("cliente_id", id),
     barberosQ.order("nombre"),
   ]);
 
-  const d = dash.data as { loyalty: LoyaltyRawData; historial: ClienteFicha["historial"] } | null;
+  const d = dash as { loyalty: LoyaltyRawData; historial: ClienteFicha["historial"] } | null;
   const metaMap = new Map((ventasMeta.data ?? []).map((v) => [v.id, v as { id: string; metodo_pago: "efectivo" | "tarjeta" | "transferencia"; barbero_id: string | null }]));
 
   return {

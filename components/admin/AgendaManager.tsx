@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +8,7 @@ import { saveCita, updateEstadoCita, deleteCita, type ActionResult } from "@/app
 import type { Barbero, Servicio, CitaRow, CitaEstado, CitaUbicacion } from "@/lib/types";
 import { IconPlus, IconSearch, IconChevronLeft, IconPencil } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
+import { filtroClientes } from "@/components/admin/filtroClientes";
 
 const TZ = "America/Guatemala";
 const ESTADOS: CitaEstado[] = ["pendiente", "confirmada", "completada", "cancelada"];
@@ -192,16 +193,25 @@ function ClientePicker({ value, onChange }: { value: ClienteSel; onChange: (v: C
   const [hits, setHits] = useState<{ id: string; nombre: string; telefono: string }[]>([]);
   const [abierto, setAbierto] = useState(false);
   const sb = useRef(createClient());
+  // Debounce (~250 ms) + contador de búsquedas: solo se aplica la respuesta
+  // de la más reciente, una lenta que llega tarde no pisa los resultados.
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const reqId = useRef(0);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
-  async function buscar(term: string) {
+  function buscar(term: string) {
     setQ(term);
     onChange({ id: null, nombre: term }); // permite nombre libre mientras escribe
-    if (term.trim().length < 2) { setHits([]); setAbierto(false); return; }
-    const digits = term.replace(/\D/g, "");
-    const filter = digits.length >= 3 ? `telefono.ilike.%${digits}%,nombre.ilike.%${term}%` : `nombre.ilike.%${term}%`;
-    const { data } = await sb.current.from("clientes").select("id, nombre, telefono").or(filter).limit(6);
-    setHits((data as { id: string; nombre: string; telefono: string }[]) ?? []);
-    setAbierto(true);
+    clearTimeout(timer.current);
+    const id = ++reqId.current;
+    const filter = filtroClientes(term);
+    if (!filter) { setHits([]); setAbierto(false); return; }
+    timer.current = setTimeout(async () => {
+      const { data } = await sb.current.from("clientes").select("id, nombre, telefono").or(filter).limit(6);
+      if (id !== reqId.current) return;
+      setHits((data as { id: string; nombre: string; telefono: string }[]) ?? []);
+      setAbierto(true);
+    }, 250);
   }
 
   return (
@@ -325,6 +335,7 @@ function CitaSheet({ cita, fechaDefault, barberos, servicios, onClose }: {
                   key={u}
                   type="button"
                   onClick={() => setUbicacion(u)}
+                  aria-pressed={ubicacion === u}
                   className={`min-h-11 flex-1 rounded-lg border text-sm font-medium transition-colors ${ubicacion === u ? "border-accent bg-accent text-accent-ink" : "border-line bg-elevated text-muted hover:text-ink"}`}
                 >
                   {u === "barberia" ? "En la barbería" : "Domicilio / evento"}

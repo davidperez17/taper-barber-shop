@@ -79,7 +79,6 @@ export interface ClienteFicha {
     nombre: string;
     telefono: string;
     correo: string | null;
-    qr_token: string;
     created_at: string;
     activo: boolean;
   };

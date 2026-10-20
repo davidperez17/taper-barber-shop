@@ -57,7 +57,9 @@ export async function updateSession(request: NextRequest) {
   if (isAdmin && !isLogin && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
-    url.searchParams.set("next", pathname);
+    // `next` conserva el query (p. ej. ?rango=7d) en vez de dejarlo suelto en /login.
+    url.search = "";
+    url.searchParams.set("next", pathname + request.nextUrl.search);
     const res = NextResponse.redirect(url);
     if (authRota) {
       for (const c of request.cookies.getAll()) {

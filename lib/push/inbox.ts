@@ -25,21 +25,33 @@ export async function registrarNoti(clienteId: string, noti: NotiInput): Promise
   } catch {}
 }
 
-/** Registra la misma notificación para todos los clientes (difusión/promos). */
+const PAGINA = 1000; // tope por defecto de filas de PostgREST
+
+/**
+ * Registra la misma notificación para todos los clientes (difusión/promos).
+ * Paginado: un solo select devolvía máx. 1000 filas y el resto se quedaba sin aviso.
+ */
 export async function registrarNotiTodosClientes(noti: NotiInput): Promise<void> {
   try {
     const admin = createAdmin();
-    const { data } = await admin.from("clientes").select("id");
-    const ids = (data as { id: string }[] | null) ?? [];
-    if (ids.length === 0) return;
-    await admin.from("notificaciones").insert(
-      ids.map((c) => ({
-        cliente_id: c.id,
-        tipo: noti.tipo ?? "general",
-        titulo: noti.titulo,
-        cuerpo: noti.cuerpo,
-        url: noti.url ?? null,
-      })),
-    );
+    for (let desde = 0; ; desde += PAGINA) {
+      const { data } = await admin
+        .from("clientes")
+        .select("id")
+        .order("id")
+        .range(desde, desde + PAGINA - 1);
+      const ids = (data as { id: string }[] | null) ?? [];
+      if (ids.length === 0) return;
+      await admin.from("notificaciones").insert(
+        ids.map((c) => ({
+          cliente_id: c.id,
+          tipo: noti.tipo ?? "general",
+          titulo: noti.titulo,
+          cuerpo: noti.cuerpo,
+          url: noti.url ?? null,
+        })),
+      );
+      if (ids.length < PAGINA) return;
+    }
   } catch {}
 }

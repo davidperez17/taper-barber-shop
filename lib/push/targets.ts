@@ -29,8 +29,28 @@ export async function subsPorTipo(
   ownerType: "cliente" | "staff",
   sucursalId?: string | null,
 ): Promise<Suscripcion[]> {
-  let q = createAdmin().from("push_subscriptions").select(COLS).eq("owner_type", ownerType);
-  if (sucursalId) q = q.eq("sucursal_id", sucursalId);
-  const { data } = await q;
-  return (data as Suscripcion[]) ?? [];
+  const admin = createAdmin();
+  // Paginado: PostgREST corta en 1000 filas por defecto.
+  let filas: (Suscripcion & { owner_id: string })[] = [];
+  for (let desde = 0; ; desde += 1000) {
+    let q = admin
+      .from("push_subscriptions")
+      .select(`${COLS}, owner_id`)
+      .eq("owner_type", ownerType)
+      .order("endpoint")
+      .range(desde, desde + 999);
+    if (sucursalId) q = q.eq("sucursal_id", sucursalId);
+    const { data } = await q;
+    const pagina = (data as (Suscripcion & { owner_id: string })[]) ?? [];
+    filas = filas.concat(pagina);
+    if (pagina.length < 1000) break;
+  }
+  // Staff desactivado no debe seguir recibiendo avisos internos (stock,
+  // difusión, cliente nuevo) aunque su suscripción siga viva.
+  if (ownerType === "staff" && filas.length > 0) {
+    const { data: activos } = await admin.from("staff").select("id").eq("activo", true);
+    const ids = new Set((activos ?? []).map((s) => s.id as string));
+    filas = filas.filter((f) => ids.has(f.owner_id));
+  }
+  return filas.map(({ endpoint, p256dh, auth }) => ({ endpoint, p256dh, auth }));
 }

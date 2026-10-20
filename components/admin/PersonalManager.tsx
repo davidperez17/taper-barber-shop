@@ -11,6 +11,7 @@ import type { StaffRow, RolStaff } from "@/lib/types";
 import type { BarberoVinculo } from "@/lib/queries/personal";
 import { IconPlus, IconPencil, IconEye, IconEyeOff } from "@/components/icons";
 import { useModalA11y } from "@/components/admin/useModalA11y";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 const ROLES: RolStaff[] = ["cajero", "barbero", "admin", "dueno"];
 const ROL_LABEL: Record<RolStaff, string> = { cajero: "Cajero", barbero: "Barbero", admin: "Admin", dueno: "Dueño" };
@@ -90,7 +91,10 @@ function useAction() {
 }
 
 function PersonalFila({ staff, esYo, onEdit }: { staff: StaffRow; esYo: boolean; onEdit: () => void }) {
-  const { pending, run } = useAction();
+  const { pending, error, run } = useAction();
+  // Desactivar corta el acceso al panel → se confirma. Activar va directo.
+  const [confirmando, setConfirmando] = useState(false);
+  const cambiar = () => run(() => cambiarActivoStaff(staff.id, !staff.activo));
   return (
     <div className="flex items-center gap-3 rounded-xl border border-line bg-elevated px-4 py-3">
       <div className="min-w-0 flex-1">
@@ -104,6 +108,7 @@ function PersonalFila({ staff, esYo, onEdit }: { staff: StaffRow; esYo: boolean;
           {fmtAcceso(staff.last_sign_in_at)}
           {(staff.rol === "cajero" || staff.rol === "barbero") && staff.sucursal_nombre ? ` · ${staff.sucursal_nombre}` : ""}
         </p>
+        {error && <p role="alert" className="mt-0.5 text-[12px] text-danger">{error}</p>}
       </div>
 
       {/* Switch de estado (bloqueado para la propia cuenta) */}
@@ -113,7 +118,7 @@ function PersonalFila({ staff, esYo, onEdit }: { staff: StaffRow; esYo: boolean;
         aria-checked={staff.activo}
         aria-label={`${staff.activo ? "Desactivar" : "Activar"} a ${staff.nombre}`}
         disabled={pending || esYo}
-        onClick={() => run(() => cambiarActivoStaff(staff.id, !staff.activo))}
+        onClick={() => (staff.activo ? setConfirmando(true) : cambiar())}
         title={esYo ? "No puedes desactivar tu propia cuenta" : undefined}
         className="flex min-h-11 shrink-0 items-center gap-2 rounded-full px-1.5 disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -128,6 +133,17 @@ function PersonalFila({ staff, esYo, onEdit }: { staff: StaffRow; esYo: boolean;
       <button onClick={onEdit} className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-3.5 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink">
         <IconPencil size={15} /> Editar
       </button>
+
+      {confirmando && (
+        <ConfirmDialog
+          title={`¿Desactivar a ${staff.nombre}?`}
+          message="Ya no podrá iniciar sesión en el panel. Puedes volver a activarlo cuando quieras."
+          confirmLabel="Desactivar"
+          danger
+          onConfirm={() => { setConfirmando(false); cambiar(); }}
+          onCancel={() => setConfirmando(false)}
+        />
+      )}
     </div>
   );
 }
@@ -174,6 +190,7 @@ function RolSelector({ value, onChange, disabled }: { value: RolStaff; onChange:
             type="button"
             disabled={disabled}
             onClick={() => onChange(r)}
+            aria-pressed={activo}
             className={`flex items-start gap-3 rounded-lg border px-3.5 py-2.5 text-left transition-colors disabled:opacity-50 ${activo ? "border-accent bg-accent-dim" : "border-line bg-elevated hover:border-line-strong"}`}
           >
             <span className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border ${activo ? "border-accent" : "border-line-strong"}`}>
@@ -201,6 +218,7 @@ function PersonalSheet({ staff, esYo, sucursales, barberos, onClose }: { staff: 
   const [barberoId, setBarberoId] = useState<string>(staff?.barbero_id ?? "");
 
   const esNuevo = staff === null;
+  const sucursalInactiva = !!staff?.sucursal_id && !sucursales.some((s) => s.id === staff.sucursal_id);
   // La sucursal solo aplica a trabajadores (dueño/admin ven todas).
   const asignaSucursal = rol === "cajero" || rol === "barbero";
   // El vínculo a barbero solo tiene sentido para el rol barbero.
@@ -252,6 +270,11 @@ function PersonalSheet({ staff, esYo, sucursales, barberos, onClose }: { staff: 
             <Campo label="Sucursal asignada">
               <select value={sucursalId} onChange={(e) => setSucursalId(e.target.value)} className={inputCls}>
                 {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                {/* Solo llegan sucursales activas: si la asignada está desactivada se
+                    muestra igual (marcada) para no aparentar otra asignación. */}
+                {sucursalInactiva && (
+                  <option value={staff?.sucursal_id ?? ""}>{(staff?.sucursal_nombre ?? "Sucursal") + " (inactiva)"}</option>
+                )}
               </select>
             </Campo>
           )}

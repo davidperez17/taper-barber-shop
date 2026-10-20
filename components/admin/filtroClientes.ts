@@ -1,0 +1,16 @@
+/**
+ * Arma el filtro `.or()` de PostgREST para buscar clientes por nombre/teléfono.
+ *
+ * El término va crudo dentro de la sintaxis del filtro: una coma o paréntesis
+ * lo rompen (o lo convierten en otra condición), y `%`/`*` actúan como comodín.
+ * Se quitan esos caracteres (y `\` y comillas) antes de interpolar.
+ * Devuelve null si tras sanear no queda un término útil (< 2 caracteres).
+ */
+export function filtroClientes(termino: string): string | null {
+  const term = termino.replace(/[,()*\\%"]/g, " ").replace(/\s+/g, " ").trim();
+  if (term.length < 2) return null;
+  const digits = term.replace(/\D/g, "");
+  return digits.length >= 3
+    ? `telefono.ilike.%${digits}%,nombre.ilike.%${term}%`
+    : `nombre.ilike.%${term}%`;
+}

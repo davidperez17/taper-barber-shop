@@ -1,11 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { TIER_BENEFITS, TIER_SURFACE, tierRank, type Tier } from "@/lib/loyalty";
+import { TIER_BENEFITS, TIER_LABEL, TIER_SURFACE, tierRank, type Tier } from "@/lib/loyalty";
 import { useModalA11y } from "@/components/admin/useModalA11y";
 import { Confetti, type ConfettiPiece } from "./Confetti";
+import { trasReward } from "./RewardCelebration";
 
+/** Prefijo de la clave por cliente (`taper_tier_seen:<clienteId>`). */
 const KEY = "taper_tier_seen";
+
+// localStorage puede lanzar (modo privado / almacenamiento bloqueado).
+function leer(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function escribir(key: string, v: string) {
+  try { localStorage.setItem(key, v); } catch { /* sin almacenamiento: no festeja */ }
+}
 
 const CONFETTI: ConfettiPiece[] = [
   { l: 12, col: "#f5c800", d: 0, dur: 1600, w: 8 },
@@ -18,33 +28,50 @@ const CONFETTI: ConfettiPiece[] = [
 
 /**
  * Celebra cuando el cliente sube de tier. Compara el tier actual contra el
- * último visto (localStorage, persiste entre sesiones): solo festeja subidas,
- * nunca en la primera carga (fija baseline) ni en bajadas. Una vez por subida.
+ * último visto (localStorage por cliente, persiste entre sesiones): solo
+ * festeja subidas, nunca en la primera carga (fija baseline) ni en bajadas.
+ * Una vez por subida.
+ *
+ * El tier es el MÁXIMO entre sucursales (`tiers`): con el de la sucursal
+ * "primaria" (última visitada) visitar otra sucursal bajaba el tier en
+ * silencio y al volver festejaba una subida falsa. Si hay celebración de
+ * recompensa en curso, espera a que se cierre (no se enciman overlays).
  */
-export function TierUpCelebration({ tier, tierLabel }: { tier: Tier; tierLabel: string }) {
+export function TierUpCelebration({ clienteId, tiers }: { clienteId: string; tiers: Tier[] }) {
   const [open, setOpen] = useState(false);
+  const tier = tiers.reduce<Tier>((max, t) => (tierRank(t) > tierRank(max) ? t : max), "silver");
 
   useEffect(() => {
-    const previo = localStorage.getItem(KEY) as Tier | null;
+    const key = `${KEY}:${clienteId}`;
+    // Clave global vieja (no ligada al cliente): se descarta.
+    try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+
+    const previo = leer(key) as Tier | null;
     const esTier = previo !== null && tierRank(previo) >= 0;
     // Primera vez (o valor corrupto): fija baseline sin celebrar.
     if (!esTier) {
-      localStorage.setItem(KEY, tier);
+      escribir(key, tier);
       return;
     }
     if (tierRank(tier) > tierRank(previo)) {
-      localStorage.setItem(KEY, tier);
-      const t = setTimeout(() => setOpen(true), 250);
-      return () => clearTimeout(t);
+      escribir(key, tier);
+      let cancelarEspera = () => {};
+      const t = setTimeout(() => {
+        cancelarEspera = trasReward(() => setOpen(true));
+      }, 250);
+      return () => {
+        clearTimeout(t);
+        cancelarEspera();
+      };
     }
     // Bajada o igual: sincroniza en silencio (nunca festeja retrocesos).
-    if (tierRank(tier) < tierRank(previo)) localStorage.setItem(KEY, tier);
-  }, [tier]);
+    if (tierRank(tier) < tierRank(previo)) escribir(key, tier);
+  }, [tier, clienteId]);
 
   const close = useCallback(() => setOpen(false), []);
 
   if (!open) return null;
-  return <TierUpDialog tier={tier} tierLabel={tierLabel} onClose={close} />;
+  return <TierUpDialog tier={tier} tierLabel={TIER_LABEL[tier]} onClose={close} />;
 }
 
 function TierUpDialog({ tier, tierLabel, onClose }: { tier: Tier; tierLabel: string; onClose: () => void }) {

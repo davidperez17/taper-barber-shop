@@ -9,6 +9,9 @@ import type { ClienteInfo } from "@/lib/types";
 
 export interface FormState {
   error?: string;
+  // Eco de lo escrito (registro): React 19 resetea el form tras cada submit y
+  // sin esto un error (teléfono duplicado, PIN) borraba todos los campos.
+  valores?: { nombre: string; telefono: string; correo: string };
 }
 
 const esPinValido = (pin: string) => /^\d{6}$/.test(pin);
@@ -23,11 +26,16 @@ export async function registerCliente(
   const correo = String(formData.get("correo") ?? "").trim();
   const pin = String(formData.get("pin") ?? "");
   const pin2 = String(formData.get("pin2") ?? "");
+  const valores = { nombre, telefono, correo };
+  // Largo máximo del nombre (evita spam en el push "cliente nuevo" al staff).
+  const NOMBRE_MAX = 60;
 
-  if (!nombre) return { error: "Escribe tu nombre." };
-  if (telefono.replace(/\D/g, "").length < 8) return { error: "Escribe un teléfono válido." };
-  if (!esPinValido(pin)) return { error: "El PIN debe ser de 6 dígitos." };
-  if (pin !== pin2) return { error: "Los PIN no coinciden." };
+  if (!nombre) return { error: "Escribe tu nombre.", valores };
+  if (nombre.length > NOMBRE_MAX) return { error: `El nombre admite máximo ${NOMBRE_MAX} caracteres.`, valores };
+  if (telefono.replace(/\D/g, "").length < 8) return { error: "Escribe un teléfono válido.", valores };
+  if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return { error: "Escribe un correo válido.", valores };
+  if (!esPinValido(pin)) return { error: "El PIN debe ser de 6 dígitos.", valores };
+  if (pin !== pin2) return { error: "Los PIN no coinciden.", valores };
 
   const sb = await createClient();
   const { data, error } = await sb.rpc("register_cliente", {
@@ -42,6 +50,7 @@ export async function registerCliente(
       error: error.message.includes("teléfono")
         ? "Ya existe una cuenta con ese teléfono. Inicia sesión."
         : "No pudimos crear tu cuenta. Intenta de nuevo.",
+      valores,
     };
   }
 
