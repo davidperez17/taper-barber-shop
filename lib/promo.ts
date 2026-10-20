@@ -47,7 +47,7 @@ export const AVISOS_HALLOWEEN: AvisoHalloween[] = [
     dia: "2026-10-24",
     hora: 10 * 60,
     titulo: "🎃 Halloween en Taper",
-    cuerpo: "Este sábado 31, todos los cortes incluyen mascarilla de carbón GRATIS. ¡Aparta tu día!",
+    cuerpo: "El próximo sábado 31, todos los cortes incluyen mascarilla de carbón GRATIS. ¡Aparta tu día!",
   },
   {
     id: "vispera",

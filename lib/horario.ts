@@ -17,6 +17,7 @@ const FMT = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
   hour: "2-digit",
   minute: "2-digit",
+  second: "2-digit",
   hourCycle: "h23",
 });
 
@@ -26,5 +27,6 @@ export function canjeAbierto(d: Date = new Date()): boolean {
   for (const { type, value } of FMT.formatToParts(d)) p[type] = value;
   if (p.weekday === "Sat" || p.weekday === "Sun") return false;
   const minutos = Number(p.hour) * 60 + Number(p.minute);
-  return minutos >= ABRE && minutos <= CIERRA;
+  // Igual que SQL: 19:30:00 entra, 19:30:01 ya no (antes JS aceptaba hasta 19:30:59).
+  return minutos >= ABRE && (minutos < CIERRA || (minutos === CIERRA && Number(p.second) === 0));
 }

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdmin } from "@/lib/supabase/admin";
 import { getStaff } from "@/lib/queries/staff";
@@ -114,6 +115,13 @@ export interface VentaInput {
   canjear: boolean;
   items: VentaItemInput[];
   cuponId?: string | null;
+  // Idempotencia (0034): UUID generado en el POS por venta. Un reintento
+  // (red caída, cola offline en dos pestañas) devuelve la venta ya guardada.
+  clientId?: string;
+  // Contexto capturado al cobrar, para la cola offline: sin esto la venta se
+  // registraba con la sucursal y la hora del momento de sincronizar.
+  sucursalId?: string | null;
+  creadoEn?: string;
 }
 
 export type VentaResult = { ok: true; total: number } | { ok: false; error: string };
@@ -122,7 +130,9 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
   if (input.items.length === 0) return { ok: false, error: "Agrega al menos un servicio o producto." };
 
   const sb = await createClient();
-  const sucursalId = await sucursalActiva();
+  // La sucursal capturada al cobrar manda (cola offline); record_venta (0034)
+  // la fuerza a la del staff si es cajero/barbero.
+  const sucursalId = input.sucursalId ?? (await sucursalActiva());
   const params: Record<string, unknown> = {
     p_cliente_id: input.clienteId,
     p_barbero_id: input.barberoId,
@@ -132,9 +142,17 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
     p_cupon_id: input.cuponId ?? null,
   };
   if (sucursalId) params.p_sucursal_id = sucursalId;
+  if (input.clientId) params.p_client_id = input.clientId;
+  if (input.creadoEn) params.p_creado_en = input.creadoEn;
 
   const recompensasAntes = await recompensasDisponibles(sb, input.clienteId, sucursalId);
-  const { data, error } = await sb.rpc("record_venta", params);
+  let { data, error } = await sb.rpc("record_venta", params);
+  // Base sin 0034 aún: PostgREST no encuentra la firma con los params nuevos.
+  if (error?.code === "PGRST202" && (params.p_client_id || params.p_creado_en)) {
+    delete params.p_client_id;
+    delete params.p_creado_en;
+    ({ data, error } = await sb.rpc("record_venta", params));
+  }
 
   if (error) {
     // Los candados de canje (record_venta) rebotan con P0001.
@@ -144,17 +162,30 @@ export async function recordVenta(input: VentaInput): Promise<VentaResult> {
     if (input.canjear && /recompensa disponible/i.test(error.message)) {
       return { ok: false, error: "Este cliente no tiene un corte gratis disponible en esta sucursal." };
     }
+    if (/cup[oó]n no encontrado/i.test(error.message)) {
+      return { ok: false, error: "El cupón ya no existe. Quítalo e intenta de nuevo." };
+    }
+    // 22023 = validación de negocio con mensaje ya legible (cupón vencido o
+    // agotado, ítem fuera del catálogo, sucursal desactivada…).
+    if (error.code === "22023") return { ok: false, error: error.message };
+    if (/no autorizado/i.test(error.message)) {
+      return { ok: false, error: "Tu usuario no tiene permiso para registrar ventas. Vuelve a iniciar sesión." };
+    }
     return { ok: false, error: "No se pudo registrar la venta. Intenta de nuevo." };
   }
 
-  // Aviso realtime a la PWA del cliente: refresca su tarjeta al instante
-  // (sello nuevo + sonido) si la tiene abierta. No bloquea si falla.
-  await broadcastVenta(input.clienteId);
+  // Caja/Dashboard/ficha del cliente: sin esto el router cache (staleTimes 30s)
+  // mostraba el arqueo sin la venta recién cobrada.
+  revalidatePath("/admin", "layout");
 
-  // Notificaciones (no bloquean el resultado si fallan).
-  const recompensasDespues = await recompensasDisponibles(sb, input.clienteId, sucursalId);
-  if (recompensasDespues > recompensasAntes) await pushRecompensaLista(input.clienteId);
-  await avisarStockBajo(sb, input.items);
+  // Realtime a la PWA del cliente + pushes: después de responder, para no
+  // sumar su latencia al POS. No bloquean el resultado si fallan.
+  after(async () => {
+    await broadcastVenta(input.clienteId);
+    const recompensasDespues = await recompensasDisponibles(sb, input.clienteId, sucursalId);
+    if (recompensasDespues > recompensasAntes) await pushRecompensaLista(input.clienteId);
+    await avisarStockBajo(sb, input.items);
+  });
 
   return { ok: true, total: Number((data as { total: number }).total) };
 }
@@ -197,6 +228,9 @@ export async function validarCupon(codigo: string, subtotal: number): Promise<Cu
 // ── Alta rápida de cliente desde el panel ───────────────────────
 export interface NuevoClienteState {
   error?: string;
+  // Eco de lo escrito: React 19 resetea el form tras cada submit y sin esto
+  // un error (teléfono duplicado, PIN inválido) borraba todos los campos.
+  valores?: { nombre: string; telefono: string; correo: string };
 }
 
 export async function registrarClienteAdmin(
@@ -206,15 +240,21 @@ export async function registrarClienteAdmin(
   const nombre = String(formData.get("nombre") ?? "").trim();
   const telefono = String(formData.get("telefono") ?? "").trim();
   const correo = String(formData.get("correo") ?? "").trim();
+  const pin = String(formData.get("pin") ?? "");
+  const valores = { nombre, telefono, correo };
 
-  if (!nombre) return { error: "Escribe el nombre." };
-  if (telefono.replace(/\D/g, "").length < 8) return { error: "Teléfono inválido." };
+  if (!nombre) return { error: "Escribe el nombre.", valores };
+  if (telefono.replace(/\D/g, "").length < 8) return { error: "Teléfono inválido.", valores };
+  // PIN obligatorio en el alta: una cuenta sin PIN la podía reclamar cualquiera
+  // que supiera el teléfono (set_cliente_pin es anónimo).
+  if (!/^\d{6}$/.test(pin)) return { error: "El PIN debe ser de 6 dígitos.", valores };
 
   const sb = await createClient();
   const { data, error } = await sb.rpc("register_cliente", {
     p_nombre: nombre,
     p_telefono: telefono,
     p_correo: correo || null,
+    p_pin: pin,
   });
 
   if (error) {
@@ -222,6 +262,7 @@ export async function registrarClienteAdmin(
       error: error.message.includes("teléfono")
         ? "Ya existe un cliente con ese teléfono."
         : "No se pudo registrar. Intenta de nuevo.",
+      valores,
     };
   }
 
@@ -235,14 +276,28 @@ export interface ActionResult {
 }
 
 /** Reset del PIN del cliente (dueño/admin). El cliente crea uno nuevo al ingresar. */
-export async function resetPinCliente(clienteId: string): Promise<ActionResult> {
+export async function resetPinCliente(clienteId: string): Promise<ActionResult & { codigo?: string }> {
   const staff = await getStaff();
-  if (staff?.rol !== "dueno" && staff?.rol !== "admin") {
-    return { ok: false, error: "No autorizado." };
-  }
+  if (!staff) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
-  const { error } = await sb.rpc("reset_cliente_pin", { p_cliente_id: clienteId });
-  if (error) return { ok: false, error: "No se pudo reiniciar el PIN." };
+
+  // 0038: genera un código de activación (y deja la cuenta sin PIN). El
+  // cliente lo necesita para crear su PIN: sin él, cualquiera con el
+  // teléfono podía reclamar una cuenta sin PIN. La DB decide permisos
+  // (cuenta sin PIN: cualquier staff; con PIN: solo admin/dueño).
+  const { data, error } = await sb.rpc("generar_codigo_pin", { p_cliente_id: clienteId });
+  if (!error) {
+    revalidatePath(`/admin/clientes/${clienteId}`);
+    return { ok: true, codigo: data as string };
+  }
+  if (error.code !== "PGRST202") {
+    return { ok: false, error: error.code === "42501" ? "Solo un admin puede reiniciar el PIN de esta cuenta." : "No se pudo generar el código." };
+  }
+
+  // Base sin 0038: reset clásico (solo admin/dueño).
+  if (staff.rol !== "dueno" && staff.rol !== "admin") return { ok: false, error: "No autorizado." };
+  const { error: errReset } = await sb.rpc("reset_cliente_pin", { p_cliente_id: clienteId });
+  if (errReset) return { ok: false, error: "No se pudo reiniciar el PIN." };
   revalidatePath(`/admin/clientes/${clienteId}`);
   return { ok: true };
 }
@@ -472,7 +527,11 @@ export async function cerrarCaja(
   };
   if (sucursalId) params.p_sucursal_id = sucursalId;
   const { error } = await sb.rpc("caja_cerrar", params);
-  if (error) return { ok: false, error: error.message.includes("cerrada") ? "La caja de ese día ya está cerrada." : "No se pudo cerrar la caja." };
+  if (error) {
+    // "cerrada" (RPC) o unique_violation (dos dispositivos cerrando a la vez).
+    const yaCerrada = error.message.includes("cerrada") || error.code === "23505";
+    return { ok: false, error: yaCerrada ? "La caja de ese día ya está cerrada." : "No se pudo cerrar la caja." };
+  }
   revalidatePath("/admin/caja");
   return { ok: true };
 }
@@ -497,7 +556,8 @@ export async function saveServicio(input: {
   imagen_url: string | null;
 }): Promise<ActionResult> {
   if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio." };
-  if (input.precio < 0) return { ok: false, error: "Precio inválido." };
+  // NaN llega cuando el texto no es un número ("abc", vacío): antes se guardaba Q0.
+  if (!Number.isFinite(input.precio) || input.precio < 0) return { ok: false, error: "Precio inválido." };
   if (!Number.isInteger(input.puntos) || input.puntos < 0) return { ok: false, error: "Puntos inválidos." };
 
   const sb = await createClient();
@@ -514,10 +574,11 @@ export async function saveServicio(input: {
     const sucursalId = await sucursalActiva();
     if (sucursalId) fila.sucursal_id = sucursalId;
   }
-  const { error } = input.id
-    ? await sb.from("servicios").update(fila).eq("id", input.id)
-    : await sb.from("servicios").insert(fila);
+  const { data: tocadas, error } = input.id
+    ? await sb.from("servicios").update(fila).eq("id", input.id).select("id")
+    : await sb.from("servicios").insert(fila).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/catalogo");
   return { ok: true };
 }
@@ -534,7 +595,8 @@ export async function saveProducto(input: {
   stock_inicial?: number;
 }): Promise<ActionResult> {
   if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio." };
-  if (input.precio < 0) return { ok: false, error: "Precio inválido." };
+  // NaN llega cuando el texto no es un número ("abc", vacío): antes se guardaba Q0.
+  if (!Number.isFinite(input.precio) || input.precio < 0) return { ok: false, error: "Precio inválido." };
   if (input.stock_min < 0) return { ok: false, error: "Stock mínimo inválido." };
   if (!Number.isInteger(input.puntos) || input.puntos < 0) return { ok: false, error: "Puntos inválidos." };
 
@@ -555,10 +617,11 @@ export async function saveProducto(input: {
     if (sucursalId) fila.sucursal_id = sucursalId;
   }
 
-  const { error } = input.id
-    ? await sb.from("productos").update(fila).eq("id", input.id)
-    : await sb.from("productos").insert(fila);
+  const { data: tocadas, error } = input.id
+    ? await sb.from("productos").update(fila).eq("id", input.id).select("id")
+    : await sb.from("productos").insert(fila).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/catalogo");
   revalidatePath("/admin/inventario");
   return { ok: true };
@@ -613,8 +676,9 @@ export async function toggleActivo(
   activo: boolean,
 ): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from(tabla).update({ activo }).eq("id", id);
+  const { data: tocadas, error } = await sb.from(tabla).update({ activo }).eq("id", id).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/catalogo");
   return { ok: true };
 }
@@ -635,8 +699,11 @@ export async function saveCupon(input: {
   if (!codigo) return { ok: false, error: "El código es obligatorio." };
   if (!(input.valor > 0)) return { ok: false, error: "El valor debe ser mayor que 0." };
   if (input.tipo === "porcentaje" && input.valor > 100) return { ok: false, error: "El porcentaje no puede superar 100." };
-  if (input.min_compra < 0) return { ok: false, error: "Mínimo de compra inválido." };
-  if (input.usos_max != null && input.usos_max < 1) return { ok: false, error: "El límite de usos debe ser al menos 1." };
+  if (!Number.isFinite(input.min_compra) || input.min_compra < 0) return { ok: false, error: "Mínimo de compra inválido." };
+  // "1O" → NaN → JSON null = ilimitado; exigir entero ≥ 1.
+  if (input.usos_max != null && !(Number.isInteger(input.usos_max) && input.usos_max >= 1)) {
+    return { ok: false, error: "El límite de usos debe ser un número entero de al menos 1." };
+  }
   if (input.vigencia_desde && input.vigencia_hasta && input.vigencia_hasta < input.vigencia_desde) {
     return { ok: false, error: "La vigencia final no puede ser antes de la inicial." };
   }
@@ -652,34 +719,59 @@ export async function saveCupon(input: {
     usos_max: input.usos_max,
     activo: input.activo,
   };
-  const { error } = input.id
-    ? await sb.from("cupones").update(fila).eq("id", input.id)
-    : await sb.from("cupones").insert(fila);
+  const { data: tocadas, error } = input.id
+    ? await sb.from("cupones").update(fila).eq("id", input.id).select("id")
+    : await sb.from("cupones").insert(fila).select("id");
   if (error) {
     if (error.message.includes("duplicate")) return { ok: false, error: "Ya existe un cupón con ese código." };
     return { ok: false, error: catalogoError(error.message) };
   }
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/cupones");
   return { ok: true };
 }
 
 export async function toggleCuponActivo(id: string, activo: boolean): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("cupones").update({ activo }).eq("id", id);
+  // RLS que bloquea un update no da error: afecta 0 filas. Sin este chequeo la UI decía "listo".
+  const { data: tocadas, error } = await sb.from("cupones").update({ activo }).eq("id", id).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/cupones");
   return { ok: true };
 }
 
 export async function deleteCupon(id: string): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("cupones").delete().eq("id", id);
+  const { data: tocadas, error } = await sb.from("cupones").delete().eq("id", id).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: RLS_DENY };
   revalidatePath("/admin/cupones");
   return { ok: true };
 }
 
 // ── Agenda: citas (gestión del staff) ───────────────────────────
+/**
+ * Query sobre una cita por id, acotada a la sucursal del trabajador
+ * (cajero/barbero): antes bastaba el id para editar o borrar citas de otra
+ * sucursal. Dueño/admin operan sobre cualquiera.
+ * accion: undefined = select · objeto = update · "delete".
+ */
+function citaDeMiSucursal(
+  sb: Awaited<ReturnType<typeof createClient>>,
+  staff: Awaited<ReturnType<typeof getStaff>>,
+  id: string,
+  accion?: Record<string, unknown> | "delete",
+) {
+  const base = sb.from("citas");
+  let q = accion === "delete" ? base.delete() : accion ? base.update(accion) : base.select("*");
+  q = q.eq("id", id);
+  if (staff && (staff.rol === "cajero" || staff.rol === "barbero") && staff.sucursal_id) {
+    q = q.eq("sucursal_id", staff.sucursal_id);
+  }
+  return q;
+}
+
 export async function saveCita(input: {
   id?: string;
   clienteId: string | null;
@@ -719,9 +811,21 @@ export async function saveCita(input: {
     nota: input.nota.trim() || null,
   };
   const sucursalId = input.id ? null : await sucursalActiva();
-  const { error } = input.id
-    ? await sb.from("citas").update(fila).eq("id", input.id)
-    : await sb.from("citas").insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) });
+  let error;
+  if (input.id) {
+    // Si se reagenda, el recordatorio debe volver a salir para la hora nueva.
+    const { data: previa } = await citaDeMiSucursal(sb, staff, input.id).select("inicia_en").maybeSingle();
+    if (!previa) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
+    const reagendada = new Date(previa.inicia_en as string).getTime() !== inicia.getTime();
+    ({ error } = await sb
+      .from("citas")
+      .update({ ...fila, ...(reagendada ? { recordatorio_enviado: false } : {}) })
+      .eq("id", input.id));
+  } else {
+    ({ error } = await sb
+      .from("citas")
+      .insert({ ...fila, creada_por: staff?.id ?? null, ...(sucursalId ? { sucursal_id: sucursalId } : {}) }));
+  }
   if (error) return { ok: false, error: catalogoError(error.message) };
 
   // Aviso al cliente registrado cuando se agenda una cita nueva.
@@ -736,8 +840,10 @@ export async function updateEstadoCita(
   estado: "pendiente" | "confirmada" | "completada" | "cancelada",
 ): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("citas").update({ estado }).eq("id", id);
+  const staff = await getStaff();
+  const { data: tocadas, error } = await citaDeMiSucursal(sb, staff, id, { estado }).select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
 
   // Aviso al cliente registrado cuando su cita se confirma o cancela.
   if (estado === "confirmada" || estado === "cancelada") {
@@ -751,8 +857,10 @@ export async function updateEstadoCita(
 
 export async function deleteCita(id: string): Promise<ActionResult> {
   const sb = await createClient();
-  const { error } = await sb.from("citas").delete().eq("id", id);
+  const staff = await getStaff();
+  const { data: tocadas, error } = await citaDeMiSucursal(sb, staff, id, "delete").select("id");
   if (error) return { ok: false, error: catalogoError(error.message) };
+  if (!tocadas?.length) return { ok: false, error: "Esa cita no existe o es de otra sucursal." };
   revalidatePath("/admin/agenda");
   return { ok: true };
 }
@@ -789,7 +897,11 @@ export async function enviarDifusion(input: {
   if (!titulo) return { ok: false, error: "Escribe un título." };
   if (!mensaje) return { ok: false, error: "Escribe el mensaje." };
 
+  // Solo rutas de la propia app: el SW abre esta URL al tocar la notificación.
   const url = input.url.trim() || "/";
+  if (!url.startsWith("/") || url.startsWith("//")) {
+    return { ok: false, error: "El enlace debe ser una ruta de la app (empieza con /)." };
+  }
 
   // A clientes: dejar registro en la bandeja de todos (promos), tengan push o no.
   if (input.audiencia === "clientes") {

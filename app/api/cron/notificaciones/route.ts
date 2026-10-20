@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdmin } from "@/lib/supabase/admin";
 import { pushAvisosHalloween, pushRecordatorioCita, pushReactivacion } from "@/lib/push/eventos";
@@ -26,8 +27,16 @@ async function recordatorios(admin: ReturnType<typeof createAdmin>): Promise<num
 
   let enviados = 0;
   for (const c of data ?? []) {
+    // Reclamar antes de enviar (update condicional): si dos corridas se
+    // solapan, solo una gana la cita y el recordatorio no sale dos veces.
+    const { data: reclamada } = await admin
+      .from("citas")
+      .update({ recordatorio_enviado: true })
+      .eq("id", c.id)
+      .eq("recordatorio_enviado", false)
+      .select("id");
+    if (!reclamada?.length) continue;
     await pushRecordatorioCita(c.cliente_id as string, c.inicia_en as string);
-    await admin.from("citas").update({ recordatorio_enviado: true }).eq("id", c.id);
     enviados++;
   }
   return enviados;
@@ -54,19 +63,27 @@ async function reactivacion(admin: ReturnType<typeof createAdmin>): Promise<numb
     if (!cl.ultima_visita) continue; // nunca visitó → no es reactivación
     if (!conSub.has(cl.id) || yaAvisados.has(cl.id)) continue;
 
+    // Log ANTES de enviar y aunque el push falle: pushReactivacion siempre
+    // deja el aviso en la bandeja, y sin log cada corrida (cada 15 min) volvía
+    // a insertar otro "Te extrañamos" a quien tuviera la suscripción rota.
+    await admin.from("notificaciones_log").insert({ owner_type: "cliente", owner_id: cl.id, tipo: "reactivacion" });
     const n = await pushReactivacion(cl.id, cl.nombre);
-    if (n > 0) {
-      await admin.from("notificaciones_log").insert({ owner_type: "cliente", owner_id: cl.id, tipo: "reactivacion" });
-      enviados++;
-    }
+    if (n > 0) enviados++;
   }
   return enviados;
+}
+
+/** Comparación en tiempo constante (no filtra el secreto por timing). */
+function mismoSecreto(a: string, b: string): boolean {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ba.length === bb.length && timingSafeEqual(ba, bb);
 }
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "CRON_SECRET no configurado" }, { status: 500 });
-  if (req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!mismoSecreto(req.headers.get("authorization") ?? "", `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

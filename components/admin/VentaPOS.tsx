@@ -20,11 +20,12 @@ interface Props {
   barberos: Barbero[];
   defaultBarberoId?: string | null; // barbero del staff logueado (auto-atribución)
   canjeAbiertoInicial: boolean; // ventana de canje calculada en el server (evita mismatch de hidratación)
+  sucursalId: string | null; // sucursal activa al abrir el POS (se guarda con la venta offline)
 }
 
 type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
 
-export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, defaultBarberoId, canjeAbiertoInicial }: Props) {
+export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, defaultBarberoId, canjeAbiertoInicial, sucursalId }: Props) {
   const router = useRouter();
   const loyalty = computeLoyalty(loyaltyRaw);
 
@@ -189,6 +190,9 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
       canjear: canjear && hayServicioLealtadEnCarrito && canjeAbiertoAhora,
       items,
       cuponId: cuponVigente?.cuponId ?? null,
+      clientId: crypto.randomUUID(),
+      sucursalId,
+      creadoEn: new Date().toISOString(),
     };
 
     // Offline-first: sin red, encolar y sincronizar al reconectar.
@@ -200,7 +204,19 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
       return;
     }
 
-    const res = await recordVenta(payload);
+    let res: Awaited<ReturnType<typeof recordVenta>>;
+    try {
+      res = await recordVenta(payload);
+    } catch {
+      // La action lanzó (red caída a medio camino). Se encola con el mismo
+      // clientId: si el server alcanzó a guardarla, el reintento devuelve la
+      // misma venta en vez de duplicarla (record_venta 0034).
+      setSubmitting(false);
+      enqueueVenta(payload);
+      setPendiente(true);
+      setDone(totalFinal);
+      return;
+    }
     setSubmitting(false);
     if (!res.ok) {
       // Falla de red tras el intento: guardar local en vez de perder la venta.
@@ -384,9 +400,9 @@ export function VentaPOS({ cliente, loyaltyRaw, servicios, productos, barberos, 
             )}
             <p className="text-[13px] font-medium text-muted">Total</p>
             <p className="font-display text-2xl font-bold tabular-nums text-ink">{fmtQ(totalFinal)}</p>
-            {puntosCarrito > 0 && (
+            {puntosNetos > 0 && (
               <p className="text-[13px] font-semibold tabular-nums text-accent">
-                +{puntosCarrito} sello{puntosCarrito > 1 ? "s" : ""}
+                +{puntosNetos} sello{puntosNetos > 1 ? "s" : ""}
               </p>
             )}
           </div>
@@ -449,6 +465,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`min-h-11 rounded-full border px-4 text-sm font-medium transition-colors ${active ? "border-accent bg-accent text-accent-ink" : "border-line bg-elevated text-muted hover:text-ink"}`}
     >
       {children}

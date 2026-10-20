@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { enviarDifusion } from "@/app/admin/actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 type Audiencia = "clientes" | "staff";
 
@@ -14,8 +15,11 @@ export function DifusionForm() {
   const [audiencia, setAudiencia] = useState<Audiencia>("clientes");
   const [pending, start] = useTransition();
   const [feedback, setFeedback] = useState<{ ok: boolean; texto: string } | null>(null);
+  // Una difusión no se puede deshacer → se confirma antes de enviar.
+  const [confirmando, setConfirmando] = useState(false);
 
   const enviar = () => {
+    setConfirmando(false);
     setFeedback(null);
     start(async () => {
       const r = await enviarDifusion({ titulo, mensaje, url, audiencia });
@@ -48,6 +52,7 @@ export function DifusionForm() {
               key={a}
               type="button"
               onClick={() => setAudiencia(a)}
+              aria-pressed={audiencia === a}
               className={
                 "min-h-[46px] rounded-lg border text-sm font-semibold transition-colors " +
                 (audiencia === a
@@ -85,9 +90,23 @@ export function DifusionForm() {
         </p>
       )}
 
-      <Button onClick={enviar} loading={pending} disabled={!titulo.trim() || !mensaje.trim()}>
+      <Button onClick={() => setConfirmando(true)} loading={pending} disabled={!titulo.trim() || !mensaje.trim()}>
         Enviar notificación
       </Button>
+
+      {confirmando && (
+        <ConfirmDialog
+          title="¿Enviar notificación?"
+          message={
+            audiencia === "clientes"
+              ? `"${titulo.trim()}" se enviará a todos los clientes con notificaciones activas y quedará en la bandeja de todos los clientes. No se puede deshacer.`
+              : `"${titulo.trim()}" se enviará a todo el equipo con notificaciones activas. No se puede deshacer.`
+          }
+          confirmLabel="Enviar"
+          onConfirm={enviar}
+          onCancel={() => setConfirmando(false)}
+        />
+      )}
     </div>
   );
 }

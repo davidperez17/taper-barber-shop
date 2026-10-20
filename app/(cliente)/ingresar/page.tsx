@@ -27,6 +27,12 @@ export default function IngresarPage() {
 
   const [loginState, loginAction, loginPending] = useActionState(loginCliente, initial);
   const [setupState, setupAction, setupPending] = useActionState(crearPin, initial);
+  // useActionState no se puede reiniciar: al "Cambiar número" se recuerda qué
+  // estado se descartó y su error deja de mostrarse (no arrastra el del PIN
+  // anterior al siguiente número).
+  const [descartados, setDescartados] = useState<FormState[]>([]);
+  const errLogin = descartados.includes(loginState) ? undefined : loginState.error;
+  const errSetup = descartados.includes(setupState) ? undefined : setupState.error;
 
   const continuar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,7 +48,10 @@ export default function IngresarPage() {
     });
   };
 
-  const volver = () => { setPaso("telefono"); setPin(""); setPin2(""); };
+  const volver = () => {
+    setPaso("telefono"); setPin(""); setPin2(""); setErrTel(null);
+    setDescartados([loginState, setupState]);
+  };
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-[440px] animate-fade-up overflow-auto px-6 pb-8 pt-16 sm:pt-24">
@@ -55,7 +64,7 @@ export default function IngresarPage() {
           <p className="mb-7 mt-1.5 text-sm text-muted">Con el teléfono de tu cuenta</p>
 
           <form onSubmit={continuar}>
-            <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" required />
+            <Input label="Teléfono" name="telefono" prefix="+502" placeholder="0000 0000" inputMode="tel" autoComplete="tel" required defaultValue={telefono} />
             {errTel && <p role="alert" className="mb-4 text-sm text-danger">{errTel}</p>}
             <Button type="submit" loading={checando}>Continuar</Button>
           </form>
@@ -81,7 +90,7 @@ export default function IngresarPage() {
           <form action={loginAction}>
             <input type="hidden" name="telefono" value={telefono} />
             <div className="mb-5"><PinInput value={pin} onChange={setPin} name="pin" autoFocus /></div>
-            {loginState.error && <p role="alert" className="mb-4 text-sm text-danger">{loginState.error}</p>}
+            {errLogin && <p role="alert" className="mb-4 text-sm text-danger">{errLogin}</p>}
             <Button type="submit" loading={loginPending} disabled={pin.length < 6}>Entrar</Button>
           </form>
 
@@ -100,13 +109,24 @@ export default function IngresarPage() {
             </button>
           </div>
           <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-0.01em] text-ink">Protege tu cuenta</h1>
-          <p className="mb-7 mt-1.5 text-sm text-muted">Crea un PIN de 6 dígitos para tu próximo ingreso</p>
+          <p className="mb-7 mt-1.5 text-sm text-muted">
+            Pide tu código de activación en la barbería y crea un PIN de 6 dígitos.
+          </p>
 
           <form action={setupAction}>
             <input type="hidden" name="telefono" value={telefono} />
+            <Input
+              label="Código de activación"
+              hint="· te lo da el cajero"
+              name="codigo"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="000000"
+            />
             <div className="mb-4"><PinInput value={pin} onChange={setPin} name="pin" label="Nuevo PIN" autoFocus /></div>
             <div className="mb-5"><PinInput value={pin2} onChange={setPin2} name="pin2" label="Confirma tu PIN" /></div>
-            {setupState.error && <p role="alert" className="mb-4 text-sm text-danger">{setupState.error}</p>}
+            {errSetup && <p role="alert" className="mb-4 text-sm text-danger">{errSetup}</p>}
             <Button type="submit" loading={setupPending} disabled={pin.length < 6 || pin2.length < 6}>Guardar PIN</Button>
           </form>
         </>

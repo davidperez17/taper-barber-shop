@@ -73,15 +73,27 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Estáticos: cache-first con relleno. Si no hay caché y la red falla, hay que
-  // devolver un Response (nunca undefined) o respondWith rechaza.
+  // Solo estáticos inmutables van a caché. Payloads RSC (?_rsc= / header RSC),
+  // route handlers y datos pasan directo a la red: cachearlos servía la tarjeta
+  // vieja (o la de OTRO cliente tras logout en el mismo teléfono).
+  if (request.headers.has("RSC") || url.searchParams.has("_rsc")) return;
+  const estatico =
+    url.pathname.startsWith("/_next/static/") ||
+    /\\.(?:png|jpe?g|webp|avif|gif|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
+  if (!estatico) return;
+
+  // Cache-first con relleno. Si no hay caché y la red falla, hay que devolver
+  // un Response (nunca undefined) o respondWith rechaza. No se guardan errores
+  // (un 404/500 pasajero quedaría pegado hasta el próximo deploy).
   e.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request)
         .then((resp) => {
-          const copy = resp.clone();
-          caches.open(CACHE).then((c) => c.put(request, copy));
+          if (resp.ok) {
+            const copy = resp.clone();
+            caches.open(CACHE).then((c) => c.put(request, copy));
+          }
           return resp;
         })
         .catch(() => Response.error());

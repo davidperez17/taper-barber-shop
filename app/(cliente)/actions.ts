@@ -2,12 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { setQrToken, clearQrToken } from "@/lib/session";
+import { createAdmin } from "@/lib/supabase/admin";
+import { setQrToken, clearQrToken, getQrToken } from "@/lib/session";
 import { pushNuevoClienteStaff } from "@/lib/push/eventos";
 import type { ClienteInfo } from "@/lib/types";
 
 export interface FormState {
   error?: string;
+  // Eco de lo escrito (registro): React 19 resetea el form tras cada submit y
+  // sin esto un error (teléfono duplicado, PIN) borraba todos los campos.
+  valores?: { nombre: string; telefono: string; correo: string };
 }
 
 const esPinValido = (pin: string) => /^\d{6}$/.test(pin);
@@ -22,11 +26,16 @@ export async function registerCliente(
   const correo = String(formData.get("correo") ?? "").trim();
   const pin = String(formData.get("pin") ?? "");
   const pin2 = String(formData.get("pin2") ?? "");
+  const valores = { nombre, telefono, correo };
+  // Largo máximo del nombre (evita spam en el push "cliente nuevo" al staff).
+  const NOMBRE_MAX = 60;
 
-  if (!nombre) return { error: "Escribe tu nombre." };
-  if (telefono.replace(/\D/g, "").length < 8) return { error: "Escribe un teléfono válido." };
-  if (!esPinValido(pin)) return { error: "El PIN debe ser de 6 dígitos." };
-  if (pin !== pin2) return { error: "Los PIN no coinciden." };
+  if (!nombre) return { error: "Escribe tu nombre.", valores };
+  if (nombre.length > NOMBRE_MAX) return { error: `El nombre admite máximo ${NOMBRE_MAX} caracteres.`, valores };
+  if (telefono.replace(/\D/g, "").length < 8) return { error: "Escribe un teléfono válido.", valores };
+  if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return { error: "Escribe un correo válido.", valores };
+  if (!esPinValido(pin)) return { error: "El PIN debe ser de 6 dígitos.", valores };
+  if (pin !== pin2) return { error: "Los PIN no coinciden.", valores };
 
   const sb = await createClient();
   const { data, error } = await sb.rpc("register_cliente", {
@@ -41,6 +50,7 @@ export async function registerCliente(
       error: error.message.includes("teléfono")
         ? "Ya existe una cuenta con ese teléfono. Inicia sesión."
         : "No pudimos crear tu cuenta. Intenta de nuevo.",
+      valores,
     };
   }
 
@@ -102,18 +112,49 @@ export async function crearPin(
   const telefono = String(formData.get("telefono") ?? "").trim();
   const pin = String(formData.get("pin") ?? "");
   const pin2 = String(formData.get("pin2") ?? "");
+  const codigo = String(formData.get("codigo") ?? "").replace(/\D/g, "");
   if (!esPinValido(pin)) return { error: "El PIN debe ser de 6 dígitos." };
   if (pin !== pin2) return { error: "Los PIN no coinciden." };
 
   const sb = await createClient();
-  const { data, error } = await sb.rpc("set_cliente_pin", { p_telefono: telefono, p_pin: pin });
-  if (error || !data) return { error: "No pudimos configurar tu PIN. Intenta de nuevo." };
+  // 0038: crear el PIN exige el código de activación que genera el staff.
+  let { data, error } = await sb.rpc("set_cliente_pin", { p_telefono: telefono, p_pin: pin, p_codigo: codigo });
+  if (error?.code === "PGRST202") {
+    ({ data, error } = await sb.rpc("set_cliente_pin", { p_telefono: telefono, p_pin: pin }));
+  }
+  if (error) {
+    if (/vencido|inexistente/i.test(error.message)) {
+      return { error: "Tu código venció o ya no es válido. Pide uno nuevo en la barbería." };
+    }
+    return { error: "No pudimos configurar tu PIN. Intenta de nuevo." };
+  }
+  if (!data) {
+    return {
+      error: codigo
+        ? "Código de activación incorrecto."
+        : "Escribe el código de activación de 6 dígitos que te dio la barbería.",
+    };
+  }
 
   await setQrToken(data as string);
   redirect("/tarjeta");
 }
 
-export async function logout(): Promise<void> {
+/** endpoint: suscripción push de este teléfono, para que deje de ser de este cliente. */
+export async function logout(endpoint?: string | null): Promise<void> {
+  const token = await getQrToken();
+  if (endpoint && token) {
+    const admin = createAdmin();
+    const { data } = await admin.from("clientes").select("id").eq("qr_token", token).maybeSingle();
+    if (data) {
+      await admin
+        .from("push_subscriptions")
+        .delete()
+        .eq("endpoint", endpoint)
+        .eq("owner_type", "cliente")
+        .eq("owner_id", data.id);
+    }
+  }
   await clearQrToken();
   redirect("/");
 }

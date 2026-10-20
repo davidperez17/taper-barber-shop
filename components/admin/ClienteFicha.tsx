@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -36,17 +37,28 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
   const [ajustando, setAjustando] = useState(false);
   const [pinPend, startPin] = useTransition();
   const [pinMsg, setPinMsg] = useState<string | null>(null);
+  const [codigoPin, setCodigoPin] = useState<string | null>(null);
   const [qrPend, startQr] = useTransition();
   const [qrMsg, setQrMsg] = useState<string | null>(null);
   const [confirmar, setConfirmar] = useState<null | "pin" | "qr">(null);
   const loyalty = computeLoyalty(ficha.loyalty);
-  const invertido = ficha.historial.reduce((s, v) => s + Number(v.total), 0);
+  // total_invertido (0035) cubre todo el historial; la suma local solo ve las últimas 50.
+  const invertido = ficha.totalInvertido ?? ficha.historial.reduce((s, v) => s + Number(v.total), 0);
+  // Sin PIN → "Código de activación" (cualquier staff). Con PIN → "Reiniciar PIN" (admin).
+  const sinPin = ficha.tienePin === false;
 
   const reiniciarPin = () => {
     setPinMsg(null);
     startPin(async () => {
       const r = await resetPinCliente(ficha.cliente.id);
-      setPinMsg(r.ok ? "PIN reiniciado. El cliente lo configura al ingresar." : r.error ?? "Error");
+      setCodigoPin(r.ok && r.codigo ? r.codigo : null);
+      setPinMsg(
+        r.ok
+          ? r.codigo
+            ? null
+            : "PIN reiniciado. El cliente lo configura al ingresar."
+          : r.error ?? "Error",
+      );
       setConfirmar(null);
     });
   };
@@ -98,27 +110,40 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
         <button onClick={() => setEditando(true)} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-ink hover:border-line-strong">
           Editar datos
         </button>
-        {puedeResetPin && (
+        {(sinPin || puedeGestionar) && (
           <button onClick={() => setConfirmar("pin")} disabled={pinPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
-            {pinPend ? "Reiniciando…" : "Reiniciar PIN"}
+            {pinPend ? "Generando…" : sinPin ? "Código de activación" : "Reiniciar PIN"}
           </button>
         )}
-        {puedeResetPin && (
+        {puedeResetPin && puedeGestionar && (
           <button onClick={() => setConfirmar("qr")} disabled={qrPend} className="inline-flex min-h-11 items-center rounded-full border border-line bg-elevated px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink disabled:opacity-50">
             {qrPend ? "Regenerando…" : "Regenerar QR"}
           </button>
         )}
       </div>
       {pinMsg && <p role="status" className="mt-2 text-sm text-muted">{pinMsg}</p>}
+      {codigoPin && (
+        <div role="status" className="mt-3 rounded-xl border border-accent/50 bg-elevated p-4">
+          <p className="text-[13px] font-medium text-muted">Código de activación</p>
+          <p className="mt-1 font-display text-3xl font-extrabold tracking-[0.2em] tabular-nums text-accent">{codigoPin}</p>
+          <p className="mt-1 text-xs text-muted">
+            Dáselo a {ficha.cliente.nombre.split(" ")[0]} en persona. Lo usa en “Ingresar” para crear su PIN. Vence en 30 min.
+          </p>
+        </div>
+      )}
       {qrMsg && <p role="status" className="mt-2 text-sm text-muted">{qrMsg}</p>}
 
       {confirmar === "pin" && (
         <ConfirmDialog
-          title="¿Reiniciar el PIN?"
-          message={`${ficha.cliente.nombre} configurará un PIN nuevo la próxima vez que ingrese.`}
-          confirmLabel="Sí, reiniciar"
+          title={sinPin ? "¿Generar código de activación?" : "¿Reiniciar el PIN?"}
+          message={
+            sinPin
+              ? `Verás un código de 6 dígitos para que ${ficha.cliente.nombre} cree su PIN. Dáselo solo a la persona en el mostrador.`
+              : `El PIN actual de ${ficha.cliente.nombre} deja de servir. Verás un código para que cree uno nuevo.`
+          }
+          confirmLabel={sinPin ? "Generar código" : "Sí, reiniciar"}
           pending={pinPend}
-          pendingLabel="Reiniciando…"
+          pendingLabel="Generando…"
           onConfirm={reiniciarPin}
           onCancel={() => setConfirmar(null)}
         />
@@ -142,6 +167,7 @@ export function ClienteFicha({ ficha, puedeResetPin, puedeGestionar }: { ficha: 
           <button
             key={t}
             onClick={() => setTab(t)}
+            aria-pressed={tab === t}
             className={`-mb-px min-h-10 border-b-2 text-sm font-medium capitalize transition-colors ${tab === t ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"}`}
           >
             {t === "notas" ? "Notas y etiquetas" : t}
@@ -322,7 +348,12 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
     if (!nuevaNota.trim()) return;
     start(async () => { await addNota(clienteId, nuevaNota); setNuevaNota(""); router.refresh(); });
   };
-  const borrarNota = (id: string) => start(async () => { await deleteNota(id, clienteId); router.refresh(); });
+  // Borrar una nota no se puede deshacer → se confirma antes (id de la nota a borrar).
+  const [notaABorrar, setNotaABorrar] = useState<string | null>(null);
+  const borrarNota = (id: string) => {
+    setNotaABorrar(null);
+    start(async () => { await deleteNota(id, clienteId); router.refresh(); });
+  };
 
   const sugeridas = ETIQUETAS_SUGERIDAS.filter((s) => !etiquetas.includes(s));
 
@@ -377,13 +408,23 @@ function NotasEtiquetas({ clienteId, notas, etiquetas }: { clienteId: string; no
             <div key={n.id} className="rounded-xl border border-line bg-elevated p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <p className="whitespace-pre-wrap text-sm text-ink">{n.texto}</p>
-                <button onClick={() => borrarNota(n.id)} aria-label="Borrar nota" className="-mr-1 -mt-1 flex size-9 shrink-0 items-center justify-center text-base text-subtle hover:text-danger">×</button>
+                <button onClick={() => setNotaABorrar(n.id)} disabled={pending} aria-label="Borrar nota" className="-mr-1 -mt-1 flex size-9 shrink-0 items-center justify-center text-base text-subtle hover:text-danger">×</button>
               </div>
               <p className="mt-1.5 text-[11px] text-subtle">{fmtDiaMes(n.created_at)}{n.autor_nombre ? ` · ${n.autor_nombre}` : ""}</p>
             </div>
           ))}
           {notas.length === 0 && <p className="text-[13px] text-subtle">Sin notas todavía.</p>}
         </div>
+        {notaABorrar && (
+          <ConfirmDialog
+            title="¿Borrar esta nota?"
+            message="La nota se eliminará para todo el equipo. No se puede deshacer."
+            confirmLabel="Borrar"
+            danger
+            onConfirm={() => borrarNota(notaABorrar)}
+            onCancel={() => setNotaABorrar(null)}
+          />
+        )}
       </section>
     </div>
   );
@@ -409,7 +450,8 @@ function EditarSheet({ cliente, onClose }: { cliente: Ficha["cliente"]; onClose:
     });
   };
 
-  return (
+  // Portal a body: animate-fade-up de un ancestro atrapa position:fixed.
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Editar cliente">
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
@@ -427,7 +469,8 @@ function EditarSheet({ cliente, onClose }: { cliente: Ficha["cliente"]; onClose:
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -477,7 +520,8 @@ function EditarVentaSheet({
     });
   };
 
-  return (
+  // Portal a body: animate-fade-up de un ancestro atrapa position:fixed.
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Editar venta">
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
@@ -494,6 +538,7 @@ function EditarVentaSheet({
                 <button
                   key={m}
                   onClick={() => setMetodo(m)}
+                  aria-pressed={metodo === m}
                   className={`min-h-10 rounded-full border px-4 text-sm font-medium capitalize transition-colors ${metodo === m ? "border-accent bg-accent text-accent-ink" : "border-line bg-elevated text-muted hover:text-ink"}`}
                 >
                   {m}
@@ -527,7 +572,8 @@ function EditarVentaSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -559,7 +605,8 @@ function AjustarSellosSheet({
     });
   };
 
-  return (
+  // Portal a body: animate-fade-up de un ancestro atrapa position:fixed.
+  return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Ajustar sellos">
       <button aria-label="Cerrar" tabIndex={-1} className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div ref={ref} className="animate-fade-up relative w-full max-w-[440px] rounded-t-2xl border border-line bg-bg p-5 sm:rounded-2xl">
@@ -590,6 +637,7 @@ function AjustarSellosSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

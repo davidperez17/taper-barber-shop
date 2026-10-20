@@ -14,7 +14,7 @@ export default async function AgendaPage({
   if (!staff) redirect("/admin/login");
 
   const sp = await searchParams;
-  const fecha = /^\d{4}-\d{2}-\d{2}$/.test(sp.d ?? "") ? sp.d! : hoyGT();
+  const fecha = fechaValida(sp.d) ? sp.d : hoyGT();
 
   const sucursalId = await getSucursalActiva(staff);
   const [citas, catalogo] = await Promise.all([getCitasDelDia(fecha, sucursalId), getCatalogo(sucursalId)]);
@@ -28,4 +28,11 @@ export default async function AgendaPage({
       servicios={catalogo.servicios}
     />
   );
+}
+
+// "2026-13-01" pasa el regex pero revienta en toISOString(): validar que exista.
+function fechaValida(d: string | undefined): d is string {
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  const t = new Date(`${d}T12:00:00Z`);
+  return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d;
 }

@@ -17,10 +17,19 @@ export function ActualizarApp({ variant = "icon" }: { variant?: "icon" | "full" 
   async function actualizar() {
     setCargando(true);
     try {
-      // 1) Borra TODOS los caches del SW (lo que deja la app pegada en iOS).
+      // 1) Vacía los caches del SW (lo que deja la app pegada en iOS), pero
+      //    conserva y refresca /offline: sin él, una navegación sin red ya no
+      //    tendría pantalla (y QR) hasta reinstalar el SW.
       if ("caches" in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
+        await Promise.all(
+          keys.map(async (k) => {
+            const c = await caches.open(k);
+            const reqs = await c.keys();
+            await Promise.all(reqs.filter((r) => new URL(r.url).pathname !== "/offline").map((r) => c.delete(r)));
+            await c.add("/offline").catch(() => {});
+          }),
+        );
       }
       // 2) Fuerza un SW nuevo y que tome control de inmediato si hay uno esperando.
       if ("serviceWorker" in navigator) {

@@ -37,6 +37,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     canSwitch: staff.rol === "dueno" || staff.rol === "admin",
   };
   const mostrarSwitcher = sucursales.length > 1;
+  // Cajero/barbero fijo a una sucursal que el dueño desactivó: no debe seguir
+  // vendiendo ni moviendo caja ahí (record_venta 0034 también lo rechaza).
+  const sucursalInactiva =
+    (staff.rol === "cajero" || staff.rol === "barbero") && !!activeId && !sucursales.some((s) => s.id === activeId);
 
   return (
     <div data-app-shell className="flex h-full w-full overflow-hidden bg-bg">
@@ -65,7 +69,14 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <div className="mx-auto max-w-[420px] lg:mx-0">
             <NotifyOptIn />
           </div>
-          {children}
+          {sucursalInactiva ? (
+            <div className="mx-auto max-w-[420px] rounded-xl border border-warning/40 bg-warning/10 p-5 text-center lg:mx-0">
+              <p className="font-display text-lg font-bold text-ink">Tu sucursal está desactivada</p>
+              <p className="mt-1 text-sm text-muted">Pídele al dueño que la reactive o te asigne otra para seguir operando.</p>
+            </div>
+          ) : (
+            children
+          )}
         </main>
 
         <AdminBottomNav

@@ -1,6 +1,6 @@
 import { requireDashboard } from "@/lib/queries/cliente";
 import { fmtFechaLarga } from "@/lib/format";
-import { logout } from "@/app/(cliente)/actions";
+import { LogoutButton } from "@/components/cliente/LogoutButton";
 import { PushToggle } from "@/components/cliente/PushToggle";
 import { InstallPWA } from "@/components/InstallPWA";
 import { ActualizarApp } from "@/components/ActualizarApp";
@@ -87,14 +87,7 @@ export default async function PerfilPage() {
       {/* Traer la última versión sin reinstalar (limpia caché; útil en iOS). */}
       <ActualizarApp variant="full" />
 
-      <form action={logout} className="mt-8">
-        <button
-          type="submit"
-          className="min-h-11 text-sm text-muted underline-offset-4 hover:text-danger hover:underline"
-        >
-          Cerrar sesión
-        </button>
-      </form>
+      <LogoutButton />
     </div>
   );
 }

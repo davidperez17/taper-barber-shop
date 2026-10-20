@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { crearMovimientoCaja, borrarMovimientoCaja, cerrarCaja } from "@/app/admin/actions";
-import { fmtQ } from "@/lib/format";
+import { fmtQ, mismoMonto, parseMonto } from "@/lib/format";
 import type { CajaResumen } from "@/lib/queries/caja";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
@@ -25,47 +25,78 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
   const [contado, setContado] = useState("");
   const [notas, setNotas] = useState("");
   const [confCerrar, setConfCerrar] = useState(false);
+  const [borrarId, setBorrarId] = useState<string | null>(null);
 
   // Nuevo movimiento
   const [movTipo, setMovTipo] = useState<"egreso" | "ingreso">("egreso");
   const [movMonto, setMovMonto] = useState("");
   const [movMotivo, setMovMotivo] = useState("");
 
+  // "1,250" o "150,50" antes daban NaN → 0 y descuadraban el arqueo.
+  const fondoN = parseMonto(fondo);
+  const contadoN = parseMonto(contado);
   const esperado = useMemo(
-    () => (Number(fondo) || 0) + efectivoVentas + ingresos - egresos,
-    [fondo, efectivoVentas, ingresos, egresos],
+    () => (fondoN ?? 0) + efectivoVentas + ingresos - egresos,
+    [fondoN, efectivoVentas, ingresos, egresos],
   );
-  const diferencia = (Number(contado) || 0) - esperado;
+  const diferencia = (contadoN ?? 0) - esperado;
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, after?: () => void) =>
     start(async () => {
       setError(null);
-      const r = await fn();
-      if (!r.ok) { setError(r.error ?? "Error"); return; }
+      try {
+        const r = await fn();
+        if (!r.ok) { setError(r.error ?? "Error"); return; }
+      } catch {
+        setError("Sin conexión. Revisa la red e intenta de nuevo.");
+        return;
+      }
       after?.();
       router.refresh();
     });
 
   const agregarMov = () => {
-    const monto = Number(movMonto);
-    if (!(monto > 0)) { setError("Monto inválido."); return; }
+    const monto = parseMonto(movMonto);
+    if (monto === null || !(monto > 0)) { setError("Monto inválido."); return; }
     run(() => crearMovimientoCaja(movTipo, monto, movMotivo), () => { setMovMonto(""); setMovMotivo(""); });
   };
 
+  const pedirCierre = () => {
+    if (fondoN === null || fondoN < 0) { setError("Fondo inicial inválido."); return; }
+    if (contadoN === null || contadoN < 0) { setError("Efectivo contado inválido."); return; }
+    setError(null);
+    setConfCerrar(true);
+  };
+
   const cerrar = () => {
-    run(() => cerrarCaja(resumen.fecha, Number(fondo) || 0, Number(contado) || 0, notas), () => setConfCerrar(false));
+    run(() => cerrarCaja(resumen.fecha, fondoN ?? 0, contadoN ?? 0, notas), () => setConfCerrar(false));
   };
 
   // ── Día ya cerrado ─────────────────────────────────────────────
   if (resumen.cierre) {
     const c = resumen.cierre;
     const dif = Number(c.diferencia);
+    // Ventas cobradas después del cierre (o sincronizadas tarde desde la cola
+    // offline): el snapshot ya no las incluye y antes nadie se enteraba.
+    const posteriores =
+      !mismoMonto(efectivoVentas, Number(c.efectivo_ventas)) ||
+      !mismoMonto(tarjeta, Number(c.tarjeta_total)) ||
+      !mismoMonto(transfer, Number(c.transfer_total));
     return (
       <div className="flex flex-col gap-4">
         <div className="rounded-xl border border-success/40 bg-success-dim p-4">
           <p className="font-display text-lg font-bold text-success">Caja cerrada</p>
           <p className="mt-0.5 text-sm text-muted">El arqueo de hoy ya se registró.</p>
         </div>
+        {posteriores && (
+          <div role="alert" className="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm">
+            <p className="font-semibold text-warning">Hubo ventas después del cierre</p>
+            <p className="mt-1 text-muted">
+              Ahora: efectivo {fmtQ(efectivoVentas)} · tarjeta {fmtQ(tarjeta)} · transferencia {fmtQ(transfer)}.
+              El arqueo guardado no las incluye; cuéntalas aparte.
+            </p>
+          </div>
+        )}
         <Resumen efectivo={Number(c.efectivo_ventas)} tarjeta={Number(c.tarjeta_total)} transfer={Number(c.transfer_total)} num={resumen.ventas.num} />
         <div className="rounded-xl border border-line bg-elevated p-4">
           <Fila k="Fondo inicial" v={fmtQ(Number(c.fondo_inicial))} />
@@ -74,7 +105,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
           <Fila k="Efectivo esperado" v={fmtQ(Number(c.efectivo_esperado))} bold />
           <Fila k="Efectivo contado" v={fmtQ(Number(c.efectivo_contado))} bold />
           <div className="mt-1 border-t border-line pt-2">
-            <Fila k="Diferencia" v={`${dif > 0 ? "+" : ""}${fmtQ(dif)}`} tone={dif === 0 ? "ok" : "warn"} bold />
+            <Fila k="Diferencia" v={`${dif >= 0.005 ? "+" : ""}${fmtQ(dif)}`} tone={mismoMonto(dif, 0) ? "ok" : "warn"} bold />
           </div>
           {c.notas && <p className="mt-3 whitespace-pre-wrap text-sm text-muted">{c.notas}</p>}
         </div>
@@ -93,7 +124,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
         <div className="flex flex-wrap items-end gap-2">
           <div className="inline-flex rounded-full border border-line bg-elevated p-1">
             {(["egreso", "ingreso"] as const).map((t) => (
-              <button key={t} onClick={() => setMovTipo(t)}
+              <button key={t} onClick={() => setMovTipo(t)} aria-pressed={movTipo === t}
                 className={`min-h-9 rounded-full px-3.5 text-[13px] font-semibold capitalize transition-colors ${movTipo === t ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"}`}>
                 {t === "egreso" ? "Egreso" : "Ingreso"}
               </button>
@@ -112,7 +143,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
                   {m.tipo === "egreso" ? "−" : "+"} {fmtQ(Number(m.monto))}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm text-muted">{m.motivo || (m.tipo === "egreso" ? "Egreso" : "Ingreso")}</span>
-                <button onClick={() => run(() => borrarMovimientoCaja(m.id))} aria-label="Borrar" className="flex size-8 items-center justify-center text-subtle hover:text-danger">×</button>
+                <button onClick={() => setBorrarId(m.id)} aria-label="Borrar movimiento" className="flex size-11 items-center justify-center text-subtle hover:text-danger">×</button>
               </div>
             ))}
           </div>
@@ -137,7 +168,7 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
         </label>
         {contado !== "" && (
           <div className="mt-3 border-t border-line pt-2">
-            <Fila k="Diferencia" v={`${diferencia > 0 ? "+" : ""}${fmtQ(diferencia)}`} tone={diferencia === 0 ? "ok" : "warn"} bold />
+            <Fila k="Diferencia" v={`${diferencia >= 0.005 ? "+" : ""}${fmtQ(diferencia)}`} tone={mismoMonto(diferencia, 0) ? "ok" : "warn"} bold />
           </div>
         )}
       </section>
@@ -147,9 +178,22 @@ export function CajaCierre({ resumen }: { resumen: CajaResumen }) {
 
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
-      <button onClick={() => setConfCerrar(true)} disabled={pending || contado === ""} className="min-h-[52px] rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] disabled:opacity-40">
+      <button onClick={pedirCierre} disabled={pending || contado === ""} className="min-h-[52px] rounded-full bg-accent text-base font-semibold text-accent-ink shadow-[0_0_28px_var(--accent-glow)] disabled:opacity-40">
         {pending ? "Cerrando…" : "Cerrar caja del día"}
       </button>
+
+      {borrarId && (
+        <ConfirmDialog
+          title="¿Borrar este movimiento?"
+          message="Se quita del arqueo de hoy."
+          confirmLabel="Borrar"
+          danger
+          pending={pending}
+          pendingLabel="Borrando…"
+          onConfirm={() => run(() => borrarMovimientoCaja(borrarId), () => setBorrarId(null))}
+          onCancel={() => setBorrarId(null)}
+        />
+      )}
 
       {confCerrar && (
         <ConfirmDialog

@@ -15,7 +15,10 @@ interface BarcodeDetectorLike {
 }
 declare global {
   interface Window {
-    BarcodeDetector?: new (opts?: { formats: string[] }) => BarcodeDetectorLike;
+    BarcodeDetector?: {
+      new (opts?: { formats: string[] }): BarcodeDetectorLike;
+      getSupportedFormats?: () => Promise<string[]>;
+    };
   }
 }
 
@@ -33,17 +36,24 @@ export function QrScanner() {
     let raf = 0;
     let cancelado = false;
 
-    async function resolverToken(token: string) {
+    // true = cliente encontrado (navega); false = seguir escaneando.
+    async function resolverToken(token: string): Promise<boolean> {
       setEstado("buscando");
-      const { data } = await sb.current.rpc("get_cliente_by_qr", { p_qr_token: token });
-      if (cancelado) return;
-      const cliente = (data as { cliente?: { id: string } } | null)?.cliente;
+      let cliente: { id: string } | undefined;
+      try {
+        const { data } = await sb.current.rpc("get_cliente_by_qr", { p_qr_token: token });
+        cliente = (data as { cliente?: { id: string } } | null)?.cliente;
+      } catch {
+        /* red caída: se trata como no reconocido */
+      }
+      if (cancelado) return true;
       if (cliente?.id) {
         router.push(`/admin/venta/${cliente.id}`);
-      } else {
-        setMensaje("QR no reconocido. Intenta de nuevo o busca al cliente.");
-        setEstado("escaneando");
+        return true;
       }
+      setMensaje("QR no reconocido. Intenta de nuevo o busca al cliente.");
+      setEstado("escaneando");
+      return false;
     }
 
     async function start() {
@@ -55,14 +65,27 @@ export function QrScanner() {
       }
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        if (cancelado) return;
+        // Salió de la pantalla mientras el aviso de permiso estaba abierto:
+        // el cleanup ya corrió con stream=null, así que apagar la cámara aquí.
+        if (cancelado) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
         const video = videoRef.current!;
         video.srcObject = stream;
         await video.play();
 
         // Decodificador: BarcodeDetector nativo (rápido) cuando existe;
         // si no (iOS Safari, Firefox…), fallback a jsQR sobre canvas.
-        const nativo = window.BarcodeDetector ? new window.BarcodeDetector({ formats: ["qr_code"] }) : null;
+        // Algunos navegadores exponen BarcodeDetector sin soporte de QR: ahí
+        // detect() lanza en cada frame y nunca se llegaba a jsQR.
+        let nativo: BarcodeDetectorLike | null = null;
+        if (window.BarcodeDetector) {
+          const formatos = await window.BarcodeDetector.getSupportedFormats?.().catch((): string[] => []);
+          if (!formatos || formatos.includes("qr_code")) {
+            nativo = new window.BarcodeDetector({ formats: ["qr_code"] });
+          }
+        }
         let canvas: HTMLCanvasElement | null = null;
         let ctx: CanvasRenderingContext2D | null = null;
         if (!nativo) {
@@ -92,6 +115,7 @@ export function QrScanner() {
 
         // ~10fps: detectar es costoso; 60fps gasta CPU/batería sin ganar nada.
         const INTERVALO = 100;
+        const PAUSA_FALLO = 1500;
         let ultimo = 0;
         const tick = async (t: number) => {
           if (cancelado) return;
@@ -101,8 +125,9 @@ export function QrScanner() {
               const token = await detectar();
               if (token) {
                 cancelAnimationFrame(raf);
-                await resolverToken(token);
-                return;
+                if (await resolverToken(token)) return;
+                // QR ajeno: pausa breve para no re-leer el mismo código en loop.
+                ultimo = t + PAUSA_FALLO;
               }
             } catch {
               /* frame sin lectura */

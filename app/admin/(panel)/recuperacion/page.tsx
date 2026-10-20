@@ -8,7 +8,10 @@ import { IconMessage, IconCheck } from "@/components/icons";
 const SEGMENTOS = [30, 60, 90];
 
 function waLink(r: InactivoRow): string {
-  const tel = r.telefono.replace(/\D/g, "");
+  // wa.me exige el número internacional: los teléfonos se guardan con 8 dígitos
+  // (Guatemala) → se antepone 502, salvo que ya venga con él (11 dígitos).
+  const digitos = r.telefono.replace(/\D/g, "");
+  const tel = digitos.length === 11 && digitos.startsWith("502") ? digitos : `502${digitos}`;
   const nombre = r.nombre.split(" ")[0];
   const msg = `Hola ${nombre}, te extrañamos en Taper Barber. Tienes un beneficio esperándote en tu próximo corte — ¡pasa cuando quieras y te lo aplicamos!`;
   return `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
@@ -69,6 +72,8 @@ export default async function RecuperacionPage({
               <Link href={`/admin/clientes/${r.id}`} className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-ink">{r.nombre}</p>
                 <p className="text-[13px] text-muted">
+                  {/* dias_inactivo null = nunca registró una venta (con 0039 incluye a
+                      quien se registró y no volvió). */}
                   {r.dias_inactivo == null ? "Nunca registró visita" : `Hace ${r.dias_inactivo} días`}
                   {r.ultima_visita ? ` · últ. ${fmtDiaMes(r.ultima_visita)}` : ""} · {r.telefono}
                 </p>

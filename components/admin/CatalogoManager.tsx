@@ -11,13 +11,14 @@ import {
   updateConfigLealtad,
   type ActionResult,
 } from "@/app/admin/actions";
-import { fmtQ } from "@/lib/format";
+import { fmtQ, parseMonto } from "@/lib/format";
 import type { CatalogoAdmin } from "@/lib/queries/catalogo";
 import type { Servicio, Producto, Barbero } from "@/lib/types";
 import { IconPlus, IconPencil } from "@/components/icons";
 import { Thumb } from "@/components/admin/Thumb";
 import { ImagePicker } from "@/components/admin/ImagePicker";
 import { useModalA11y } from "@/components/admin/useModalA11y";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 type Tab = "servicios" | "productos" | "barberos" | "lealtad";
 
@@ -33,6 +34,7 @@ export function CatalogoManager({ catalogo }: { catalogo: CatalogoAdmin }) {
           <button
             key={t}
             onClick={() => setTab(t)}
+            aria-pressed={tab === t}
             className={`-mb-px min-h-10 shrink-0 border-b-2 text-sm font-medium capitalize transition-colors ${tab === t ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"}`}
           >
             {t}
@@ -207,7 +209,7 @@ function ServicioSheet({ servicio, onClose }: { servicio: Servicio | null; onClo
     <Sheet title={servicio ? "Editar servicio" : "Nuevo servicio"} onClose={onClose} pending={pending} error={error}
       onSave={() => run(() => saveServicio({
         id: servicio?.id,
-        nombre, precio: Number(precio) || 0, categoria,
+        nombre, precio: parseMonto(precio) ?? NaN, categoria,
         duracion_min: duracion ? Number(duracion) : null,
         puntos: Math.max(0, Math.round(Number(puntos) || 0)), orden: Number(orden) || 0,
         imagen_url: imagen,
@@ -283,7 +285,7 @@ function ProductoSheet({ producto, onClose }: { producto: Producto | null; onClo
   return (
     <Sheet title={producto ? "Editar producto" : "Nuevo producto"} onClose={onClose} pending={pending} error={error}
       onSave={() => run(() => saveProducto({
-        id: producto?.id, nombre, precio: Number(precio) || 0, categoria, imagen_url: imagen,
+        id: producto?.id, nombre, precio: parseMonto(precio) ?? NaN, categoria, imagen_url: imagen,
         controla_stock: controlaStock, stock_min: Number(stockMin) || 0,
         puntos: Math.max(0, Math.round(Number(puntos) || 0)),
         stock_inicial: producto ? undefined : Number(stockInicial) || 0,
@@ -368,6 +370,15 @@ function LealtadTab({ config }: { config: CatalogoAdmin["config"] }) {
   const [cortes, setCortes] = useState(String(config.cortes_objetivo));
   const [ventana, setVentana] = useState(String(config.ventana_meses));
   const [ok, setOk] = useState(false);
+  // Cambiar la meta recalcula hacia atrás el progreso/recompensas de todos los
+  // clientes → se pide confirmación solo si el valor cambió.
+  const [confirmando, setConfirmando] = useState(false);
+
+  const guardar = () => {
+    setConfirmando(false);
+    run(() => updateConfigLealtad(Number(cortes) || 0, Number(ventana) || 0), () => setOk(true));
+  };
+  const cortesCambio = (Number(cortes) || 0) !== config.cortes_objetivo;
 
   return (
     <div className="max-w-[440px]">
@@ -383,12 +394,22 @@ function LealtadTab({ config }: { config: CatalogoAdmin["config"] }) {
       {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
       {ok && <p className="mt-3 text-sm text-success">Guardado ✓</p>}
       <button
-        onClick={() => run(() => updateConfigLealtad(Number(cortes) || 0, Number(ventana) || 0), () => setOk(true))}
+        onClick={() => (cortesCambio ? setConfirmando(true) : guardar())}
         disabled={pending}
         className="mt-4 inline-flex min-h-[48px] items-center rounded-full bg-accent px-6 text-sm font-semibold text-accent-ink disabled:opacity-50"
       >
         {pending ? "Guardando…" : "Guardar config"}
       </button>
+      {confirmando && (
+        <ConfirmDialog
+          title="¿Cambiar la meta de lealtad?"
+          message={`Pasar de ${config.cortes_objetivo} a ${Number(cortes) || 0} cortes recalcula el progreso de TODOS los clientes con sus visitas pasadas: algunos podrían ganar o perder al instante un corte gratis pendiente. No afecta canjes ya hechos.`}
+          confirmLabel="Sí, cambiar meta"
+          danger
+          onConfirm={guardar}
+          onCancel={() => setConfirmando(false)}
+        />
+      )}
     </div>
   );
 }

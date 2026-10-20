@@ -17,5 +17,5 @@ export default async function ClienteFichaPage({
   if (!ficha) redirect("/admin/clientes");
 
   const puedeGestionar = staff?.rol === "dueno" || staff?.rol === "admin";
-  return <ClienteFicha ficha={ficha} puedeResetPin={puedeGestionar} puedeGestionar={puedeGestionar} />;
+  return <ClienteFicha ficha={ficha} puedeResetPin puedeGestionar={puedeGestionar} />;
 }

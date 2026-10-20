@@ -4,10 +4,8 @@ import type { CitaRow } from "@/lib/types";
 const SELECT =
   "*, cliente:clientes(nombre,telefono), barbero:barberos(nombre), servicio:servicios(nombre,precio,duracion_min)";
 
-/** Fecha de hoy (YYYY-MM-DD) en hora local de Guatemala. */
-export function hoyGT(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guatemala" }).format(new Date());
-}
+// Una sola definición de "hoy en Guatemala" (antes duplicada aquí y en caja).
+export { hoyGT } from "@/lib/queries/caja";
 
 /** Citas de un día (hora local GT, UTC-6 sin horario de verano), ordenadas por hora. */
 export async function getCitasDelDia(fecha: string, sucursalId?: string | null): Promise<CitaRow[]> {

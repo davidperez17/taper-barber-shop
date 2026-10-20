@@ -15,6 +15,29 @@ const CONFETTI: ConfettiPiece[] = [
   { l: 42, col: "#f5c800", d: 500, dur: 2100, w: 7 },
 ];
 
+// ── Cola de celebraciones ───────────────────────────────────────
+// Si en la misma carga toca corte gratis y subida de nivel, TierUp espera a
+// que este overlay se cierre (antes se encimaban dos modales).
+const EVENTO_CIERRE = "taper:reward-cerrada";
+let rewardActiva = false;
+
+function liberarReward() {
+  if (!rewardActiva) return;
+  rewardActiva = false;
+  window.dispatchEvent(new Event(EVENTO_CIERRE));
+}
+
+/** Corre `cb` ya, o cuando se cierre la celebración de recompensa si está en
+ *  curso. Devuelve una función para cancelar la espera. */
+export function trasReward(cb: () => void): () => void {
+  if (!rewardActiva) {
+    cb();
+    return () => {};
+  }
+  window.addEventListener(EVENTO_CIERRE, cb, { once: true });
+  return () => window.removeEventListener(EVENTO_CIERRE, cb);
+}
+
 /** Overlay de celebración al desbloquear corte gratis. Una vez por sesión. */
 export function RewardCelebration({ nombre }: { nombre: string }) {
   const [open, setOpen] = useState(false);
@@ -23,13 +46,22 @@ export function RewardCelebration({ nombre }: { nombre: string }) {
     const key = "taper_reward_seen";
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
+    // Se marca activa ya (sincrónico en el effect) para que TierUp, que decide
+    // tras su propio delay, la vea y se encole detrás.
+    rewardActiva = true;
     // Tras el primer paint: la tarjeta entra primero y la celebración encima
     // (además evita el setState síncrono en el effect).
     const t = setTimeout(() => setOpen(true), 250);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      liberarReward();
+    };
   }, []);
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => {
+    setOpen(false);
+    liberarReward();
+  }, []);
 
   if (!open) return null;
   return <RewardDialog nombre={nombre} onClose={close} />;

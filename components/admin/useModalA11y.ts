@@ -9,6 +9,13 @@ import { useEffect, useRef } from "react";
  */
 export function useModalA11y(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
+  // onClose suele crearse en cada render del padre; si fuera dependencia del
+  // efecto, éste se re-ejecutaría en cada render (re-enfocando el primer
+  // elemento y devolviendo el foco al disparador). Se guarda en un ref.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const disparador = document.activeElement as HTMLElement | null;
@@ -35,7 +42,7 @@ export function useModalA11y(onClose: () => void) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab") {
@@ -61,7 +68,7 @@ export function useModalA11y(onClose: () => void) {
       if (shell) shell.style.overflow = shellPrevio;
       disparador?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   return ref;
 }

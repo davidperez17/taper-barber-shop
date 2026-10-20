@@ -26,6 +26,7 @@ export default async function VentaPage({
       barberos={catalogo.barberos}
       defaultBarberoId={staff.barbero_id}
       canjeAbiertoInicial={canjeAbierto()}
+      sucursalId={sucursalId}
     />
   );
 }
