@@ -40,3 +40,7 @@ Thumbs.db
 
 # Windows download metadata
 *:Zone.Identifier
+
+# Video Remotion (proyecto aparte)
+/video/node_modules
+/video/out
