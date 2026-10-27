@@ -14,6 +14,21 @@ export async function subsDeCliente(clienteId: string): Promise<Suscripcion[]> {
   return (data as Suscripcion[]) ?? [];
 }
 
+/** Suscripciones de un grupo de clientes (por tandas: el filtro `in` viaja en la URL). */
+export async function subsDeClientes(clienteIds: string[]): Promise<Suscripcion[]> {
+  const admin = createAdmin();
+  let subs: Suscripcion[] = [];
+  for (let i = 0; i < clienteIds.length; i += 200) {
+    const { data } = await admin
+      .from("push_subscriptions")
+      .select(COLS)
+      .eq("owner_type", "cliente")
+      .in("owner_id", clienteIds.slice(i, i + 200));
+    subs = subs.concat((data as Suscripcion[]) ?? []);
+  }
+  return subs;
+}
+
 /** Suscripciones de un miembro del staff concreto. */
 export async function subsDeStaff(staffId: string): Promise<Suscripcion[]> {
   const { data } = await createAdmin()

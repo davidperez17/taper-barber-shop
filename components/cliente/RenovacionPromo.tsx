@@ -8,7 +8,8 @@ import { RENOVACION_KEY, renovacionVigente } from "@/lib/promo";
 // Anuncio "barbería renovada" (lib/promo.ts). Solo anuncio: borrar tras RENOVACION_HASTA.
 
 /**
- * Splash del anuncio. Sale UNA vez por dispositivo. Abre después del de
+ * Splash del anuncio (lo monta la tarjeta, solo para clientes de la sucursal
+ * renovada). Sale UNA vez por dispositivo. Abre después del de
  * Halloween: si ya hay otro overlay abierto no se apila y espera a la próxima
  * apertura (Halloween sale 1×día, así que a la segunda ya toca éste).
  */
@@ -62,7 +63,7 @@ export function RenovacionBanner() {
             Nueva cara · Mismo filo
           </span>
           <span className="mt-0.5 block font-display text-[17px] font-semibold leading-tight text-ink">
-            Renovamos Taper
+            Renovamos Taper Chimaltenango
           </span>
           <span className="mt-0.5 block text-xs text-muted">Ven a conocerla y sal con corte fresco</span>
         </span>
@@ -80,7 +81,7 @@ function RenovacionDialog({ onClose }: { onClose: () => void }) {
       ref={ref}
       role="dialog"
       aria-modal="true"
-      aria-label="Renovamos la barbería"
+      aria-label="Renovamos Taper Chimaltenango"
       className="animate-fade-up fixed inset-0 z-[var(--z-modal)] flex flex-col items-center justify-center overflow-hidden px-8"
       style={{ background: "rgba(10,10,10,0.95)" }}
     >
@@ -107,7 +108,7 @@ function RenovacionDialog({ onClose }: { onClose: () => void }) {
           Taper
         </h2>
         <p className="mt-4 max-w-[300px] text-center text-[16px] leading-snug text-ink">
-          Le dimos una nueva cara a la barbería. Pasa a conocerla… y ya que vienes,{" "}
+          Le dimos una nueva cara a la barbería de Chimaltenango. Pasa a conocerla… y ya que vienes,{" "}
           <strong className="font-semibold">sal con corte fresco</strong>.
         </p>
         <p className="mt-2 max-w-[280px] text-center text-[13px] text-subtle">

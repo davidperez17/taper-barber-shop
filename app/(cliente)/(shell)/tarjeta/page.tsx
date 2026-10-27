@@ -15,9 +15,9 @@ import { VentaLive } from "@/components/cliente/VentaLive";
 import { canalCliente } from "@/lib/realtime";
 import { QrOfflineCache } from "@/components/cliente/QrOfflineCache";
 import { getBandeja } from "@/lib/queries/notificaciones";
-import { faseHalloween, renovacionVigente } from "@/lib/promo";
+import { faseHalloween, renovacionVigente, RENOVACION_SUCURSAL } from "@/lib/promo";
 import { HalloweenBanner } from "@/components/cliente/HalloweenPromo";
-import { RenovacionBanner } from "@/components/cliente/RenovacionPromo";
+import { RenovacionBanner, RenovacionPromo } from "@/components/cliente/RenovacionPromo";
 
 export default async function TarjetaPage() {
   const dash = await requireDashboard();
@@ -43,7 +43,10 @@ export default async function TarjetaPage() {
   const cortesGlobal = dash.loyalty_sucursales.reduce((sum, s) => sum + s.cortes_total, 0);
   const algunaRecompensa = cards.some((c) => c.recompensaDisponible);
   const halloween = faseHalloween();
-  const renovacion = renovacionVigente();
+  // Anuncio de la renovación: solo clientes con cortes en esa sucursal.
+  const renovacion =
+    renovacionVigente() &&
+    dash.loyalty_sucursales.some((s) => s.sucursal_id === RENOVACION_SUCURSAL && s.cortes_total > 0);
 
   // QR rotativo (0040): sin red, la tarjeta avisa y /offline muestra el número.
   const token = await getQrToken();
@@ -54,6 +57,7 @@ export default async function TarjetaPage() {
       <VentaLive canal={canalCliente(dash.cliente.id)} />
       <QrOfflineCache nombre={dash.cliente.nombre} memberId={memberId(dash.cliente.numero)} />
       {loyalty.recompensaDisponible && <RewardCelebration nombre={dash.cliente.nombre} />}
+      {renovacion && <RenovacionPromo />}
       <TierUpCelebration clienteId={dash.cliente.id} tiers={[loyalty.tier, ...cards.map((c) => c.tier)]} />
 
       {/* Header */}

@@ -27,6 +27,24 @@ export async function registrarNoti(clienteId: string, noti: NotiInput): Promise
 
 const PAGINA = 1000; // tope por defecto de filas de PostgREST
 
+/** Registra la misma notificación para un grupo de clientes (difusión segmentada). */
+export async function registrarNotiClientes(clienteIds: string[], noti: NotiInput): Promise<void> {
+  try {
+    const admin = createAdmin();
+    for (let i = 0; i < clienteIds.length; i += PAGINA) {
+      await admin.from("notificaciones").insert(
+        clienteIds.slice(i, i + PAGINA).map((id) => ({
+          cliente_id: id,
+          tipo: noti.tipo ?? "general",
+          titulo: noti.titulo,
+          cuerpo: noti.cuerpo,
+          url: noti.url ?? null,
+        })),
+      );
+    }
+  } catch {}
+}
+
 /**
  * Registra la misma notificación para todos los clientes (difusión/promos).
  * Paginado: un solo select devolvía máx. 1000 filas y el resto se quedaba sin aviso.

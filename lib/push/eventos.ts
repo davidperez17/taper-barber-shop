@@ -1,9 +1,9 @@
 import "server-only";
 import { enviarPush, ICONO_STAFF } from "./send";
-import { subsDeCliente, subsPorTipo } from "./targets";
-import { registrarNoti, registrarNotiTodosClientes } from "./inbox";
+import { subsDeCliente, subsDeClientes, subsPorTipo } from "./targets";
+import { registrarNoti, registrarNotiClientes, registrarNotiTodosClientes } from "./inbox";
 import { CANJE_HORARIO } from "@/lib/horario";
-import { AVISO_RENOVACION, avisoRenovacionDelMomento, avisosHalloweenDelMomento } from "@/lib/promo";
+import { AVISO_RENOVACION, RENOVACION_SUCURSAL, avisoRenovacionDelMomento, avisosHalloweenDelMomento } from "@/lib/promo";
 import { createAdmin } from "@/lib/supabase/admin";
 
 // Eventos transaccionales → notificación. Cada función se aísla: nunca lanza,
@@ -128,10 +128,14 @@ export async function pushStockBajoStaff(nombres: string[]): Promise<void> {
 /**
  * Difusión programada que sale una sola vez: se reclama `tipo` en
  * notificaciones_log ANTES de enviar (si el envío falla no se reintenta: mejor
- * perder uno que mandarlo doble). Va a la bandeja de todos los clientes + push
- * a los suscritos. Devuelve cuántos push salieron.
+ * perder uno que mandarlo doble). Va a la bandeja + push de todos los clientes,
+ * o solo de `clienteIds` si se pasa. Devuelve cuántos push salieron.
  */
-async function difusionUnica(tipo: string, a: { titulo: string; cuerpo: string; tag: string }): Promise<number> {
+async function difusionUnica(
+  tipo: string,
+  a: { titulo: string; cuerpo: string; tag: string },
+  clienteIds?: string[],
+): Promise<number> {
   try {
     const admin = createAdmin();
     const { data: ya } = await admin.from("notificaciones_log").select("id").eq("tipo", tipo).limit(1);
@@ -142,8 +146,11 @@ async function difusionUnica(tipo: string, a: { titulo: string; cuerpo: string; 
       .insert({ owner_type: "cliente", owner_id: "00000000-0000-0000-0000-000000000000", tipo });
     if (error) return 0;
 
-    await registrarNotiTodosClientes({ tipo: "promo", titulo: a.titulo, cuerpo: a.cuerpo, url: "/tarjeta" });
-    const r = await enviarPush(await subsPorTipo("cliente"), {
+    const noti = { tipo: "promo", titulo: a.titulo, cuerpo: a.cuerpo, url: "/tarjeta" };
+    if (clienteIds) await registrarNotiClientes(clienteIds, noti);
+    else await registrarNotiTodosClientes(noti);
+    const subs = clienteIds ? await subsDeClientes(clienteIds) : await subsPorTipo("cliente");
+    const r = await enviarPush(subs, {
       title: a.titulo,
       body: a.cuerpo,
       url: "/tarjeta",
@@ -164,8 +171,21 @@ export async function pushAvisosHalloween(): Promise<number> {
   return enviados;
 }
 
-/** Aviso único "barbería renovada" (lib/promo.ts). Borrar tras RENOVACION_HASTA. */
+/**
+ * Aviso único "barbería renovada" (lib/promo.ts), solo a clientes con cortes en
+ * la sucursal renovada — mismo criterio que el banner de la tarjeta.
+ * Borrar tras RENOVACION_HASTA.
+ */
 export async function pushAvisoRenovacion(): Promise<number> {
   if (!avisoRenovacionDelMomento()) return 0;
-  return difusionUnica(AVISO_RENOVACION.tipo, { ...AVISO_RENOVACION, tag: "renovacion" });
+  const { data, error } = await createAdmin()
+    .from("cliente_loyalty")
+    .select("cliente_id")
+    .eq("sucursal_id", RENOVACION_SUCURSAL)
+    .gt("cortes_total", 0)
+    .range(0, 9999);
+  // Sin destinatarios fiables no se reclama el aviso: se reintenta en la próxima corrida.
+  if (error || !data || data.length === 0) return 0;
+  const ids = (data as { cliente_id: string }[]).map((r) => r.cliente_id);
+  return difusionUnica(AVISO_RENOVACION.tipo, { ...AVISO_RENOVACION, tag: "renovacion" }, ids);
 }

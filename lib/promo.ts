@@ -83,8 +83,13 @@ export function avisosHalloweenDelMomento(d: Date = new Date()): AvisoHalloween[
 
 // ── Anuncio: barbería renovada (2026) ────────────────────────────────────────
 // Solo anuncio, como Halloween: splash una vez por dispositivo, banner en la
-// tarjeta hasta RENOVACION_HASTA y un aviso push + bandeja a todos los clientes.
+// tarjeta hasta RENOVACION_HASTA y un aviso push + bandeja. SOLO para clientes
+// de la sucursal renovada (con al menos un corte ahí): los clientes no tienen
+// sucursal propia, así que "ser de Chimal" = tener lealtad en esa sucursal.
 // Desde el día siguiente a RENOVACION_HASTA no se muestra nada → borrable.
+
+/** Sucursal renovada: "Sucursal Chimal" (la principal, uuid fijo de 0015). */
+export const RENOVACION_SUCURSAL = "00000000-0000-0000-0000-000000000001";
 
 /** Último día (GT) en que se muestra el anuncio. */
 export const RENOVACION_HASTA = "2026-11-30";
@@ -98,7 +103,7 @@ export const AVISO_RENOVACION = {
   dia: "2026-10-27", // sale desde este día (GT), en la primera corrida del cron
   hora: 10 * 60, // dentro de la franja 10:00–20:00 GT: si el deploy cae de
   hasta: 20 * 60, // noche o ya pasó el día, sale a la mañana siguiente.
-  titulo: "💈 Taper se renovó",
+  titulo: "💈 Taper Chimaltenango se renovó",
   cuerpo: "Estrenamos nueva cara. Pasa a conocerla y de una vez sal con corte fresco: tus sellos te esperan.",
 };
 
