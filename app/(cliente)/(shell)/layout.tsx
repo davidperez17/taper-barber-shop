@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/cliente/BottomNav";
 import { AutoRefresh } from "@/components/cliente/AutoRefresh";
 import { PushSync } from "@/components/cliente/PushSync";
 import { HalloweenPromo } from "@/components/cliente/HalloweenPromo";
+import { RenovacionPromo } from "@/components/cliente/RenovacionPromo";
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
   if (!(await getQrToken())) redirect("/");
@@ -13,6 +14,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       <AutoRefresh />
       <PushSync />
       <HalloweenPromo />
+      <RenovacionPromo />
       {/* pb = espacio del bottom nav fijo (nav ~64px + margen + inset) para no tapar contenido */}
       <div data-shell-scroll className="min-h-0 flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+92px)]">{children}</div>
       <BottomNav />

@@ -15,8 +15,9 @@ import { VentaLive } from "@/components/cliente/VentaLive";
 import { canalCliente } from "@/lib/realtime";
 import { QrOfflineCache } from "@/components/cliente/QrOfflineCache";
 import { getBandeja } from "@/lib/queries/notificaciones";
-import { faseHalloween } from "@/lib/promo";
+import { faseHalloween, renovacionVigente } from "@/lib/promo";
 import { HalloweenBanner } from "@/components/cliente/HalloweenPromo";
+import { RenovacionBanner } from "@/components/cliente/RenovacionPromo";
 
 export default async function TarjetaPage() {
   const dash = await requireDashboard();
@@ -42,6 +43,7 @@ export default async function TarjetaPage() {
   const cortesGlobal = dash.loyalty_sucursales.reduce((sum, s) => sum + s.cortes_total, 0);
   const algunaRecompensa = cards.some((c) => c.recompensaDisponible);
   const halloween = faseHalloween();
+  const renovacion = renovacionVigente();
 
   // QR rotativo (0040): sin red, la tarjeta avisa y /offline muestra el número.
   const token = await getQrToken();
@@ -83,6 +85,7 @@ export default async function TarjetaPage() {
       )}
 
       {halloween && <HalloweenBanner fase={halloween} />}
+      {renovacion && <RenovacionBanner />}
 
       {/* Quick actions */}
       <div className="mt-6">

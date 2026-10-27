@@ -3,7 +3,7 @@ import { enviarPush, ICONO_STAFF } from "./send";
 import { subsDeCliente, subsPorTipo } from "./targets";
 import { registrarNoti, registrarNotiTodosClientes } from "./inbox";
 import { CANJE_HORARIO } from "@/lib/horario";
-import { avisosHalloweenDelMomento } from "@/lib/promo";
+import { AVISO_RENOVACION, avisoRenovacionDelMomento, avisosHalloweenDelMomento } from "@/lib/promo";
 import { createAdmin } from "@/lib/supabase/admin";
 
 // Eventos transaccionales → notificación. Cada función se aísla: nunca lanza,
@@ -126,37 +126,46 @@ export async function pushStockBajoStaff(nombres: string[]): Promise<void> {
 }
 
 /**
- * Avisos programados de la promo de Halloween 2026 (lib/promo.ts). Cada aviso
- * sale una sola vez: se reclama en notificaciones_log ANTES de enviar (si el
- * envío falla no se reintenta: mejor perder uno que mandarlo doble). Va a la
- * bandeja de todos los clientes + push a los suscritos. Borrar tras el 31-oct.
+ * Difusión programada que sale una sola vez: se reclama `tipo` en
+ * notificaciones_log ANTES de enviar (si el envío falla no se reintenta: mejor
+ * perder uno que mandarlo doble). Va a la bandeja de todos los clientes + push
+ * a los suscritos. Devuelve cuántos push salieron.
  */
+async function difusionUnica(tipo: string, a: { titulo: string; cuerpo: string; tag: string }): Promise<number> {
+  try {
+    const admin = createAdmin();
+    const { data: ya } = await admin.from("notificaciones_log").select("id").eq("tipo", tipo).limit(1);
+    if (ya && ya.length > 0) return 0;
+    // owner_id nil = difusión global (no es de un cliente concreto).
+    const { error } = await admin
+      .from("notificaciones_log")
+      .insert({ owner_type: "cliente", owner_id: "00000000-0000-0000-0000-000000000000", tipo });
+    if (error) return 0;
+
+    await registrarNotiTodosClientes({ tipo: "promo", titulo: a.titulo, cuerpo: a.cuerpo, url: "/tarjeta" });
+    const r = await enviarPush(await subsPorTipo("cliente"), {
+      title: a.titulo,
+      body: a.cuerpo,
+      url: "/tarjeta",
+      tag: a.tag,
+    });
+    return r.enviadas;
+  } catch {
+    return 0;
+  }
+}
+
+/** Avisos programados de la promo de Halloween 2026 (lib/promo.ts). Borrar tras el 31-oct. */
 export async function pushAvisosHalloween(): Promise<number> {
-  const avisos = avisosHalloweenDelMomento();
-  if (avisos.length === 0) return 0;
-
-  const admin = createAdmin();
   let enviados = 0;
-  for (const a of avisos) {
-    const tipo = `halloween_2026_${a.id}`;
-    try {
-      const { data: ya } = await admin.from("notificaciones_log").select("id").eq("tipo", tipo).limit(1);
-      if (ya && ya.length > 0) continue;
-      // owner_id nil = difusión global (no es de un cliente concreto).
-      const { error } = await admin
-        .from("notificaciones_log")
-        .insert({ owner_type: "cliente", owner_id: "00000000-0000-0000-0000-000000000000", tipo });
-      if (error) continue;
-
-      await registrarNotiTodosClientes({ tipo: "promo", titulo: a.titulo, cuerpo: a.cuerpo, url: "/tarjeta" });
-      const r = await enviarPush(await subsPorTipo("cliente"), {
-        title: a.titulo,
-        body: a.cuerpo,
-        url: "/tarjeta",
-        tag: "halloween",
-      });
-      enviados += r.enviadas;
-    } catch {}
+  for (const a of avisosHalloweenDelMomento()) {
+    enviados += await difusionUnica(`halloween_2026_${a.id}`, { ...a, tag: "halloween" });
   }
   return enviados;
+}
+
+/** Aviso único "barbería renovada" (lib/promo.ts). Borrar tras RENOVACION_HASTA. */
+export async function pushAvisoRenovacion(): Promise<number> {
+  if (!avisoRenovacionDelMomento()) return 0;
+  return difusionUnica(AVISO_RENOVACION.tipo, { ...AVISO_RENOVACION, tag: "renovacion" });
 }

@@ -344,6 +344,63 @@ select:focus-visible {
 }
 .hw-shine { animation: taperShine 6s ease-in-out infinite; }
 
+/* Anuncio "barbería renovada" (RenovacionPromo.tsx) — borrar tras el 30-nov.
+   Ciclo de 5.5 s: entra la tijera, corta, caen las mitades, destellos. */
+@keyframes taperPoleSpin {
+  to { transform: translateY(18px); }
+}
+@keyframes taperScissorsIn {
+  0%        { transform: translateX(120px); opacity: 0; }
+  18%, 58%  { transform: translateX(0); opacity: 1; }
+  72%, 100% { transform: translate(40px, -26px); opacity: 0; }
+}
+@keyframes taperBladeA {
+  0%, 22%   { transform: rotate(16deg); }
+  30%, 100% { transform: rotate(0deg); }
+}
+@keyframes taperBladeB {
+  0%, 22%   { transform: rotate(-16deg); }
+  30%, 100% { transform: rotate(0deg); }
+}
+@keyframes taperRibbonL {
+  0%, 30%  { transform: rotate(0deg); opacity: 1; }
+  42%      { transform: rotate(62deg); }
+  48%      { transform: rotate(50deg); }
+  54%, 86% { transform: rotate(55deg); opacity: 1; }
+  94%      { transform: rotate(55deg); opacity: 0; }
+  96%      { transform: rotate(0deg); opacity: 0; }
+  100%     { transform: rotate(0deg); opacity: 1; }
+}
+@keyframes taperRibbonR {
+  0%, 30%  { transform: rotate(0deg); opacity: 1; }
+  42%      { transform: rotate(-62deg); }
+  48%      { transform: rotate(-50deg); }
+  54%, 86% { transform: rotate(-55deg); opacity: 1; }
+  94%      { transform: rotate(-55deg); opacity: 0; }
+  96%      { transform: rotate(0deg); opacity: 0; }
+  100%     { transform: rotate(0deg); opacity: 1; }
+}
+@keyframes taperSnipSparkle {
+  0%, 29%   { opacity: 0; transform: scale(0) rotate(0deg); }
+  38%       { opacity: 1; transform: scale(1.25) rotate(45deg); }
+  52%, 100% { opacity: 0; transform: scale(0.6) rotate(90deg); }
+}
+
+.rn-stripes { animation: taperPoleSpin 1.4s linear infinite; }
+.rn-glow    { animation: taperGlow 3.4s ease-in-out infinite alternate; }
+.rn-sc { animation: taperScissorsIn 5.5s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+.rn-ba { animation: taperBladeA 5.5s ease-in infinite; }
+.rn-bb { animation: taperBladeB 5.5s ease-in infinite; }
+.rn-rl,
+.rn-rr { transform-box: fill-box; }
+.rn-rl { transform-origin: left center;  animation: taperRibbonL 5.5s ease-in infinite; }
+.rn-rr { transform-origin: right center; animation: taperRibbonR 5.5s ease-in infinite; }
+.rn-sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: taperSnipSparkle 5.5s ease-out calc(var(--i, 0) * 60ms) infinite both;
+}
+
 /* Sello de lealtad — pop escalonado al montar (delay via --i) */
 .stamp-pop {
   animation: taperStamp 320ms var(--ease-spring) both;
@@ -415,6 +472,19 @@ select:focus-visible {
   /* Sin movimiento: la calabaza queda encendida, sin mascarilla ni destellos. */
   .hw-mask,
   .hw-sparkle {
+    display: none;
+  }
+  /* Renovación: tijera quieta sobre el listón intacto, sin destellos. */
+  .rn-stripes,
+  .rn-glow,
+  .rn-sc,
+  .rn-ba,
+  .rn-bb,
+  .rn-rl,
+  .rn-rr {
+    animation: none !important;
+  }
+  .rn-sparkle {
     display: none;
   }
 }

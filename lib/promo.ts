@@ -80,3 +80,38 @@ export function avisosHalloweenDelMomento(d: Date = new Date()): AvisoHalloween[
   const minutos = Number(p.hour) * 60 + Number(p.minute);
   return AVISOS_HALLOWEEN.filter((a) => a.dia === hoy && minutos >= a.hora);
 }
+
+// ── Anuncio: barbería renovada (2026) ────────────────────────────────────────
+// Solo anuncio, como Halloween: splash una vez por dispositivo, banner en la
+// tarjeta hasta RENOVACION_HASTA y un aviso push + bandeja a todos los clientes.
+// Desde el día siguiente a RENOVACION_HASTA no se muestra nada → borrable.
+
+/** Último día (GT) en que se muestra el anuncio. */
+export const RENOVACION_HASTA = "2026-11-30";
+
+/** Clave localStorage: el splash ya se vio en este dispositivo. */
+export const RENOVACION_KEY = "taper_renovacion_2026";
+
+/** Copy compartido por el aviso push y la bandeja. */
+export const AVISO_RENOVACION = {
+  tipo: "renovacion_2026", // idempotencia en notificaciones_log
+  dia: "2026-10-27", // sale desde este día (GT), en la primera corrida del cron
+  hora: 10 * 60, // dentro de la franja 10:00–20:00 GT: si el deploy cae de
+  hasta: 20 * 60, // noche o ya pasó el día, sale a la mañana siguiente.
+  titulo: "💈 Taper se renovó",
+  cuerpo: "Estrenamos nueva cara. Pasa a conocerla y de una vez sal con corte fresco: tus sellos te esperan.",
+};
+
+export function renovacionVigente(d: Date = new Date()): boolean {
+  return diaGT(d) <= RENOVACION_HASTA;
+}
+
+/** ¿Toca mandar el aviso? Ya llegó su día, sigue vigente y es de día (GT). */
+export function avisoRenovacionDelMomento(d: Date = new Date()): boolean {
+  const hoy = diaGT(d);
+  if (hoy < AVISO_RENOVACION.dia || hoy > RENOVACION_HASTA) return false;
+  const p: Record<string, string> = {};
+  for (const { type, value } of FMT_HORA.formatToParts(d)) p[type] = value;
+  const minutos = Number(p.hour) * 60 + Number(p.minute);
+  return minutos >= AVISO_RENOVACION.hora && minutos < AVISO_RENOVACION.hasta;
+}
